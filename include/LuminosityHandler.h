@@ -29,7 +29,7 @@
 #include "TRandom2.h"
 
 // Local include(s)
-#include "core/include/SLogger.h"
+#include "../../core/include/SLogger.h"
 #include "LuminosityUtils.h"
 //#include "GoodRunsLists/include/TGoodRunsList.h"
 

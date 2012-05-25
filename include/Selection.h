@@ -3,7 +3,7 @@
 
 #include "Objects.h"
 #include "BaseCycleContainer.h"
-#include "core/include/SLogger.h"
+#include "../../core/include/SLogger.h"
 
 class SelectionModule{
  public:
