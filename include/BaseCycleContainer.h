@@ -9,6 +9,9 @@ struct BaseCycleContainer{
   int run;
   int luminosityBlock;
   int event;
+
+  float rho;
+
   bool isRealData;
   bool HBHENoiseFilterResult;
 
