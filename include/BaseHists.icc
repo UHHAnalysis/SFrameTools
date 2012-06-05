@@ -1,0 +1,24 @@
+// Dear emacs, this is -*- c++ -*-
+// $Id: BaseHists.icc
+
+#ifndef BaseHists_ICC
+#define BaseHists_ICC
+
+// SFrame include(s):
+#include "core/include/SCycleBase.h"
+
+template< class T >
+T* BaseHists::Book( const T& histo ) throw( SError ) {
+
+  T* ret = SCycleBaseHist::template Book(histo, m_name.Data());   
+  return ret;
+}
+
+template< class T >
+T* BaseHists::Retrieve( const char* name ) throw( SError ) {
+
+  T* ret = SCycleBaseHist::template Retrieve< T >(name, m_name.Data());   
+  return ret;
+}
+
+#endif // BaseHists_ICC
