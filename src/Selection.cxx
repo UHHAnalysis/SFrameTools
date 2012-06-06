@@ -41,6 +41,18 @@ bool Selection::passInvertedSelection(BaseCycleContainer *bcc){
   return false;
 }
 
+bool Selection::passSelection(){
+  ObjectHandler* objs = ObjectHandler::Instance();
+  BaseCycleContainer* bcc = objs->GetBaseCycleContainer();
+  return passSelection(bcc);
+}
+
+bool Selection::passInvertedSelection(){
+  ObjectHandler* objs = ObjectHandler::Instance();
+  BaseCycleContainer* bcc = objs->GetBaseCycleContainer();
+  return passInvertedSelection(bcc);
+}
+
 void Selection::printCutFlow(){
 
   using namespace std;

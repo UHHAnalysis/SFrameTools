@@ -5,6 +5,7 @@
 #include <TString.h>
 #include "Objects.h"
 #include "BaseCycleContainer.h"
+#include "ObjectHandler.h"
 #include "../../core/include/SLogger.h"
 
 class SelectionModule{
@@ -28,6 +29,8 @@ class Selection{
   void clearSelectionModulesList();
   bool passSelection(BaseCycleContainer *bcc);
   bool passInvertedSelection(BaseCycleContainer *bcc);
+  bool passSelection();
+  bool passInvertedSelection();
 
   void printCutFlow();
 
@@ -40,6 +43,7 @@ class Selection{
   std::vector<SelectionModule*> m_cuts;
   std::vector<int> m_cutflow;
   int Ntotal;
+
 };
 
 
