@@ -46,6 +46,8 @@ void EventCalc::Reset()
 
   // reset booleans
   b_HT = false;
+  b_HTlep = false;
+
 }
 
 BaseCycleContainer* EventCalc::GetBaseCycleContainer()
