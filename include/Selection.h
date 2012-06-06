@@ -1,6 +1,8 @@
+// Dear emacs, this is -*- c++ -*-
 #ifndef Selection_H
 #define Selection_H
 
+#include <TString.h>
 #include "Objects.h"
 #include "BaseCycleContainer.h"
 #include "../../core/include/SLogger.h"
@@ -19,7 +21,7 @@ class Selection{
  public:
   
   //Selection(){};
-  Selection(std::string name = "Selection");
+  Selection(std::string name);
   ~Selection(){};
   
   void addSelectionModule(SelectionModule*);
@@ -29,12 +31,17 @@ class Selection{
 
   void printCutFlow();
 
+  TString GetName() {return m_name;}
+  void SetName(TString name) { m_name = name;}
+
  private:
+  TString m_name;
   mutable SLogger m_logger;
   std::vector<SelectionModule*> m_cuts;
   std::vector<int> m_cutflow;
+  int Ntotal;
 };
 
 
 
-#endif
+#endif // Selection_H
