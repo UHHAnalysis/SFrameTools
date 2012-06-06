@@ -86,19 +86,6 @@ bool LuminosityHandler::Initialise()
 
    if( !m_lumiFileName.empty() ){
 
-//      TFile *testfile =  new TFile( "/afs/naf.desy.de/user/p/peiffer/CMSSW_5_2_3_patch4/src/UHHAnalysis/NtupleWriter/test.root", "READ");
-
-//      TTree *testTr = (TTree*)testfile->Get( "AnalysisTree" );
-
-//      TString* testString;
-//      testTr->SetBranchAddress( "HLTpath", &testString);
-
-//       for( Int_t ientry = 0; ientry<testTr->GetEntries(); ientry++){
-//          testTr->GetEntry( ientry );
-// 	 std::cout << testString->Data() << std::endl;
-//       }
-//       testfile->Close();
-
       TFile *lumifile = new TFile( grl_dir + m_lumiFileName.c_str(), "READ");
       if( lumifile == NULL ){
          m_logger << FATAL << "Lumi File \"" << m_lumiFileName << "\" doesn't exist or cannot be opened!"
@@ -113,6 +100,8 @@ bool LuminosityHandler::Initialise()
          exit(-1);
       }
          
+      m_logger << INFO << "Set directory to \"" << grl_dir << "\"." << SLogger::endmsg;
+
       m_logger << INFO << "Using LumiFile \"" << m_lumiFileName 
                << "\", luminosity calculation with Trigger \"" << m_triggerName  << "\"!" << SLogger::endmsg;
 
