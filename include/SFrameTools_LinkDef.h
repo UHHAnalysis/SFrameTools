@@ -1,5 +1,5 @@
 // Dear emacs, this is -*- c++ -*-
-// $Id: SFrameTools_LinkDef.h,v 1.2 2012/05/25 12:47:50 peiffer Exp $
+// $Id: SFrameTools_LinkDef.h,v 1.3 2012/06/06 08:35:10 rkogler Exp $
 #ifdef __CINT__
 
 #pragma link off all globals;
@@ -21,6 +21,7 @@
 #pragma link C++ struct BaseCycleContainer+;
 #pragma link C++ struct Selection+;
 #pragma link C++ struct PUWeightProducer+;
+#pragma link C++ class BaseHists+;
 
 #pragma link C++ class Particle+;
 #pragma link C++ class std::vector<Particle>+;

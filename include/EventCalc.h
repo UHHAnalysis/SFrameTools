@@ -3,7 +3,7 @@
 #define EventCalc_H
 
 #include "ObjectHandler.h"
-#include "core/include/SLogger.h"
+#include "SLogger.h"
 
 class EventCalc
 {
@@ -22,7 +22,7 @@ class EventCalc
   int GetLumiBlock() {return (m_bcc ? m_bcc->luminosityBlock : -1);}
   int GetEventNum() {return (m_bcc ? m_bcc->event : -1);}
   bool IsRealData() {return (m_bcc ? m_bcc->isRealData : false);}
-  bool GetHBHENoiseFilterResult() {return (m_bcc ? m_bcc->HBHENoiseFilterResult : false);}
+  //bool GetHBHENoiseFilterResult() {return (m_bcc ? m_bcc->HBHENoiseFilterResult : false);}
 
   float GetBeamSpotX0() {return (m_bcc ? m_bcc->beamspot_x0 : -999.);}
   float GetBeamSpotY0() {return (m_bcc ? m_bcc->beamspot_y0 : -999.);}

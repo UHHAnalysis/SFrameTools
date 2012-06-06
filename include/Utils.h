@@ -16,7 +16,7 @@ enum E_BtagType{e_CSVT,e_CSVM,e_CSVL,e_JPT,e_JPM,e_JPL};
 
 bool TopTag(TopJet topjet, double& mjet, int& nsubjets, double& mmin);
 
-double HTlep(const BaseCycleContainer *bcc);
+//double HTlep(const BaseCycleContainer *bcc); ->moved to EventCalc
 Jet* nextJet(const Particle *p, std::vector<Jet> *jets);
 double pTrel(const Particle *p, std::vector<Jet> *jets);
 double deltaRmin(const Particle *p, std::vector<Jet> *jets);

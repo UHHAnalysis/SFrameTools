@@ -13,7 +13,7 @@ struct BaseCycleContainer{
   float rho;
 
   bool isRealData;
-  bool HBHENoiseFilterResult;
+  //bool HBHENoiseFilterResult;
 
   float beamspot_x0;
   float beamspot_y0;
@@ -26,6 +26,7 @@ struct BaseCycleContainer{
   std::vector< PrimaryVertex >* pvs;
   std::vector< Jet >* jets;
   std::vector< TopJet >* topjets;
+  std::vector< TopJet >* topjetsgen;
   std::vector< TopJet >* prunedjets;
   std::vector< GenParticle >* genparticles;
   MET* met;

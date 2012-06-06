@@ -5,7 +5,7 @@
 #include "Objects.h"
 #include "BaseCycleContainer.h"
 #include "LuminosityHandler.h"
-#include "core/include/SLogger.h"
+#include "SLogger.h"
 
 class ObjectHandler
 {
@@ -22,10 +22,11 @@ class ObjectHandler
   LuminosityHandler* GetLumiHandler();
 
   int GetRunNum() {return (m_bcc ? m_bcc->run : -1);}
+  float GetRho() {return (m_bcc ? m_bcc->rho : -1);}
   int GetLumiBlock() {return (m_bcc ? m_bcc->luminosityBlock : -1);}
   int GetEventNum() {return (m_bcc ? m_bcc->event : -1);}
   bool IsRealData() {return (m_bcc ? m_bcc->isRealData : false);}
-  bool GetHBHENoiseFilterResult() {return (m_bcc ? m_bcc->HBHENoiseFilterResult : false);}
+  //bool GetHBHENoiseFilterResult() {return (m_bcc ? m_bcc->HBHENoiseFilterResult : false);}
 
   float GetBeamSpotX0() {return (m_bcc ? m_bcc->beamspot_x0 : -999.);}
   float GetBeamSpotY0() {return (m_bcc ? m_bcc->beamspot_y0 : -999.);}
