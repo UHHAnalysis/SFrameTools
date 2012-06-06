@@ -80,8 +80,6 @@ void FJet::FindJets(const vector<Particle*> ParticlesIn, vector<Jet*>& JetsOut)
   // the main routine:
   // jet finding using FastJet
 
-  cout << "Main finding routine..." << endl;
-
   // clear the list if it is filled
   if (JetsOut.size()!=0){
     JetsOut.clear();
