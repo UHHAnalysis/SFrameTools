@@ -27,6 +27,7 @@ class Selection{
   
   void addSelectionModule(SelectionModule*);
   void clearSelectionModulesList();
+  void resetCutFlow();
   bool passSelection(BaseCycleContainer *bcc);
   bool passInvertedSelection(BaseCycleContainer *bcc);
   bool passSelection();

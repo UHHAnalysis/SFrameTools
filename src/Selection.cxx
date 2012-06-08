@@ -10,7 +10,15 @@ Selection::Selection(std::string name):
   Ntotal=0;
 }
 
+void Selection::resetCutFlow(){
+  Ntotal=0;
+  for(unsigned int i=0; i<m_cuts.size(); ++i){
+    m_cutflow[i]=0;
+  }
+}
+
 void Selection::addSelectionModule(SelectionModule* sel){
+  m_logger << DEBUG << "Adding selection module: " << sel->description() << SLogger::endmsg;
   m_cuts.push_back(sel);
   m_cutflow.push_back(0);
 }
