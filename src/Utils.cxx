@@ -47,26 +47,6 @@ bool TopTag(TopJet topjet,  double &mjet, int &nsubjets, double &mmin){
   return true;
 }
 
-double HTlep(const BaseCycleContainer *bcc){
-
-  double htlep=0;
-
-  if(bcc->electrons){
-    for(unsigned int i=0; i<bcc->electrons->size(); ++i){
-      htlep += bcc->electrons->at(i).pt();
-    }
-  }
-  if(bcc->muons){
-    for(unsigned int i=0; i<bcc->muons->size(); ++i){
-      htlep += bcc->muons->at(i).pt();
-    }
-  }
-  if(bcc->met) htlep += bcc->met->pt();
-
-  return htlep;
-
-}
-
 Jet* nextJet(const Particle *p, std::vector<Jet> *jets){
 
   double deltarmin = double_infinity();
