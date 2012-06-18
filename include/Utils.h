@@ -17,9 +17,9 @@ struct HigherPt {
  * @see  Cleaner::JetEnergyResolutionShifter
 */
 enum E_SystShift{
-  e_Default, /**< default, no systematic hsift is applied */
-  e_Up, /**< upwards variation */
-  e_Down /**< downwards variation */
+  e_Default, /**< default, no systematic shift is applied */
+  e_Up, /**< up variation */
+  e_Down /**< down variation */
 };
 
 /**
