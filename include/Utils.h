@@ -13,6 +13,16 @@ struct HigherPt {
 };
 
 /**
+ * list of systematic shift options
+ * @see  Cleaner::JetEnergyResolutionShifter
+*/
+enum E_SystShift{
+  e_Default, /**< default, no systematic hsift is applied */
+  e_Up, /**< upwards variation */
+  e_Down /**< downwards variation */
+};
+
+/**
  * list of supported b-tagging working points
  * @see  NBTagSelection
 */
