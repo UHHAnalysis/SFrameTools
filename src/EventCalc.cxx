@@ -128,4 +128,39 @@ double EventCalc::GetHTlep()
   return m_HTlep;
 }
 
+void EventCalc::PrintEventContent(){
 
+  m_logger << INFO << "----------------- event content -----------------" << SLogger::endmsg;
+  m_logger << INFO << "run: " << m_bcc->run <<  "   lumi block:" << m_bcc->luminosityBlock << "   event: " << m_bcc->event << SLogger::endmsg;
+  m_logger << INFO << "MET = " << m_bcc->met->pt() << "   METphi = " << m_bcc->met->phi() <<  "   HTlep = " << GetHTlep() << SLogger::endmsg;
+  if(m_bcc->electrons){m_logger << INFO << "Electrons:" << SLogger::endmsg;
+    for(unsigned int i=0; i<m_bcc->electrons->size(); ++i){
+      m_logger << INFO << "     " << i+1 << " pt = " << m_bcc->electrons->at(i).pt() <<"   eta = " << m_bcc->electrons->at(i).eta() << SLogger::endmsg;
+    }
+  }
+  if(m_bcc->muons){m_logger << INFO << "Muons:" << SLogger::endmsg;
+    for(unsigned int i=0; i<m_bcc->muons->size(); ++i){
+      m_logger << INFO << "     " << i+1 << " pt = " << m_bcc->muons->at(i).pt() <<"   eta = " << m_bcc->muons->at(i).eta() << SLogger::endmsg;
+    }
+  }
+  if(m_bcc->taus){m_logger << INFO << "Taus:" << SLogger::endmsg;
+    for(unsigned int i=0; i<m_bcc->taus->size(); ++i){
+      m_logger << INFO << "     " << i+1 << " pt = " << m_bcc->taus->at(i).pt() <<"   eta = " << m_bcc->taus->at(i).eta() << SLogger::endmsg;
+    }
+  }
+  if(m_bcc->jets){m_logger << INFO << "Jets:" << SLogger::endmsg;
+    for(unsigned int i=0; i<m_bcc->jets->size(); ++i){
+      m_logger << INFO << "     " << i+1 << " pt = " << m_bcc->jets->at(i).pt() <<"   eta = " << m_bcc->jets->at(i).eta() << SLogger::endmsg;
+    }
+  }
+  if(m_bcc->topjets){m_logger << INFO << "TopJets:" << SLogger::endmsg;
+    for(unsigned int i=0; i<m_bcc->topjets->size(); ++i){
+      m_logger << INFO << "     " << i+1 << " pt = " << m_bcc->topjets->at(i).pt() <<"   eta = " << m_bcc->topjets->at(i).eta() << SLogger::endmsg;
+    }
+  }
+  if(m_bcc->photons){m_logger << INFO << "Photons:" << SLogger::endmsg;
+    for(unsigned int i=0; i<m_bcc->photons->size(); ++i){
+      m_logger << INFO << "     " << i+1 << " pt = " << m_bcc->photons->at(i).pt() <<"   eta = " << m_bcc->photons->at(i).eta() << SLogger::endmsg;
+    }
+  }
+}

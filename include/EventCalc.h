@@ -5,6 +5,14 @@
 #include "ObjectHandler.h"
 #include "SLogger.h"
 
+/**
+ *  @short class for the calculation of basic event variables
+ *
+ * 
+ *
+ *  @author Roman Kogler
+ */
+
 class EventCalc
 {
  private:
@@ -47,9 +55,14 @@ class EventCalc
 
   std::vector<std::string> GetTrigNamesActualRun() {return (m_bcc ? m_bcc->triggerNames_actualrun : std::vector<std::string>());}
   
+  /// scalar sum of the pt of all jets, leptons and missing transverse energy
   double GetHT();
 
+  /// scalar sum of missing transverse energy and the pt of all leptons in the actual BaseCycleContainer
   double GetHTlep();
+
+  /// print a list of all objects in the actual BaseCycleContainer
+  void PrintEventContent();
 
 
  private:
