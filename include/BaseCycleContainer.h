@@ -4,6 +4,13 @@
 
 #include "Objects.h"
 
+/**
+ *  @short container that contains all objects of the actual event
+ * 
+ *  @author Thomas Peiffer
+ */
+
+
 struct BaseCycleContainer{
   //input variables
   int run;
