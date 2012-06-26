@@ -150,7 +150,7 @@ void EventCalc::PrintEventContent(){
   }
   if(m_bcc->jets){m_logger << INFO << "Jets:" << SLogger::endmsg;
     for(unsigned int i=0; i<m_bcc->jets->size(); ++i){
-      m_logger << INFO << "     " << i+1 << " pt = " << m_bcc->jets->at(i).pt() <<"   eta = " << m_bcc->jets->at(i).eta() << SLogger::endmsg;
+      m_logger << INFO << "     " << i+1 << " pt = " << m_bcc->jets->at(i).pt() <<"   eta = " << m_bcc->jets->at(i).eta() << "   genjet_pt = " << m_bcc->jets->at(i).genjet_pt() << "   genjet_eta = " <<   m_bcc->jets->at(i).genjet_eta() <<SLogger::endmsg;
     }
   }
   if(m_bcc->topjets){m_logger << INFO << "TopJets:" << SLogger::endmsg;
