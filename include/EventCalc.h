@@ -113,7 +113,7 @@ class EventCalc
   /// print a list of all objects in the actual BaseCycleContainer
   void PrintEventContent();
 
-protected:
+private:
   mutable SLogger m_logger;
   EventCalc();
   ~EventCalc();
@@ -121,8 +121,6 @@ protected:
   // same as for ObjectHandler, to make things easier
   BaseCycleContainer* m_bcc;
   LuminosityHandler* m_lumi;
-
-private:
 
   // booleans to tell weather quantities have already been derived in an event
   bool b_HT;
