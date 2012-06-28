@@ -3,6 +3,7 @@
 #define BaseCycleContainer_H
 
 #include "Objects.h"
+#include "ReconstructionHypothesis.h"
 
 /**
  *  @short container that contains all objects of the actual event
@@ -46,6 +47,8 @@ struct BaseCycleContainer{
   //use this vector since triggerNames is only filled for first event of new run
   std::vector<std::string> triggerNames_actualrun;
 
+  std::vector< ReconstructionHypothesis >* recoHyps;
+  
 };
 
 

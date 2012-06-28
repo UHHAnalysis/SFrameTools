@@ -25,6 +25,7 @@ EventCalc::EventCalc() : m_logger( "EventCalc" )
   m_logger << DEBUG << "Constructor called." << SLogger::endmsg;
   m_bcc = NULL;
   m_lumi = NULL;
+  m_primlep = NULL;
 }
 
 EventCalc::~EventCalc()
@@ -47,6 +48,8 @@ void EventCalc::Reset()
   // reset booleans
   b_HT = false;
   b_HTlep = false;
+
+  m_primlep = NULL;
 
 }
 
@@ -128,6 +131,156 @@ double EventCalc::GetHTlep()
   return m_HTlep;
 }
 
+Particle* EventCalc::GetPrimaryLepton(){
+
+  if(!m_primlep){
+    double ptmax = -999;
+    for(unsigned int i=0; i<m_bcc->electrons->size(); ++i){
+      if(m_bcc->electrons->at(i).pt()>ptmax){
+	ptmax = m_bcc->electrons->at(i).pt();
+	m_primlep = &m_bcc->electrons->at(i);
+      }
+    }
+    for(unsigned int i=0; i<m_bcc->muons->size(); ++i){
+      if(m_bcc->muons->at(i).pt()>ptmax){
+	ptmax = m_bcc->muons->at(i).pt();
+	m_primlep = &m_bcc->muons->at(i);
+      }
+    }
+  }
+
+  return m_primlep;
+}
+
+
+std::vector<LorentzVector> EventCalc::NeutrinoReconstruction(const LorentzVector lepton, const LorentzVector met){
+
+  
+  TVector3 lepton_pT = toVector(lepton);
+  lepton_pT.SetZ(0);
+  
+  TVector3 neutrino_pT = toVector(met);
+  neutrino_pT.SetZ(0);
+  
+  const float mass_w = 80.399;
+  float mu = mass_w * mass_w / 2 + lepton_pT * neutrino_pT;
+  
+  float A = - (lepton_pT * lepton_pT);
+  float B = mu * lepton.pz();
+  float C = mu * mu - lepton.e() * lepton.e() * (neutrino_pT * neutrino_pT);
+  
+  float discriminant = B * B - A * C;
+  
+  std::vector<LorentzVector> solutions;
+  
+  if (0 >= discriminant)
+    {
+      // Take only real part of the solution
+      //
+      LorentzVectorXYZE solution (0,0,0,0);
+      solution.SetPx(met.Px());
+      solution.SetPy(met.Py());
+      solution.SetPz(-B / A);
+      solution.SetE(toVector(solution).Mag());
+      
+      solutions.push_back(toPtEtaPhi(solution));
+      
+      //_solutions = 0 > discriminant ? 0 : 1;
+    }
+  else
+    {
+      discriminant = sqrt(discriminant);
+      
+      LorentzVectorXYZE solution (0,0,0,0);
+      solution.SetPx(met.Px());
+      solution.SetPy(met.Py());
+      solution.SetPz((-B - discriminant) / A);
+      solution.SetE(toVector(solution).Mag());
+      
+      solutions.push_back(toPtEtaPhi(solution));
+      
+      LorentzVectorXYZE solution2 (0,0,0,0);
+      solution2.SetPx(met.Px());
+      solution2.SetPy(met.Py());
+      solution2.SetPz((-B + discriminant) / A);
+      solution2.SetE(toVector(solution2).Mag());
+      
+      solutions.push_back(toPtEtaPhi(solution2));
+      
+      //_solutions = 2;
+    }
+  
+  return solutions;
+}
+
+void EventCalc::FillHighMassTTbarHypotheses(){
+
+  //clear hypothesis list
+  m_bcc->recoHyps->clear();
+
+  //find primary charged lepton
+  Particle* lepton = GetPrimaryLepton();
+
+  //reconstruct neutrino
+  std::vector<LorentzVector> neutrinos = NeutrinoReconstruction( lepton->v4(), m_bcc->met->v4());
+  
+  ReconstructionHypothesis hyp;
+
+  hyp.set_lepton(*lepton);
+
+  //loop over neutrino solutions and jet assignments to fill hyotheses
+  for(unsigned int i=0; i< neutrinos.size();++i){
+
+    hyp.set_neutrino_v4(neutrinos[i]);
+    LorentzVector wlep_v4 = lepton->v4()+neutrinos[i];
+
+    unsigned int n_jets = m_bcc->jets->size();
+    unsigned int max_j = myPow(3, n_jets);
+    for (unsigned int j=0; j < max_j; j++) {
+      LorentzVector tophad_v4(0,0,0,0);
+      LorentzVector toplep_v4 = wlep_v4;
+      int hadjets=0;
+      int lepjets=0;
+      int num = j;
+      hyp.clear_jetindices();
+      for (unsigned int k=0; k<n_jets; k++) {
+	// num is the k-th digit of j if you
+	// write j in a base-3 system. According
+	// to the value of this digit (which takes
+	// values from 0 to 2,
+	// in all possible combinations with the other digits),
+	// decide how to treat the jet.
+	
+	if(num%3==0) {
+	  tophad_v4 = tophad_v4 + m_bcc->jets->at(k).v4();
+	  hyp.add_tophad_jet_index(k);
+	  hadjets++;
+	}
+	
+	if(num%3==1) {
+	  toplep_v4 = toplep_v4 + m_bcc->jets->at(k).v4();
+	  hyp.add_toplep_jet_index(k);
+	  lepjets++;
+	}
+	//if(num%3==2); //do not take this jet
+	
+	//shift the trigits of num to the right:
+	num /= 3;
+      }
+      
+      
+      //fill only hypotheses with at least on ejet assigned to each top quark
+      if(hadjets>0 && lepjets>0){
+	hyp.set_tophad_v4(tophad_v4);
+	hyp.set_toplep_v4(toplep_v4);
+	m_bcc->recoHyps->push_back(hyp);
+      }
+    }
+  }
+  
+}
+
+
 void EventCalc::PrintEventContent(){
 
   m_logger << INFO << "----------------- event content -----------------" << SLogger::endmsg;
@@ -135,7 +288,13 @@ void EventCalc::PrintEventContent(){
   m_logger << INFO << "MET = " << m_bcc->met->pt() << "   METphi = " << m_bcc->met->phi() <<  "   HTlep = " << GetHTlep() << SLogger::endmsg;
   if(m_bcc->electrons){m_logger << INFO << "Electrons:" << SLogger::endmsg;
     for(unsigned int i=0; i<m_bcc->electrons->size(); ++i){
-      m_logger << INFO << "     " << i+1 << " pt = " << m_bcc->electrons->at(i).pt() <<"   eta = " << m_bcc->electrons->at(i).eta() << SLogger::endmsg;
+      m_logger << INFO << "     " << i+1 << " pt = " << m_bcc->electrons->at(i).pt() <<"   eta = " << m_bcc->electrons->at(i).eta() 
+	       << "   supercluster eta = " <<m_bcc->electrons->at(i).supercluster_eta() << "   IP wrt bsp = " << fabs(m_bcc->electrons->at(i).gsfTrack_dxy_vertex(m_bcc->pvs->at(0).x(), m_bcc->pvs->at(0).y()))
+	       << "   pass conv veto = " << m_bcc->electrons->at(i).passconversionveto()  << "   mvaTrigV0 = " <<  m_bcc->electrons->at(i).mvaTrigV0()
+	       << "   dEtaIn = " << m_bcc->electrons->at(i).dEtaIn() << "   sigmaIEtaIEta = " << m_bcc->electrons->at(i).sigmaIEtaIEta()
+	       << "   HoverE = " << m_bcc->electrons->at(i).HoverE() << "   EcalEnergy = " << m_bcc->electrons->at(i).EcalEnergy() 
+	       << "   EoverPIn = " << m_bcc->electrons->at(i).EoverPIn() << "   trackMomentumAtVtx = " << m_bcc->electrons->at(i).EcalEnergy()/m_bcc->electrons->at(i).EoverPIn()
+	       << SLogger::endmsg;
     }
   }
   if(m_bcc->muons){m_logger << INFO << "Muons:" << SLogger::endmsg;

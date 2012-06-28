@@ -6,6 +6,8 @@
 #include "TVector3.h"
 #include <limits>
 
+typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > LorentzVectorXYZE;
+
 struct HigherPt {
   bool operator() (const Particle& j1, const Particle& j2) const {
     return j1.pt() > j2.pt();
@@ -52,7 +54,24 @@ double pTrel(const Particle *p, std::vector<Jet> *jets);
 /// minimal distance in the eta-phi plane of particle p with respect to the closest jet from the list of jets
 double deltaRmin(const Particle *p, std::vector<Jet> *jets);
 
+/// transfroms LorentzVector to TVector3
+TVector3 toVector(LorentzVector v4);
+
+/// transfroms LorentzVector to TVector3
+TVector3 toVector(LorentzVectorXYZE v4);
+
+/// converts LorentzVector into LorentzVector
+LorentzVectorXYZE toXYZ(LorentzVector v4);
+
+/// converts LorentzVector into LorentzVector
+LorentzVector toPtEtaPhi(LorentzVectorXYZE v4);
+
+double deltaR(LorentzVector v1, LorentzVector v2);
+
 double double_infinity();
 int int_infinity();
+
+/// x^p
+int myPow(int x, unsigned int p) ;
 
 #endif

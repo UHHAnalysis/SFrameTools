@@ -1,5 +1,5 @@
 // Dear emacs, this is -*- c++ -*-
-// $Id: SFrameTools_LinkDef.h,v 1.3 2012/06/06 08:35:10 rkogler Exp $
+// $Id: SFrameTools_LinkDef.h,v 1.4 2012/06/06 15:25:23 peiffer Exp $
 #ifdef __CINT__
 
 #pragma link off all globals;
@@ -43,6 +43,9 @@
 #pragma link C++ class GenInfo+;
 #pragma link C++ class GenParticle+;
 #pragma link C++ class std::vector<GenParticle>+;
+#pragma link C++ class ReconstructionHypothesis+;
+#pragma link C++ class std::vector<ReconstructionHypothesis>+;
+#pragma link C++ struct qualityflag+;
 
 #pragma link C++ class LuminosityUtils::RunNr_LbNr+;
 #pragma link C++ class LuminosityUtils::LumiBinInfo+;
@@ -50,7 +53,8 @@
 #pragma link C++ class pair<LuminosityUtils::RunNr_LbNr,int>+;
 #pragma link C++ class pair<int,LuminosityUtils::LumiBinInfo*>+;
 #pragma link C++ class pair<double,unsigned int>+;
-
+#pragma link C++ class ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiE4D<Double32_t> >+;
+#pragma link C++ class ROOT::Math::PtEtaPhiE4D<Double32_t>+;
 
 // needed by PROOF (don't really know why)
 #pragma link C++ class pair<const string,string*>;

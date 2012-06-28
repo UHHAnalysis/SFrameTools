@@ -4,6 +4,8 @@
 
 #include "ObjectHandler.h"
 #include "SLogger.h"
+#include "TVector3.h"
+#include "Utils.h"
 
 /**
  *  @short class for the calculation of basic event variables
@@ -54,6 +56,8 @@ class EventCalc
   std::vector<bool>* GetTrigResults() {return (m_bcc ? m_bcc->triggerResults : NULL);}
 
   std::vector<std::string> GetTrigNamesActualRun() {return (m_bcc ? m_bcc->triggerNames_actualrun : std::vector<std::string>());}
+
+  std::vector< ReconstructionHypothesis >* GetRecoHyps(){ return (m_bcc ? m_bcc->recoHyps : NULL);}
   
   /// scalar sum of the pt of all jets, leptons and missing transverse energy
   double GetHT();
@@ -61,11 +65,55 @@ class EventCalc
   /// scalar sum of missing transverse energy and the pt of all leptons in the actual BaseCycleContainer
   double GetHTlep();
 
+  /// electron or muon in the actual BaseCycleContainer with largest transverse momentum
+  Particle* GetPrimaryLepton();
+
+  /**
+   * @short function to calculate the neutrino four-momentum from MET and charged lepton momenta
+   *
+   * Given the Decay:
+   *
+   * A -> B + Neutrino
+   *
+   * reconstruct the Neutrino pZ component of the Lorentz Vector given
+   * it's Energy, px, and py are known.
+   *
+   * Calculation is carried with formula:
+   *
+   * P4A^2 = (P4B + P4Neutrino)^2
+   *
+   * assuming:
+   *
+   * P4Neutrino^2 = 0
+   * P4B^2 = 0
+   *
+   * within the SM: m_neutrino = 0, mass of the second decay product
+   * is neglected due to expected small mass, e.g. in case of the
+   * electron: m_B = 0.5 MeV, for the muon: m_mu = 105 MeV and mass
+   * of the W-boson: m_W = 80 GeV. m_B is used in formula in form:
+   *
+   * m_A^2 - m_B^2
+   *
+   * and therefore m_B can be neglected.
+   *
+   * The final equation is:
+   *
+   * (-pTlep^2) * x^2 + 2 * (mu * pZlep) * x + (mu^2 - Elep^2 * pTnu^2) = 0
+   *
+   * where
+   * x is pz_nu
+   * mu = mW^2 / 2 + pTlep * pTnu * cos(phi)
+   * phi is angle between p_lepton and p_neutrino in transverse plane
+   *
+   */
+  std::vector<LorentzVector> NeutrinoReconstruction(const LorentzVector lepton, const LorentzVector met);
+
+  void FillHighMassTTbarHypotheses();
+
   /// print a list of all objects in the actual BaseCycleContainer
   void PrintEventContent();
 
-
- private:
+protected:
   mutable SLogger m_logger;
   EventCalc();
   ~EventCalc();
@@ -74,6 +122,8 @@ class EventCalc
   BaseCycleContainer* m_bcc;
   LuminosityHandler* m_lumi;
 
+private:
+
   // booleans to tell weather quantities have already been derived in an event
   bool b_HT;
   bool b_HTlep;
@@ -81,6 +131,8 @@ class EventCalc
   // data members to store calculated results
   double m_HT;
   double m_HTlep;
+
+  Particle* m_primlep;
 
 };
 
