@@ -6,6 +6,7 @@
 #include "SLogger.h"
 #include "TVector3.h"
 #include "Utils.h"
+#include "TTbarGen.h"
 
 /**
  *  @short class for the calculation of basic event variables
@@ -68,6 +69,9 @@ class EventCalc
   /// electron or muon in the actual BaseCycleContainer with largest transverse momentum
   Particle* GetPrimaryLepton();
 
+  /// return ttbar generator information of the actual event
+  TTbarGen* GetTTbarGen();
+
   /**
    * @short function to calculate the neutrino four-momentum from MET and charged lepton momenta
    *
@@ -125,12 +129,14 @@ private:
   // booleans to tell weather quantities have already been derived in an event
   bool b_HT;
   bool b_HTlep;
+  bool b_Reconstruction;
 
   // data members to store calculated results
   double m_HT;
   double m_HTlep;
 
   Particle* m_primlep;
+  TTbarGen* m_ttgen;
 
 };
 

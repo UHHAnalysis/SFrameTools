@@ -1,7 +1,4 @@
 #include "include/TTbarGen.h"
-#include "include/ObjectHandler.h"
-
-#include <iostream>
 
 using namespace std;
 
@@ -41,38 +38,39 @@ TTbarGen::TTbarGen()
 		 m_bTop = bcc->genparticles->at(indexb);
 	       }
 	   }
-	 if ( genp.pdgId() == -6 ) 
+       }
+     if ( genp.pdgId() == -6 ) 
+       {
+	 m_Antitop = genp;
+	 if (genp.daughter(bcc->genparticles,1) && (genp.daughter(bcc->genparticles,2)))
 	   {
-	     m_Antitop = genp;
-	     if (genp.daughter(bcc->genparticles,1) && (genp.daughter(bcc->genparticles,2)))
+	     int indexW;
+	     int indexb;
+	     if (genp.daughter(bcc->genparticles,1)->pdgId() == -24) 
 	       {
-		 int indexW;
-		 int indexb;
-		 if (genp.daughter(bcc->genparticles,1)->pdgId() == -24) 
-		   {
-		     indexW = genp.daughter(bcc->genparticles,1)->index();
-		     m_WAntitop = bcc->genparticles->at(indexW);
-		   }
-		 if (genp.daughter(bcc->genparticles,1)->pdgId() == -5)  
-		   {
-		     indexb = genp.daughter(bcc->genparticles,1)->index();
-		     m_bAntitop = bcc->genparticles->at(indexb);
-		   }
-		 if (genp.daughter(bcc->genparticles,2)->pdgId() == -24)
-		   {
-		     indexW = genp.daughter(bcc->genparticles,2)->index();
-		     m_WAntitop = bcc->genparticles->at(indexW);
-		   }
-		 if (genp.daughter(bcc->genparticles,2)->pdgId() == -5)  
-		   {
-		     indexb = genp.daughter(bcc->genparticles,2)->index();
-		     m_bAntitop = bcc->genparticles->at(indexb);
-		   }
+		 indexW = genp.daughter(bcc->genparticles,1)->index();
+		 m_WAntitop = bcc->genparticles->at(indexW);
+	       }
+	     if (genp.daughter(bcc->genparticles,1)->pdgId() == -5)  
+	       {
+		 indexb = genp.daughter(bcc->genparticles,1)->index();
+		 m_bAntitop = bcc->genparticles->at(indexb);
+	       }
+	     if (genp.daughter(bcc->genparticles,2)->pdgId() == -24)
+	       {
+		 indexW = genp.daughter(bcc->genparticles,2)->index();
+		 m_WAntitop = bcc->genparticles->at(indexW);
+	       }
+	     if (genp.daughter(bcc->genparticles,2)->pdgId() == -5)  
+	       {
+		 indexb = genp.daughter(bcc->genparticles,2)->index();
+		 m_bAntitop = bcc->genparticles->at(indexb);
 	       }
 	   }
        }
-   }   
-} 
+   }
+}   
+ 
 
 TTbarGen::~TTbarGen()
 {
@@ -83,6 +81,11 @@ GenParticle TTbarGen::Top()
 {
   return m_Top;
 }
+
+GenParticle TTbarGen::Antitop()
+{
+  return m_Antitop;
+} 
 
 GenParticle TTbarGen::WTop()
 {
@@ -103,5 +106,6 @@ GenParticle TTbarGen::bAntitop()
 {
   return m_bAntitop;
 } 
+
 
 

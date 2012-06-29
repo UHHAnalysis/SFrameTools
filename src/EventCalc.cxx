@@ -26,6 +26,7 @@ EventCalc::EventCalc() : m_logger( "EventCalc" )
   m_bcc = NULL;
   m_lumi = NULL;
   m_primlep = NULL;
+  m_ttgen = NULL;
 }
 
 EventCalc::~EventCalc()
@@ -48,9 +49,10 @@ void EventCalc::Reset()
   // reset booleans
   b_HT = false;
   b_HTlep = false;
+  b_Reconstruction = false;
 
   m_primlep = NULL;
-
+  m_ttgen = NULL;
 }
 
 BaseCycleContainer* EventCalc::GetBaseCycleContainer()
@@ -152,6 +154,15 @@ Particle* EventCalc::GetPrimaryLepton(){
   return m_primlep;
 }
 
+TTbarGen* EventCalc::GetTTbarGen(){
+
+  if(!m_ttgen){
+    m_ttgen = new TTbarGen();
+  }
+
+  return m_ttgen;
+}
+
 
 std::vector<LorentzVector> EventCalc::NeutrinoReconstruction(const LorentzVector lepton, const LorentzVector met){
 
@@ -215,6 +226,9 @@ std::vector<LorentzVector> EventCalc::NeutrinoReconstruction(const LorentzVector
 
 void EventCalc::FillHighMassTTbarHypotheses(){
 
+  if(b_Reconstruction) return;
+  b_Reconstruction=true;
+
   //clear hypothesis list
   m_bcc->recoHyps->clear();
 
@@ -268,8 +282,20 @@ void EventCalc::FillHighMassTTbarHypotheses(){
 	num /= 3;
       }
       
+      //search jet with highest pt assigned to leptonic top
+      float maxpt=-999;
+      int maxind=-1;
+      for(unsigned int i=0; i<hyp.toplep_jets_indices().size(); ++i){
+	float pt = m_bcc->jets->at(hyp.toplep_jets_indices().at(i)).pt();
+	if(pt>maxpt){
+	  maxpt=pt;
+	  maxind=hyp.toplep_jets_indices().at(i);
+	}
+      }
+      hyp.set_blep_index(maxind);
+
       
-      //fill only hypotheses with at least on ejet assigned to each top quark
+      //fill only hypotheses with at least one jet assigned to each top quark
       if(hadjets>0 && lepjets>0){
 	hyp.set_tophad_v4(tophad_v4);
 	hyp.set_toplep_v4(toplep_v4);

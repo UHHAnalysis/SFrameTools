@@ -5,8 +5,8 @@
 #include "ObjectHandler.h"
 #include "Utils.h"
 #include "ReconstructionHypothesis.h"
-//#include "../../core/include/SLogger.h"
 #include "EventCalc.h"
+#include "TTbarGen.h"
 
 /**
  *  @short basic class to select a reconstruction hypothesis with a certain discriminator value
@@ -44,13 +44,16 @@ class HypothesisDiscriminator{
 };
 
 /**
- * BestPossible hypothesis discriminator, only works on MC
+ * BestPossible hypothesis discriminator, only works on ttbar MC
  */
 class BestPossibleDiscriminator: public HypothesisDiscriminator{
  public:
   BestPossibleDiscriminator():HypothesisDiscriminator("BestPossible"){};
   ~BestPossibleDiscriminator(){};
 
+  virtual void FillDiscriminatorValues();
+  
+  virtual ReconstructionHypothesis* GetBestHypothesis();
 };
 
 /**
@@ -64,8 +67,6 @@ class Chi2Discriminator: public HypothesisDiscriminator{
   virtual void FillDiscriminatorValues();
   
   virtual ReconstructionHypothesis* GetBestHypothesis();
-
-  
 };
 
 #endif
