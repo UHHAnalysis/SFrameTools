@@ -51,8 +51,11 @@ void EventCalc::Reset()
   b_HTlep = false;
   b_Reconstruction = false;
 
+  m_TotalWeight = 1.;
+  
   m_primlep = NULL;
   m_ttgen = NULL;
+
 }
 
 BaseCycleContainer* EventCalc::GetBaseCycleContainer()
@@ -349,3 +352,16 @@ void EventCalc::PrintEventContent(){
     }
   }
 }
+
+
+void EventCalc::ProduceWeight(double weight)
+{
+  m_TotalWeight = m_TotalWeight * weight;
+}
+
+double EventCalc::GetWeight()
+{
+
+return m_TotalWeight;
+}
+

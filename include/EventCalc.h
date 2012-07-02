@@ -117,7 +117,13 @@ class EventCalc
   /// print a list of all objects in the actual BaseCycleContainer
   void PrintEventContent();
 
-private:
+
+  void ProduceWeight(double weight);
+
+  double GetWeight();
+
+ private:
+
   mutable SLogger m_logger;
   EventCalc();
   ~EventCalc();
@@ -135,8 +141,11 @@ private:
   double m_HT;
   double m_HTlep;
 
+  double m_TotalWeight;
+
   Particle* m_primlep;
   TTbarGen* m_ttgen;
+
 
 };
 
