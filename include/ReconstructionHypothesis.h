@@ -32,7 +32,7 @@ class ReconstructionHypothesis{
   ~ReconstructionHypothesis(){};
 
   LorentzVector toplep_v4() const{return m_toplep_v4;}
-  LorentzVector tophad_v4() const{return m_toplep_v4;} 
+  LorentzVector tophad_v4() const{return m_tophad_v4;} 
   LorentzVector neutrino_v4() const{return m_neutrino_v4;} 
   Particle lepton() const{return m_lepton;}
   std::vector<unsigned int> tophad_jets_indices() const{return m_tophad_jets_ind;}

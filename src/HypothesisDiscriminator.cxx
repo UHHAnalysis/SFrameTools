@@ -70,18 +70,18 @@ void Chi2Discriminator::FillDiscriminatorValues(){
 
     ReconstructionHypothesis* hyp =  &bcc->recoHyps->at(i);
 
-    const double m_thad = 173;
-    const double m_thad_sigma = 30;
+    const double mass_thad = 179;
+    const double mass_thad_sigma = 14;
     
-    const double m_tlep = 173;
-    const double m_tlep_sigma = 30;
+    const double mass_tlep = 172;
+    const double mass_tlep_sigma = 18;
     
     const double drsum_thad = 0.7;
     const double drsum_thad_sigma = 0.3;
     
     const double drsum_tlep = 1.3;
     const double drsum_tlep_sigma = 0.5;
-    
+
     double tlep_deltar = deltaR(hyp->toplep_v4(), bcc->jets->at(hyp->blep_index()).v4() ) + deltaR(hyp->toplep_v4(), hyp->neutrino_v4()) + deltaR(hyp->toplep_v4(), hyp->lepton().v4());
     double thad_deltar = 0.0;
 
@@ -89,14 +89,31 @@ void Chi2Discriminator::FillDiscriminatorValues(){
       thad_deltar += deltaR(hyp->tophad_v4(), bcc->jets->at(hyp->tophad_jets_indices().at(j)).v4());
     }
 
-    double chi2_thad = pow((hyp->tophad_v4().M() - m_thad) / m_thad_sigma, 2) + pow((thad_deltar - drsum_thad) / drsum_thad_sigma, 2);
-    double chi2_tlep = pow((hyp->toplep_v4().M() - m_tlep) / m_tlep_sigma, 2) + pow((tlep_deltar - drsum_tlep) / drsum_tlep_sigma, 2);
+    double mass_thad_rec=0;
+    double mass_tlep_rec=0;
+
+    if(hyp->toplep_v4().isTimelike()){
+      mass_tlep_rec=hyp->toplep_v4().mass();
+    }
+    else{
+      mass_tlep_rec= -sqrt(-hyp->toplep_v4().mass2());
+    }
+    if(hyp->tophad_v4().isTimelike()){
+      mass_thad_rec=hyp->tophad_v4().mass();
+    }
+    else{
+      mass_thad_rec= -sqrt(-hyp->tophad_v4().mass2());
+    }
+
+
+    double chi2_thad = pow((mass_thad_rec - mass_thad) / mass_thad_sigma, 2) + pow((thad_deltar - drsum_thad) / drsum_thad_sigma, 2);
+    double chi2_tlep = pow((mass_tlep_rec - mass_tlep) / mass_tlep_sigma, 2) + pow((tlep_deltar - drsum_tlep) / drsum_tlep_sigma, 2);
     
     // make the chi2 on the leptonic side very high if there is more than 1 jet assigned:
 //     if(hyp->toplep_jets_indices().size() > 1){
 //       chi2_tlep += 1000.0;
 //     }
-    
+
     hyp->add_qualityflag(m_label, chi2_thad + chi2_tlep); //m_label="Chi2"
     hyp->add_qualityflag("Chi2_tlep", chi2_tlep);
     hyp->add_qualityflag("Chi2_thad", chi2_thad);
