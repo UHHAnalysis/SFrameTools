@@ -5,6 +5,7 @@
 #include "BaseCycleContainer.h"
 #include "TVector3.h"
 #include <limits>
+#include <algorithm>
 
 typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > LorentzVectorXYZE;
 
