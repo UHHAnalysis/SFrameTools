@@ -6,12 +6,12 @@ TTbarGen::TTbarGen()
 {
   ObjectHandler* objs = ObjectHandler::Instance();
   BaseCycleContainer* bcc = objs->GetBaseCycleContainer();
-  
+  m_pdgId1 = 0;
+  m_pdgId2 = 0;
   for(unsigned int i=0; i<bcc->genparticles->size(); ++i)
    {
      GenParticle genp = bcc->genparticles->at(i);
-     m_pdgId1 = 0;
-     m_pdgId2 = 0;
+
      if ( genp.pdgId() == 6 ) 
        {
 	 m_Top = genp;
