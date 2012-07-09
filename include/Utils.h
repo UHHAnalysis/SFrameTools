@@ -46,6 +46,13 @@ enum E_BtagType{
  */
 bool TopTag(TopJet topjet, double& mjet, int& nsubjets, double& mmin);
 
+/**
+ * W tagging routine
+ *
+ * @see NWTagSelection
+ */
+bool WTag(TopJet prunedjet, double& mjet, int &nsubjets, double& massdrop);
+
 //double HTlep(const BaseCycleContainer *bcc); ->moved to EventCalc
 
 /// returns the next jet in the list jets to the particle p in the eta-phi plane

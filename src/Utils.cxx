@@ -33,7 +33,7 @@ bool TopTag(TopJet topjet,  double &mjet, int &nsubjets, double &mmin){
     if( (subjets[1].v4()+subjets[2].v4()).isTimelike()  )
       m12 = (subjets[1].v4()+subjets[2].v4()).M();
     
-    //minimum pairwise mass > 50 GeV/c^2
+    //minimum pairwise mass 
     mmin = std::min(m01,std::min(m02,m12));
   }
 
@@ -59,6 +59,39 @@ Jet* nextJet(const Particle *p, std::vector<Jet> *jets){
   }
 
   return nextjet;
+}
+
+bool WTag(TopJet prunedjet,  double& mjet, int &nsubjets, double& massdrop){
+
+  nsubjets=prunedjet.numberOfDaughters();
+
+  mjet = 0;
+  if(prunedjet.v4().isTimelike())
+    mjet = prunedjet.v4().M(); 
+
+  //calculate mass drop for first sub-jet ordered in pt
+  massdrop = 0;
+  if(nsubjets>=1 && mjet>0){
+
+    std::vector< Particle > subjets = prunedjet.subjets();
+    sort(subjets.begin(), subjets.end(), HigherPt());
+
+    double m1 = 0;
+    if(subjets[0].v4().isTimelike())
+      m1 = subjets[0].v4().M();
+
+    massdrop = m1/mjet;
+  }
+  
+  //at least 2 sub-jets
+  if(nsubjets<2) return false;
+  //60 GeV < pruned jet mass < 100 GeV
+  if(mjet <= 60 || mjet >= 100) return false;
+  //mass drop < 0.4
+  if(massdrop>=0.4) return false;
+
+  return true;
+
 }
 
 double pTrel(const Particle *p, std::vector<Jet> *jets){
