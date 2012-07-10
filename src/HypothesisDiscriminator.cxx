@@ -76,18 +76,18 @@ void Chi2Discriminator::FillDiscriminatorValues(){
     const double mass_tlep = 172;
     const double mass_tlep_sigma = 18;
     
-    const double drsum_thad = 0.7;
-    const double drsum_thad_sigma = 0.3;
+//     const double drsum_thad = 0.7;
+//     const double drsum_thad_sigma = 0.3;
     
-    const double drsum_tlep = 1.3;
-    const double drsum_tlep_sigma = 0.5;
+//     const double drsum_tlep = 1.3;
+//     const double drsum_tlep_sigma = 0.5;
 
-    double tlep_deltar = deltaR(hyp->toplep_v4(), bcc->jets->at(hyp->blep_index()).v4() ) + deltaR(hyp->toplep_v4(), hyp->neutrino_v4()) + deltaR(hyp->toplep_v4(), hyp->lepton().v4());
-    double thad_deltar = 0.0;
+//     double tlep_deltar = deltaR(hyp->toplep_v4(), bcc->jets->at(hyp->blep_index()).v4() ) + deltaR(hyp->toplep_v4(), hyp->neutrino_v4()) + deltaR(hyp->toplep_v4(), hyp->lepton().v4());
+//     double thad_deltar = 0.0;
 
-    for(unsigned int j=0; j< hyp->tophad_jets_indices().size();++j){
-      thad_deltar += deltaR(hyp->tophad_v4(), bcc->jets->at(hyp->tophad_jets_indices().at(j)).v4());
-    }
+//     for(unsigned int j=0; j< hyp->tophad_jets_indices().size();++j){
+//       thad_deltar += deltaR(hyp->tophad_v4(), bcc->jets->at(hyp->tophad_jets_indices().at(j)).v4());
+//     }
 
     double mass_thad_rec=0;
     double mass_tlep_rec=0;
@@ -106,8 +106,10 @@ void Chi2Discriminator::FillDiscriminatorValues(){
     }
 
 
-    double chi2_thad = pow((mass_thad_rec - mass_thad) / mass_thad_sigma, 2) + pow((thad_deltar - drsum_thad) / drsum_thad_sigma, 2);
-    double chi2_tlep = pow((mass_tlep_rec - mass_tlep) / mass_tlep_sigma, 2) + pow((tlep_deltar - drsum_tlep) / drsum_tlep_sigma, 2);
+    double chi2_thad = pow((mass_thad_rec - mass_thad) / mass_thad_sigma, 2);
+//     if( hyp->tophad_jets_indices().size()>1) 
+//       chi2_thad += pow((thad_deltar - drsum_thad) / drsum_thad_sigma, 2);
+    double chi2_tlep = pow((mass_tlep_rec - mass_tlep) / mass_tlep_sigma, 2); //+ pow((tlep_deltar - drsum_tlep) / drsum_tlep_sigma, 2);
     
     // make the chi2 on the leptonic side very high if there is more than 1 jet assigned:
 //     if(hyp->toplep_jets_indices().size() > 1){
