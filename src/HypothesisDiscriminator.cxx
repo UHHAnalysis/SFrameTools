@@ -143,8 +143,9 @@ void BestPossibleDiscriminator::FillDiscriminatorValues(){
 
     float bp_deltar=0;
 
-    bp_deltar = deltaR(calc->GetTTbarGen()->Top().v4(),hyp->top_v4()) + deltaR(calc->GetTTbarGen()->Antitop().v4(),hyp->antitop_v4());
-
+    if(calc->GetGenParticles ())
+      bp_deltar = deltaR(calc->GetTTbarGen()->Top().v4(),hyp->top_v4()) + deltaR(calc->GetTTbarGen()->Antitop().v4(),hyp->antitop_v4());
+    
     hyp->add_qualityflag(m_label, bp_deltar);
 
   }
