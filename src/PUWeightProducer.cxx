@@ -31,9 +31,9 @@ double PUWeightProducer::produceWeight(GenInfo* genInfo){
 
   int binnumber = h_npu_mc->GetXaxis()->FindBin(genInfo->pileup_TrueNumInteractions());
   
-  if(h_npu_data->GetBinContent(binnumber)!=0){
+  if(h_npu_mc->GetBinContent(binnumber)!=0){
 
-    weight = h_npu_mc->GetBinContent(binnumber)/h_npu_data->GetBinContent(binnumber);
+    weight = h_npu_data->GetBinContent(binnumber)/h_npu_mc->GetBinContent(binnumber);
 
   }
 
