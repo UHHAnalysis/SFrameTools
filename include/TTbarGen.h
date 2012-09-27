@@ -28,7 +28,8 @@ class TTbarGen
     e_tautau,
     e_emu,
     e_etau,
-    e_mutau  
+    e_mutau,
+    e_notfound
   };
 
   GenParticle Top(); 
