@@ -21,20 +21,14 @@ TTbarGen::TTbarGen()
 	       {
 		 m_indexW = genp.daughter(bcc->genparticles,1)->index();
 		 m_WTop = bcc->genparticles->at(m_indexW);
-	       }
-	     if (genp.daughter(bcc->genparticles,1)->pdgId() == 5)  
-	       {
-		 m_indexb = genp.daughter(bcc->genparticles,1)->index();
+		 m_indexb = genp.daughter(bcc->genparticles,2)->index();
 		 m_bTop = bcc->genparticles->at(m_indexb);
 	       }
 	     if (genp.daughter(bcc->genparticles,2)->pdgId() == 24)
 	       {
 		 m_indexW = genp.daughter(bcc->genparticles,2)->index();
 		 m_WTop = bcc->genparticles->at(m_indexW);
-	       }
-	     if (genp.daughter(bcc->genparticles,2)->pdgId() == 5)  
-	       {
-		 m_indexb = genp.daughter(bcc->genparticles,2)->index();
+		 m_indexb = genp.daughter(bcc->genparticles,1)->index();
 		 m_bTop = bcc->genparticles->at(m_indexb);
 	       }
 	   }
@@ -48,20 +42,14 @@ TTbarGen::TTbarGen()
 	       {
 		 m_indexW = genp.daughter(bcc->genparticles,1)->index();
 		 m_WAntitop = bcc->genparticles->at(m_indexW);
-	       }
-	     if (genp.daughter(bcc->genparticles,1)->pdgId() == -5)  
-	       {
-		 m_indexb = genp.daughter(bcc->genparticles,1)->index();
+		 m_indexb = genp.daughter(bcc->genparticles,2)->index();
 		 m_bAntitop = bcc->genparticles->at(m_indexb);
 	       }
 	     if (genp.daughter(bcc->genparticles,2)->pdgId() == -24)
 	       {
 		 m_indexW = genp.daughter(bcc->genparticles,2)->index();
 		 m_WAntitop = bcc->genparticles->at(m_indexW);
-	       }
-	     if (genp.daughter(bcc->genparticles,2)->pdgId() == -5)  
-	       {
-		 m_indexb = genp.daughter(bcc->genparticles,2)->index();
+		 m_indexb = genp.daughter(bcc->genparticles,1)->index();
 		 m_bAntitop = bcc->genparticles->at(m_indexb);
 	       }
 	   }
@@ -90,6 +78,47 @@ TTbarGen::TTbarGen()
 	   }
        }
    }
+  
+  // W not linked correctly -> W decay products have top as mother
+  if(m_pdgId1==0 || m_pdgId2==0 ){
+    
+    //search all particles with top as mother; store that ones which are not W or b (or equivalent light quark)
+    for(unsigned int i=0; i<bcc->genparticles->size(); ++i)
+      {
+	GenParticle genp = bcc->genparticles->at(i);
+	
+	bool notfilled1=true;
+	bool notfilled2=true;
+
+	if(genp.mother(bcc->genparticles,1)){
+	  if(genp.mother(bcc->genparticles,1)->pdgId()==6 && abs(genp.pdgId())!=24 &&  genp.pdgId()!=1 && genp.pdgId()!=3 && genp.pdgId()!=5 ){
+	    
+	    if(notfilled1){
+	      m_Wdecay1 = genp;
+	      m_pdgId1 = genp.pdgId();
+	      notfilled1=false;
+	    }
+	    else{
+	      m_Wdecay2 = genp;
+	    }
+	  }
+
+	  if(genp.mother(bcc->genparticles,1)->pdgId()==-6 && abs(genp.pdgId())!=24 && genp.pdgId()!=-1 && genp.pdgId()!=-3 && genp.pdgId()!=-5 ){
+	    if(notfilled2){
+	      m_WMinusdecay1 = genp;
+	      m_pdgId2 = genp.pdgId();
+	      notfilled2=false;
+	    }
+	    else{
+	      m_WMinusdecay2 = genp;
+	    }
+	  }
+	}
+
+      }
+  }
+
+
 }   
  
 
