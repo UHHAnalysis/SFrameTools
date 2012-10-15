@@ -38,13 +38,24 @@ enum E_BtagType{
   e_JPL /**< Jet Probability tagger, loose working point */
 };
 
+
+ 
+ 
+
 /**
  * basic top tagging routine
  * 
  * Test, if the jet topjet fulfills the top-tagging criteria. The tagging variables mjet, nsubjets and mmin are determined and returned.
  * @see NTopTagSelection
  */
+
+bool variableHepTopTag(TopJet topjet, double ptJetMin = 200., double massWindowLower = 0.85, double massWindowUpper = 1.15, double cutCondition2 = 0.35, double cutCondition3 = 0.35);
+
+bool HepTopTag(TopJet topjet);
+
 bool TopTag(TopJet topjet, double& mjet, int& nsubjets, double& mmin);
+
+ bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, double mminLower = 50., double mjetLower = 140., double mjetUpper = 250.);
 
 /**
  * W tagging routine
