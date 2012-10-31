@@ -157,3 +157,37 @@ ReconstructionHypothesis* BestPossibleDiscriminator::GetBestHypothesis(){
   return GetHypWithSmallestDiscriminator();
 
 }
+
+
+void SumDeltaRDiscriminator::FillDiscriminatorValues(){
+  HypothesisDiscriminator::FillDiscriminatorValues();
+  if(m_filled) return;
+
+  ObjectHandler* objs = ObjectHandler::Instance();
+  BaseCycleContainer* bcc = objs->GetBaseCycleContainer();
+
+  for(unsigned int i=0; i<bcc->recoHyps->size(); ++i){
+
+    ReconstructionHypothesis* hyp =  &bcc->recoHyps->at(i);
+
+    
+    double tlep_deltar = deltaR(hyp->toplep_v4(), bcc->jets->at(hyp->blep_index()).v4() ) + deltaR(hyp->toplep_v4(), hyp->neutrino_v4()) + deltaR(hyp->toplep_v4(), hyp->lepton().v4());
+//     double thad_deltar = 0.0;
+
+//      for(unsigned int j=0; j< hyp->tophad_jets_indices().size();++j){
+//        thad_deltar += deltaR(hyp->tophad_v4(), bcc->jets->at(hyp->tophad_jets_indices().at(j)).v4());
+//      }
+
+    double tlep_thad_deltar = deltaR(hyp->toplep_v4(),hyp->toplep_v4());
+
+    hyp->add_qualityflag(m_label, tlep_deltar - 0.0001*tlep_thad_deltar); 
+
+  }
+
+}
+
+ReconstructionHypothesis* SumDeltaRDiscriminator::GetBestHypothesis(){
+
+  return GetHypWithSmallestDiscriminator();
+
+}

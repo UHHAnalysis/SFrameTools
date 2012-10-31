@@ -252,8 +252,8 @@ void EventCalc::FillHighMassTTbarHypotheses(){
     LorentzVector wlep_v4 = lepton->v4()+neutrinos[i];
 
     unsigned int n_jets = m_bcc->jets->size();
+    if(n_jets>10) n_jets=10; //avoid crashes in events with many jets
     unsigned int max_j = myPow(3, n_jets);
-    if(max_j>10) max_j=10; //avoid crashes in events with many jets
     for (unsigned int j=0; j < max_j; j++) {
       LorentzVector tophad_v4(0,0,0,0);
       LorentzVector toplep_v4 = wlep_v4;
