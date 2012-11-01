@@ -69,4 +69,33 @@ class Chi2Discriminator: public HypothesisDiscriminator{
   virtual ReconstructionHypothesis* GetBestHypothesis();
 };
 
+/**
+ * hypothesis discriminator summed delta R 
+ */
+class SumDeltaRDiscriminator: public HypothesisDiscriminator{
+ public:
+  SumDeltaRDiscriminator():HypothesisDiscriminator("SumDeltaR"){};
+  ~SumDeltaRDiscriminator(){};
+
+  virtual void FillDiscriminatorValues();
+  
+  virtual ReconstructionHypothesis* GetBestHypothesis();
+};
+
+/**
+ * hypothesis discriminator for correctly matched events
+ */
+class CorrectMatchDiscriminator: public HypothesisDiscriminator{
+ public:
+  CorrectMatchDiscriminator():HypothesisDiscriminator("CorrectMatch"){};
+  ~CorrectMatchDiscriminator(){};
+
+  virtual void FillDiscriminatorValues();
+  
+  virtual ReconstructionHypothesis* GetBestHypothesis();
+
+ private:
+  float isMatched(GenParticle p, std::vector<Jet> jets);
+};
+
 #endif
