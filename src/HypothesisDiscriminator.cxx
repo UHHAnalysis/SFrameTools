@@ -191,3 +191,89 @@ ReconstructionHypothesis* SumDeltaRDiscriminator::GetBestHypothesis(){
   return GetHypWithSmallestDiscriminator();
 
 }
+
+void CorrectMatchDiscriminator::FillDiscriminatorValues(){
+  HypothesisDiscriminator::FillDiscriminatorValues();
+  if(m_filled) return;
+
+  EventCalc* calc = EventCalc::Instance();
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
+
+  for(unsigned int i=0; i<bcc->recoHyps->size(); ++i){
+
+    ReconstructionHypothesis* hyp =  &bcc->recoHyps->at(i);
+
+    float correct_dr=9999;
+
+    if(calc->GetGenParticles ()){
+      //consider l+jets events only
+      if( calc->GetTTbarGen()->DecayChannel() == TTbarGen::e_ehad || calc->GetTTbarGen()->DecayChannel() == TTbarGen::e_muhad){
+
+	//list of jets at hadronic top
+	std::vector<Jet> hadr_jets;
+	for(unsigned int i=0; i<hyp->tophad_jets_indices().size(); ++i){
+	  unsigned int index = hyp->tophad_jets_indices().at(i);
+	  hadr_jets.push_back( bcc->jets->at( index ) );
+	}
+	//list of jets at leptonic top
+	std::vector<Jet> lept_jets;
+	for(unsigned int i=0; i<hyp->toplep_jets_indices().size(); ++i){
+	  unsigned int index = hyp->toplep_jets_indices().at(i);
+	  lept_jets.push_back( bcc->jets->at( index ) );
+	}
+
+
+	//add b jets
+	//top is decaying leptonically and anti-top hadronically
+	if( abs(calc->GetTTbarGen()->Wdecay1().pdgId()) >=11 && abs(calc->GetTTbarGen()->Wdecay1().pdgId())<=16){
+	  correct_dr = isMatched(calc->GetTTbarGen()->bTop(),lept_jets) + isMatched(calc->GetTTbarGen()->bAntitop(),hadr_jets);
+	}
+	//vice versa
+	else if (  abs(calc->GetTTbarGen()->WMinusdecay1().pdgId()) >=11 && abs(calc->GetTTbarGen()->WMinusdecay1().pdgId())<=16 ) {
+	  correct_dr = isMatched(calc->GetTTbarGen()->bTop(),hadr_jets) + isMatched(calc->GetTTbarGen()->bAntitop(),lept_jets); 
+	}
+	else{
+	  std::cerr << "This should not happen" <<std::endl;
+	}
+
+	//add quarks from W decays
+	if(abs(calc->GetTTbarGen()->Wdecay1().pdgId())<6) {
+	  correct_dr += isMatched( calc->GetTTbarGen()->Wdecay1(), hadr_jets);
+	}
+	if(abs(calc->GetTTbarGen()->Wdecay2().pdgId())<6) {
+	  correct_dr += isMatched( calc->GetTTbarGen()->Wdecay2(), hadr_jets);
+	}
+	if(abs(calc->GetTTbarGen()->WMinusdecay1().pdgId())<6) {
+	  correct_dr += isMatched( calc->GetTTbarGen()->WMinusdecay1(), hadr_jets);
+	}
+	if(abs(calc->GetTTbarGen()->WMinusdecay2().pdgId())<6) {
+	  correct_dr += isMatched( calc->GetTTbarGen()->WMinusdecay2(), hadr_jets);
+	}
+      }
+    }
+         
+    hyp->add_qualityflag(m_label, correct_dr);
+
+  }
+
+}
+
+ReconstructionHypothesis* CorrectMatchDiscriminator::GetBestHypothesis(){
+
+  ReconstructionHypothesis *hyp = GetHypWithSmallestDiscriminator();
+  //return null pointer for non-matchable events
+  if(hyp->discriminator(m_label)>=9999) return NULL;
+  return hyp;
+
+}
+
+float CorrectMatchDiscriminator::isMatched(GenParticle p, std::vector<Jet> jets){
+
+  float mindr = 9999.;
+  for(unsigned int i=0; i<jets.size(); ++i){
+    float dR = deltaR( p.v4(), jets.at(i).v4());
+    if( dR <0.3 && dR<mindr) mindr=dR;
+  }
+  return mindr;
+
+}
