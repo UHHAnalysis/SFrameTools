@@ -61,7 +61,7 @@ TTbarGen::TTbarGen()
 	     m_index1 = genp.daughter(bcc->genparticles,1)->index();
 	     m_Wdecay1 = bcc->genparticles->at(m_index1);
 	     m_pdgId1= m_Wdecay1.pdgId();
-	     m_index2 = genp.daughter(bcc->genparticles,1)->index();
+	     m_index2 = genp.daughter(bcc->genparticles,2)->index();
 	     m_Wdecay2 = bcc->genparticles->at(m_index2);
 	     
 	   }
@@ -73,15 +73,14 @@ TTbarGen::TTbarGen()
 	     m_index1 = genp.daughter(bcc->genparticles,1)->index();
 	     m_WMinusdecay1 = bcc->genparticles->at(m_index1);
 	     m_pdgId2= m_WMinusdecay1.pdgId(); 
-	     m_index2 = genp.daughter(bcc->genparticles,1)->index();
+	     m_index2 = genp.daughter(bcc->genparticles,2)->index();
 	     m_WMinusdecay2 = bcc->genparticles->at(m_index2);
 	   }
        }
    }
-  
+
   // W not linked correctly -> W decay products have top as mother
   if(m_pdgId1==0 || m_pdgId2==0 ){
-    
     //search all particles with top as mother; store that ones which are not W or b (or equivalent light quark)
     for(unsigned int i=0; i<bcc->genparticles->size(); ++i)
       {

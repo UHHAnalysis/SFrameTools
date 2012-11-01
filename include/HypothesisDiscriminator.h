@@ -95,7 +95,7 @@ class CorrectMatchDiscriminator: public HypothesisDiscriminator{
   virtual ReconstructionHypothesis* GetBestHypothesis();
 
  private:
-  float isMatched(GenParticle p, std::vector<Jet> jets);
+  float isMatched(GenParticle p, std::vector<Jet> jets, int& index);
 };
 
 #endif

@@ -27,7 +27,7 @@ void HypothesisStatistics::FillHyps(ReconstructionHypothesis *hyp1, Reconstructi
 void HypothesisStatistics::PrintStatistics(){
   m_logger << INFO << "-------------------------- Reconstruction Hypothesis Statistics -------------------------"<< SLogger::endmsg;
   m_logger << INFO << "number of analysed events:   " << m_ntotal << SLogger::endmsg;
-  m_logger << INFO << "hypothesis are identical:    " << 100.*(double)m_identical/((double)m_ntotal)<< "%" << SLogger::endmsg;
+  m_logger << INFO << "hypotheses are identical:    " << 100.*(double)m_identical/((double)m_ntotal)<< "%" << SLogger::endmsg;
   m_logger << INFO << "leptonic tops are identical: " << 100.*(double)m_toplep_identical/((double)m_ntotal)<< "%" << SLogger::endmsg;
   m_logger << INFO << "hadronic tops are identical: " << 100.*(double)m_tophad_identical/((double)m_ntotal)<< "%" << SLogger::endmsg;
 
