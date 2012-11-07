@@ -43,6 +43,11 @@ double LeptonScaleFactors::GetWeight(){
 
   //Take lepton with highest transverse momentum as reference. Make sure that routine is called after selection of exactly one good lepton.
   Particle* primlep = calc->GetPrimaryLepton();
+
+  if(!primlep){
+    std::cout << "WARNING: no primary lepton found in LeptonScaleFactors; return scale factor=1" <<std::endl;
+    return 1.;
+  }
   
   double eta = primlep->eta();
 
