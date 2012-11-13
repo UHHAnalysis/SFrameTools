@@ -296,27 +296,7 @@ void CorrectMatchDiscriminator::FillDiscriminatorValues(){
 	}
 
 	//add deltaR between reconstructed and true neutrino
-	GenParticle neutrino;
-	int nneutrino=0;
-	if(abs(calc->GetTTbarGen()->Wdecay1().pdgId())==12 || abs(calc->GetTTbarGen()->Wdecay1().pdgId())==14 || abs(calc->GetTTbarGen()->Wdecay1().pdgId())==16){
-	  neutrino = calc->GetTTbarGen()->Wdecay1();
-	  nneutrino++;
-	}
-	if(abs(calc->GetTTbarGen()->Wdecay2().pdgId())==12 || abs(calc->GetTTbarGen()->Wdecay2().pdgId())==14 || abs(calc->GetTTbarGen()->Wdecay2().pdgId())==16){
-	  neutrino = calc->GetTTbarGen()->Wdecay2();
-	  nneutrino++;
-	}
-	if(abs(calc->GetTTbarGen()->WMinusdecay1().pdgId())==12 || abs(calc->GetTTbarGen()->WMinusdecay1().pdgId())==14 || abs(calc->GetTTbarGen()->WMinusdecay1().pdgId())==16){
-	  neutrino = calc->GetTTbarGen()->WMinusdecay1();
-	  nneutrino++;
-	}
-	if(abs(calc->GetTTbarGen()->WMinusdecay2().pdgId())==12 || abs(calc->GetTTbarGen()->WMinusdecay2().pdgId())==14 || abs(calc->GetTTbarGen()->WMinusdecay2().pdgId())==16){
-	  neutrino = calc->GetTTbarGen()->WMinusdecay2();
-	  nneutrino++;
-	}
-	if(nneutrino!=1) std::cerr << "Not exactly one neutrino found " << nneutrino<< std::endl;
-
-
+	GenParticle neutrino = calc->GetTTbarGen()->Neutrino();
 	correct_dr += deltaR(neutrino.v4(), hyp->neutrino_v4());
 	if(correct_dr < bestdr) bestdr = correct_dr;
       }

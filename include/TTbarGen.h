@@ -43,6 +43,18 @@ class TTbarGen
   GenParticle WMinusdecay1(); 
   GenParticle WMinusdecay2();
   E_DecayChannel DecayChannel();
+
+  //only for l+jets decays
+  GenParticle TopLep(); 
+  GenParticle TopHad();
+  GenParticle BLep();
+  GenParticle BHad(); 
+  GenParticle WLep();
+  GenParticle WHad(); 
+  GenParticle ChargedLepton();
+  GenParticle Neutrino();
+  GenParticle Q1();
+  GenParticle Q2(); 
   
  private:
 
@@ -63,7 +75,7 @@ class TTbarGen
   int m_index1;
   int m_index2;
 
- E_DecayChannel m_type;
+  E_DecayChannel m_type;
 
 
 }; // class TTbarGen

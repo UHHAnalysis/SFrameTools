@@ -196,3 +196,122 @@ TTbarGen::E_DecayChannel TTbarGen::DecayChannel()
   if ((abs(m_pdgId2)==13 || abs(m_pdgId2)==14) && (abs(m_pdgId1)==15 || abs(m_pdgId1)==16)) m_type = e_mutau;
   return m_type;
 }
+
+
+GenParticle TTbarGen::ChargedLepton(){
+  GenParticle lepton;  
+  if (m_type != e_ehad &&  m_type != e_muhad  && m_type!= e_tauhad){
+    std::cerr << "This is no l+jets ttbar event, no charged lepton found" <<std::endl;
+    return lepton;
+  }
+
+  int nlepton=0;
+  if(abs(Wdecay1().pdgId())==11 || abs(Wdecay1().pdgId())==13 || abs(Wdecay1().pdgId())==15){
+    lepton = Wdecay1();
+    nlepton++;
+  }
+  if(abs(Wdecay2().pdgId())==11 || abs(Wdecay2().pdgId())==13 || abs(Wdecay2().pdgId())==15){
+    lepton = Wdecay2();
+    nlepton++;
+  }
+  if(abs(WMinusdecay1().pdgId())==11 || abs(WMinusdecay1().pdgId())==13 || abs(WMinusdecay1().pdgId())==15){
+    lepton = WMinusdecay1();
+    nlepton++;
+  }
+  if(abs(WMinusdecay2().pdgId())==11 || abs(WMinusdecay2().pdgId())==13 || abs(WMinusdecay2().pdgId())==15){
+    lepton = WMinusdecay2();
+    nlepton++;
+  }
+  if(nlepton!=1) std::cerr << "Not exactly one lepton found " << nlepton<< std::endl;
+
+  return lepton;
+
+}
+
+GenParticle TTbarGen::Neutrino(){
+  GenParticle neutrino;
+  
+  if (m_type != e_ehad &&  m_type != e_muhad  && m_type!= e_tauhad){
+    std::cerr << "This is no l+jets ttbar event, no neutrino found" <<std::endl;
+    return neutrino;
+  }
+
+  int nneutrino=0;
+  if(abs(Wdecay1().pdgId())==12 || abs(Wdecay1().pdgId())==14 || abs(Wdecay1().pdgId())==16){
+    neutrino = Wdecay1();
+    nneutrino++;
+  }
+  if(abs(Wdecay2().pdgId())==12 || abs(Wdecay2().pdgId())==14 || abs(Wdecay2().pdgId())==16){
+    neutrino = Wdecay2();
+    nneutrino++;
+  }
+  if(abs(WMinusdecay1().pdgId())==12 || abs(WMinusdecay1().pdgId())==14 || abs(WMinusdecay1().pdgId())==16){
+    neutrino = WMinusdecay1();
+    nneutrino++;
+  }
+  if(abs(WMinusdecay2().pdgId())==12 || abs(WMinusdecay2().pdgId())==14 || abs(WMinusdecay2().pdgId())==16){
+    neutrino = WMinusdecay2();
+    nneutrino++;
+  }
+  if(nneutrino!=1) std::cerr << "Not exactly one neutrino found " << nneutrino<< std::endl;
+
+  return neutrino;
+
+}
+
+GenParticle TTbarGen::TopLep(){
+ 
+  if(ChargedLepton().charge()>0) return Top();
+  else return Antitop();
+
+}
+
+GenParticle TTbarGen::TopHad(){
+
+  if(ChargedLepton().charge()<0) return Top();
+  else return Antitop();
+
+}
+
+
+GenParticle TTbarGen::BLep(){
+ 
+  if(ChargedLepton().charge()>0) return bTop();
+  else return bAntitop();
+
+}
+
+GenParticle TTbarGen::BHad(){
+ 
+  if(ChargedLepton().charge()<0) return bTop();
+  else return bAntitop();
+
+}
+
+GenParticle TTbarGen::WLep(){
+ 
+  if(ChargedLepton().charge()>0) return WTop();
+  else return WAntitop();
+
+}
+
+GenParticle TTbarGen::WHad(){
+ 
+  if(ChargedLepton().charge()<0) return WTop();
+  else return WAntitop();
+
+}
+
+GenParticle TTbarGen::Q1(){
+ 
+  if(ChargedLepton().charge()>0) return WMinusdecay1();
+  else return Wdecay1();
+
+}
+
+GenParticle TTbarGen::Q2(){
+ 
+  if(ChargedLepton().charge()>0) return WMinusdecay2();
+  else return Wdecay2();
+
+}
