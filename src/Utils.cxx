@@ -399,3 +399,51 @@ int myPow(int x, unsigned int p) {
   for (unsigned int j = 1; j <= p; j++)  i *= x;
   return i;
 }
+
+int JetFlavor(Jet *jet){
+
+  EventCalc* calc = EventCalc::Instance();
+
+  std::vector< GenParticle >* genparticles = calc->GetGenParticles();
+  if(genparticles){
+
+    //fill pdg IDs of all matched GenParticles
+    std::vector<int> matched_genparticle_ids;
+    for(unsigned int i=0; i<genparticles->size(); ++i){
+    
+      GenParticle genp = genparticles->at(i);
+
+      //only take status 3 particles into account
+      if(genp.status()!=3) continue;
+
+      if(jet->deltaR(genp)<0.5)
+	matched_genparticle_ids.push_back(genp.pdgId());
+    }
+
+    //search for b quarks first
+    for(unsigned int i=0; i<matched_genparticle_ids.size(); ++i){
+      if(abs(matched_genparticle_ids[i])==5) return matched_genparticle_ids[i];
+    }
+    //no b quark -> search for c quarks
+    for(unsigned int i=0; i<matched_genparticle_ids.size(); ++i){
+      if(abs(matched_genparticle_ids[i])==4) return matched_genparticle_ids[i];
+    } 
+    for(unsigned int i=0; i<matched_genparticle_ids.size(); ++i){
+      if(abs(matched_genparticle_ids[i])==3) return matched_genparticle_ids[i];
+    }
+    for(unsigned int i=0; i<matched_genparticle_ids.size(); ++i){
+      if(abs(matched_genparticle_ids[i])==2) return matched_genparticle_ids[i];
+    }
+    for(unsigned int i=0; i<matched_genparticle_ids.size(); ++i){
+      if(abs(matched_genparticle_ids[i])==1) return matched_genparticle_ids[i];
+    }
+    for(unsigned int i=0; i<matched_genparticle_ids.size(); ++i){
+      if(abs(matched_genparticle_ids[i])==21) return matched_genparticle_ids[i];
+    }
+    
+  }
+
+  //no matched GenParticle -> return default value 0
+  return 0;
+
+}

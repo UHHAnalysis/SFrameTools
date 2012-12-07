@@ -6,6 +6,7 @@
 #include "TVector3.h"
 #include <limits>
 #include <algorithm>
+#include "EventCalc.h"
 
 typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > LorentzVectorXYZE;
 
@@ -92,5 +93,8 @@ int int_infinity();
 
 /// x^p
 int myPow(int x, unsigned int p) ;
+
+/// return flavor of Jet jet, return value is pdg ID of a matched GenParticle (b,c,d,u,s,g)
+int JetFlavor(Jet* jet);
 
 #endif
