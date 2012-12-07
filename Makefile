@@ -13,6 +13,8 @@ INCLUDES += -I$(SFRAME_DIR)/include
 
 # configure FastJet
 INCLUDES += -I$(FASTJETDIR)/include
+INCLUDES += -I$(FASTJETDIR)/../include
+
 
 # Include the generic compilation rules
 include $(SFRAME_DIR)/Makefile.common
