@@ -269,7 +269,7 @@ BtagFunction::BtagFunction()
     _bins.assign(bins, bins + 15);
 }
 
-const uint32_t BtagFunction::find_bin(const float &jet_pt) const
+const unsigned int BtagFunction::find_bin(const float &jet_pt) const
 {
     if (jet_pt < _bins.front())
         return 0;
@@ -277,7 +277,7 @@ const uint32_t BtagFunction::find_bin(const float &jet_pt) const
     if (jet_pt > _bins.back())
         return _bins.size() - 2;
 
-    uint32_t bin = 0;
+    unsigned int bin = 0;
     for(std::vector<float>::const_iterator bin_pt = _bins.begin();
             _bins.end() != ++bin_pt && *bin_pt < jet_pt;
             ++bin);

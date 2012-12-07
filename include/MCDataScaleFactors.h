@@ -47,7 +47,7 @@ class BtagFunction
   virtual float value_minus(const float &x) const = 0;
   
  protected:
-  const uint32_t find_bin(const float &jet_pt) const;
+  const unsigned int find_bin(const float &jet_pt) const;
   
  private:
   std::vector<float> _bins;
