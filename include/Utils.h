@@ -11,41 +11,39 @@
 typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > LorentzVectorXYZE;
 
 struct HigherPt {
-  bool operator() (const Particle& j1, const Particle& j2) const {
-    return j1.pt() > j2.pt();
-  };
+    bool operator() (const Particle& j1, const Particle& j2) const {
+        return j1.pt() > j2.pt();
+    };
 };
 
 /**
  * list of systematic shift options
  * @see  Cleaner::JetEnergyResolutionShifter
 */
-enum E_SystShift{
-  e_Default, /**< default, no systematic shift is applied */
-  e_Up, /**< up variation */
-  e_Down /**< down variation */
+enum E_SystShift {
+    e_Default, /**< default, no systematic shift is applied */
+    e_Up, /**< up variation */
+    e_Down /**< down variation */
 };
 
 /**
  * list of supported b-tagging working points
  * @see  NBTagSelection
 */
-enum E_BtagType{
-  e_CSVT, /**< Combined Secondary Vertex tagger, tight working point */
-  e_CSVM, /**< Combined Secondary Vertex tagger, medium working point */
-  e_CSVL, /**< Combined Secondary Vertex tagger, loose working point */
-  e_JPT,  /**< Jet Probability tagger, tight working point */
-  e_JPM, /**< Jet Probability tagger, medium working point */
-  e_JPL /**< Jet Probability tagger, loose working point */
+enum E_BtagType {
+    e_CSVT, /**< Combined Secondary Vertex tagger, tight working point */
+    e_CSVM, /**< Combined Secondary Vertex tagger, medium working point */
+    e_CSVL, /**< Combined Secondary Vertex tagger, loose working point */
+    e_JPT,  /**< Jet Probability tagger, tight working point */
+    e_JPM, /**< Jet Probability tagger, medium working point */
+    e_JPL /**< Jet Probability tagger, loose working point */
 };
 
-
- 
- 
+bool IsTagged(Jet &, E_BtagType);
 
 /**
  * basic top tagging routine
- * 
+ *
  * Test, if the jet topjet fulfills the top-tagging criteria. The tagging variables mjet, nsubjets and mmin are determined and returned.
  * @see NTopTagSelection
  */
@@ -53,10 +51,8 @@ enum E_BtagType{
 bool variableHepTopTag(TopJet topjet, double ptJetMin = 200., double massWindowLower = 0.85, double massWindowUpper = 1.15, double cutCondition2 = 0.35, double cutCondition3 = 0.35);
 
 bool HepTopTag(TopJet topjet);
-
 bool TopTag(TopJet topjet, double& mjet, int& nsubjets, double& mmin);
-
- bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, double mminLower = 50., double mjetLower = 140., double mjetUpper = 250.);
+bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, double mminLower = 50., double mjetLower = 140., double mjetUpper = 250.);
 
 /**
  * W tagging routine
@@ -69,7 +65,7 @@ bool WTag(TopJet prunedjet, double& mjet, int &nsubjets, double& massdrop);
 
 /// returns the next jet in the list jets to the particle p in the eta-phi plane
 Jet* nextJet(const Particle *p, std::vector<Jet> *jets);
-/// relative momentum of the particle p with respect to the next jet in the list of jets 
+/// relative momentum of the particle p with respect to the next jet in the list of jets
 double pTrel(const Particle *p, std::vector<Jet> *jets);
 /// minimal distance in the eta-phi plane of particle p with respect to the closest jet from the list of jets
 double deltaRmin(const Particle *p, std::vector<Jet> *jets);
