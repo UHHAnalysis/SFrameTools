@@ -17,6 +17,15 @@ struct HigherPt {
 };
 
 /**
+ * list of lepton selection
+ * @see  Cleaner::JetEnergyResolutionShifter
+ */
+enum E_LeptonSelection {
+    e_Electron, /**< Electron selection */
+    e_Muon, /**< Muon selection */
+};
+
+/**
  * list of systematic shift options
  * @see  Cleaner::JetEnergyResolutionShifter
 */
