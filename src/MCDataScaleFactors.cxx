@@ -27,15 +27,59 @@ double LeptonScaleFactors::GetWeight()
     double Mu40triggerRunB[3] = {0.9773, 0.9573, 0.9754};
     double Mu40triggerRunC[3] = {0.9817, 0.9640, 0.9973};
 
+    double Mu40triggerRunA_uncertainty[3] = {0.0013, 0.0042, 0.0034};
+    double Mu40triggerRunB_uncertainty[3] = {0.0007, 0.0021, 0.0017};
+    double Mu40triggerRunC_uncertainty[3] = {0.0004, 0.0014, 0.0011};
+
     double IsoMu24triggerRunA[3] = {0.9560, 0.9528, 0.9809};
     double IsoMu24triggerRunB[3] = {0.9798, 0.9618, 0.9814};
     double IsoMu24triggerRunC[3] = {0.9841, 0.9688, 1.0021};
 
+    double IsoMu24triggerRunA_uncertainty[3] = {0.0008, 0.0021, 0.0016};
+    double IsoMu24triggerRunB_uncertainty[3] = {0.0004, 0.0010, 0.0008};
+    double IsoMu24triggerRunC_uncertainty[3] = {0.0003, 0.0009, 0.0007};
+
     double TightID_RunAB[3] = {0.9941, 0.9917, 0.9982};
     double TightID_RunC[3] = {0.9934, 0.9903, 0.9979};
 
+    double TightID_RunAB_uncertainty[3] = {0.0003, 0.0005, 0.0004};
+    double TightID_RunC_uncertainty[3] = {0.0003, 0.0005, 0.0003};
+
     double Isolation_RunAB[3] = {0.9923, 0.9979, 1.0019};
     double Isolation_RunC[3] = {0.9978, 1.0005, 1.0044};
+    
+    double Isolation_RunAB_uncertainty[3] = {0.0002, 0.0003, 0.0002};
+    double Isolation_RunC_uncertainty[3] = {0.0002, 0.0003, 0.0002};
+    
+    if(m_syst_shift==e_Down){
+      for(unsigned int i=0; i<3; ++i){
+	Mu40triggerRunA[i] -= Mu40triggerRunA_uncertainty[i];
+	Mu40triggerRunB[i] -= Mu40triggerRunB_uncertainty[i];
+	Mu40triggerRunC[i] -= Mu40triggerRunC_uncertainty[i];
+	IsoMu24triggerRunA[i] -= IsoMu24triggerRunA_uncertainty[i];
+	IsoMu24triggerRunB[i] -= IsoMu24triggerRunB_uncertainty[i];
+	IsoMu24triggerRunC[i] -= IsoMu24triggerRunC_uncertainty[i];
+	TightID_RunAB[i] -= TightID_RunAB_uncertainty[i];
+	TightID_RunC[i] -= TightID_RunC_uncertainty[i];
+	Isolation_RunAB[i] -= Isolation_RunAB_uncertainty[i];
+	Isolation_RunC[i] -= Isolation_RunC_uncertainty[i];
+      }
+    }
+    if(m_syst_shift==e_Up){
+      for(unsigned int i=0; i<3; ++i){
+	Mu40triggerRunA[i] += Mu40triggerRunA_uncertainty[i];
+	Mu40triggerRunB[i] += Mu40triggerRunB_uncertainty[i];
+	Mu40triggerRunC[i] += Mu40triggerRunC_uncertainty[i];
+	IsoMu24triggerRunA[i] += IsoMu24triggerRunA_uncertainty[i];
+	IsoMu24triggerRunB[i] += IsoMu24triggerRunB_uncertainty[i];
+	IsoMu24triggerRunC[i] += IsoMu24triggerRunC_uncertainty[i];
+	TightID_RunAB[i] += TightID_RunAB_uncertainty[i];
+	TightID_RunC[i] += TightID_RunC_uncertainty[i];
+	Isolation_RunAB[i] += Isolation_RunAB_uncertainty[i];
+	Isolation_RunC[i] += Isolation_RunC_uncertainty[i];
+      }
+    }
+
 
     EventCalc* calc = EventCalc::Instance();
 
@@ -378,10 +422,10 @@ BtagEfficiency::BtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel)
     };
 
     const float CSVTEfficiencies_mu[] = {
-      0.4867069914961496, 0.49136872939368514, 0.49603046729122069, 0.50069220518875623, 
-      0.50535394308629178, 0.51957801352315347, 0.51118159612471636, 0.50374865320213236, 
-      0.48772688493061067, 0.40251157007918764, 0.3518993032067595, 0.29256013153569699, 
-      0.25184289481885574, 0.19547194395919484, 0.14962567054357276, 0.11409543692961853, 0.05264742299938039
+      0.48611233734744685, 0.49084495587364141, 0.49557757439983596, 0.50031019292603052, 
+      0.50504281145222507, 0.51984588153656797, 0.5111155698055827, 0.50384994428241348,
+      0.48720779281653653, 0.40203693185860434, 0.35119940680234535, 0.29170221794956114, 
+      0.25324360996755907, 0.1908150859592869, 0.14997899317938629, 0.11390894204727826, 0.053563169122242862
     };
 
     if (btagtype == e_CSVT && leptonsel == e_Electron) { 
@@ -435,10 +479,10 @@ CtagEfficiency::CtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel)
     };
 
     const float CSVTEfficiencies_mu[] = {
-      0.088776771803662724, 0.082308880623651492, 0.075840989443640261, 0.069373098263629029, 
-      0.062905207083617798, 0.066150549199851694, 0.056731860275576362, 0.049512588212936318, 
-      0.045087707460782625, 0.031411137335074765, 0.020572577595922629, 0.010437956331481727, 
-      0.016478496399157043, 0.0070183175039210972
+      0.089953234452144898, 0.083116889562771884, 0.07628054467339887, 0.069444199784025856, 
+      0.062607854894652842, 0.066249709912878596, 0.056876624468191909, 0.05002477475011223, 
+      0.04508856575948126, 0.030786888568016747, 0.020212080758323085, 0.010082570271345626, 
+      0.016672404844844568, 0.007150511494597455
     };
 
     if (btagtype == e_CSVT && leptonsel == e_Electron) {
@@ -473,10 +517,10 @@ LtagEfficiency::LtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel)
     };
 
     const float CSVTEfficiencies_mu[] = {
-      0.013064488336535481, 0.011226378133306248, 0.0093882679300770159, 0.0075501577268477834, 
-      0.0057120475236185509, 0.0061491974531369346, 0.0071655856827267305, 0.0063197261605225487, 
-      0.006601452080494047, 0.005620369810170083, 0.0063686240585956438, 0.007323803773992962, 
-      0.0069554450956424351, 0.0064922032240628327, 0.0042016735455371211, 0.0098530853530043802
+      0.012368496488436461, 0.010695314162950109, 0.0090221318374637573, 0.0073489495119774045, 
+      0.0056757671864910526, 0.0060836798818149195, 0.0070437434085952808, 0.0060739192548708524, 
+      0.0065709163393043229, 0.0056167170501573507, 0.0061268017111299148, 0.0074465430391629462, 
+      0.0070243350933687091, 0.0065102712066790842, 0.0042773193409681156, 0.0093149763709977663
     };
 
     if (btagtype == e_CSVT && leptonsel == e_Electron) {
