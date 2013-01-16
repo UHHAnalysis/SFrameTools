@@ -48,7 +48,18 @@ enum E_BtagType {
     e_JPL /**< Jet Probability tagger, loose working point */
 };
 
+enum E_EventFlavor {
+    e_BFlavor, 
+    e_CFlavor, 
+    e_LFlavor
+};
+
+// return if a jet is tagged given a btag operating point
 bool IsTagged(Jet &, E_BtagType);
+
+// return flavor of Jet jet, return value is pdg ID of a matched GenParticle (b,c,d,u,s,g)
+int JetFlavor(Jet* jet);
+
 
 /**
  * basic top tagging routine
@@ -98,8 +109,5 @@ int int_infinity();
 
 /// x^p
 int myPow(int x, unsigned int p) ;
-
-/// return flavor of Jet jet, return value is pdg ID of a matched GenParticle (b,c,d,u,s,g)
-int JetFlavor(Jet* jet);
 
 #endif
