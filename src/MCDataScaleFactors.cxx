@@ -186,18 +186,28 @@ double BTaggingScaleFactors::GetWeight()
             scale_jet = scale(result, jet_pt,
                               _scale_btag, _eff_btag,
                               m_syst_shift);
-            // std::cout << "b jet pt: " << jet_pt << " is tagged: " << result << " scale: "; 
-            // std::cout << _scale_btag->value(jet_pt) << " eff: " << _eff_btag->value(jet_pt); 
-            // std::cout << " weight: " << scale_jet << std::endl;
+            /*std::cout << "b jet pt: " << jet_pt << " is tagged: " << result << " scale: "; 
+            if (m_syst_shift == e_Default)
+                std::cout << _scale_btag->value(jet_pt) << " eff: " << _eff_btag->value(jet_pt);
+            else if (m_syst_shift == e_Up)
+                std::cout << _scale_btag->value_plus(jet_pt) << " eff: " << _eff_btag->value_plus(jet_pt); 
+            else
+                std::cout << _scale_btag->value_minus(jet_pt) << " eff: " << _eff_btag->value_minus(jet_pt);
+            std::cout << " weight: " << scale_jet << std::endl;*/
             break;
 
         case 4: // c-quark
             scale_jet = scale(result, jet_pt,
                               _scale_ctag, _eff_ctag,
                               m_syst_shift);
-            // std::cout << "c jet pt: " << jet_pt << " is tagged: " << result << " scale: ";
-            // std::cout << _scale_ctag->value(jet_pt) << " eff: " << _eff_ctag->value(jet_pt);
-            // std::cout << " weight: " << scale_jet << std::endl;
+            /*std::cout << "c jet pt: " << jet_pt << " is tagged: " << result << " scale: ";
+            if (m_syst_shift == e_Default)  
+                std::cout << _scale_ctag->value(jet_pt) << " eff: " << _eff_ctag->value(jet_pt);
+            else if (m_syst_shift == e_Up)
+                std::cout << _scale_ctag->value_plus(jet_pt) << " eff: " << _eff_ctag->value_plus(jet_pt);
+            else
+                std::cout << _scale_ctag->value_minus(jet_pt) << " eff: " << _eff_ctag->value_minus(jet_pt);
+            std::cout << " weight: " << scale_jet << std::endl;*/
             break;
 
         case 3: // s-quark
@@ -207,9 +217,14 @@ double BTaggingScaleFactors::GetWeight()
             scale_jet = scale(result, jet_pt,
                               _scale_light, _eff_light,
                               m_syst_shift);
-            // std::cout << "l jet pt: " << jet_pt << " is tagged: " << result << " scale: ";
-            // std::cout << _scale_light->value(jet_pt) << " eff: " << _eff_light->value(jet_pt);
-            // std::cout << " weight: " << scale_jet << std::endl;
+            /*std::cout << "l jet pt: " << jet_pt << " is tagged: " << result << " scale: ";
+            if (m_syst_shift == e_Default)
+                std::cout << _scale_light->value(jet_pt) << " eff: " << _eff_light->value(jet_pt);
+            else if (m_syst_shift == e_Up)  
+                std::cout << _scale_light->value_plus(jet_pt) << " eff: " << _eff_light->value_plus(jet_pt);
+            else
+                std::cout << _scale_light->value_minus(jet_pt) << " eff: " << _eff_light->value_minus(jet_pt);
+            std::cout << " weight: " << scale_jet << std::endl;*/
             break;
 
         default:
@@ -414,11 +429,13 @@ BtagEfficiency::BtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel)
         20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 100.0, 120.0, 160.0, 210.0, 260.0, 320.0, 400.0, 500.0, 600.0, 800.0, 1600.0
     };
 
+
+
     const float CSVTEfficiencies[] = {
-        0.45624203495703619, 0.46786383108943769, 0.47948562722183918, 0.49110742335424068,
-        0.50272921948664218, 0.52832767856815299, 0.51651387990702502, 0.52314902869708502,
-        0.49606898596772442, 0.40767442174466184, 0.35150821868729148, 0.31539656120325632,
-        0.27106653456002172, 0.170682202636179, 0.10809836686317642, 0.082176314733590869, 0.11036849260906741
+        0.45995393113468314, 0.46970557780785482, 0.47945722448102651, 0.4892088711541982, 
+        0.49896051782736989, 0.52736480487115456, 0.51718656298800869, 0.51778381299772003, 
+        0.49273414735703341, 0.40596266795544039, 0.34807215987045181, 0.31600602509673009,
+        0.27177222600495071, 0.17082550051964149, 0.10729452077597022, 0.088296058189995086, 0.11093069992211117
     };
 
     const float CSVTEfficiencies_mu[] = {
@@ -472,10 +489,10 @@ CtagEfficiency::CtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel)
     };
 
     const float CSVTEfficiencies[] = {
-        0.080333459774924343, 0.076217806680742947, 0.072102153586561551, 0.067986500492380156, 
-        0.06387084739819876, 0.055961907095792199, 0.050922506225657548, 0.049073597041259423, 
-        0.050663935939399225, 0.029076202352865961, 0.029985841943710775, 0.017976791080730817, 
-        0.014003709178586215, 0.014382063567326263
+        0.078277168566833921, 0.074915742421118273, 0.071554316275402624, 0.068192890129686975,
+        0.064831463983971327, 0.056055860000873536, 0.053423145350989264, 0.049437287248529672, 
+        0.051175126071014654, 0.031147321304156712, 0.028672334664972543, 0.017483901927108567, 
+        0.012445728161565342, 0.013059366026755743
     };
 
     const float CSVTEfficiencies_mu[] = {
@@ -510,10 +527,10 @@ LtagEfficiency::LtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel)
     };
 
     const float CSVTEfficiencies[] = {
-        0.0033199670877583926, 0.0038206483943976121, 0.0043213297010368315, 0.0048220110076760509, 
-        0.0053226923143152704, 0.0048064028142181482, 0.0048398926047131348, 0.0064654807730351932, 
-        0.0058654187863552516, 0.0058186857733359253, 0.0059569722227849594, 0.0042158538611955596,
-        0.0057752802916731681, 0.0053836585212319347, 0.01505821442096319, 0.0075835026543788833
+        0.0041961524551977604, 0.0044655765042000087, 0.0047350005532022571, 0.0050044246022045054,
+        0.0052738486512067537, 0.0045889898119126932, 0.0050790777581588833, 0.0059039415342432922,
+        0.0060358742501952448, 0.0058222771697384801, 0.0060753523061352734, 0.0042071929862444917, 
+        0.0061857466264373896, 0.0046817449333456688, 0.016176856044657056, 0.0065362936670525645
     };
 
     const float CSVTEfficiencies_mu[] = {
