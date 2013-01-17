@@ -147,9 +147,13 @@ double LeptonScaleFactors::GetWeight()
 }
 
 
-BTaggingScaleFactors::BTaggingScaleFactors(E_BtagType btagtype, E_LeptonSelection lepton_selection, E_SystShift syst_shift)
+BTaggingScaleFactors::BTaggingScaleFactors(
+    E_BtagType btagtype, E_LeptonSelection lepton_selection, E_SystShift sys_bjets, E_SystShift sys_ljets
+)
 {
-    m_syst_shift = syst_shift;
+    m_sys_bjets = sys_bjets;
+    m_sys_ljets = sys_ljets;
+    
     m_btagtype = btagtype;
     m_lepton_selection = lepton_selection;
 
@@ -185,11 +189,11 @@ double BTaggingScaleFactors::GetWeight()
         case 5: // b-quark
             scale_jet = scale(result, jet_pt,
                               _scale_btag, _eff_btag,
-                              m_syst_shift);
+                              m_sys_bjets);
             /*std::cout << "b jet pt: " << jet_pt << " is tagged: " << result << " scale: "; 
-            if (m_syst_shift == e_Default)
+            if (m_sys_bjets == e_Default)
                 std::cout << _scale_btag->value(jet_pt) << " eff: " << _eff_btag->value(jet_pt);
-            else if (m_syst_shift == e_Up)
+            else if (m_sys_bjets == e_Up)
                 std::cout << _scale_btag->value_plus(jet_pt) << " eff: " << _eff_btag->value_plus(jet_pt); 
             else
                 std::cout << _scale_btag->value_minus(jet_pt) << " eff: " << _eff_btag->value_minus(jet_pt);
@@ -199,11 +203,11 @@ double BTaggingScaleFactors::GetWeight()
         case 4: // c-quark
             scale_jet = scale(result, jet_pt,
                               _scale_ctag, _eff_ctag,
-                              m_syst_shift);
+                              m_sys_bjets);
             /*std::cout << "c jet pt: " << jet_pt << " is tagged: " << result << " scale: ";
-            if (m_syst_shift == e_Default)  
+            if (m_sys_bjets == e_Default)  
                 std::cout << _scale_ctag->value(jet_pt) << " eff: " << _eff_ctag->value(jet_pt);
-            else if (m_syst_shift == e_Up)
+            else if (m_sys_bjets == e_Up)
                 std::cout << _scale_ctag->value_plus(jet_pt) << " eff: " << _eff_ctag->value_plus(jet_pt);
             else
                 std::cout << _scale_ctag->value_minus(jet_pt) << " eff: " << _eff_ctag->value_minus(jet_pt);
@@ -216,11 +220,11 @@ double BTaggingScaleFactors::GetWeight()
         case 21: // gluon
             scale_jet = scale(result, jet_pt,
                               _scale_light, _eff_light,
-                              m_syst_shift);
+                              m_sys_ljets);
             /*std::cout << "l jet pt: " << jet_pt << " is tagged: " << result << " scale: ";
-            if (m_syst_shift == e_Default)
+            if (m_sys_ljets == e_Default)
                 std::cout << _scale_light->value(jet_pt) << " eff: " << _eff_light->value(jet_pt);
-            else if (m_syst_shift == e_Up)  
+            else if (m_sys_ljets == e_Up)  
                 std::cout << _scale_light->value_plus(jet_pt) << " eff: " << _eff_light->value_plus(jet_pt);
             else
                 std::cout << _scale_light->value_minus(jet_pt) << " eff: " << _eff_light->value_minus(jet_pt);

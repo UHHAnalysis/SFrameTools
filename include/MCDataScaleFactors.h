@@ -169,7 +169,9 @@ public:
      * second argument: systematic shift
      * @see E_SystShift
      */
-    BTaggingScaleFactors(E_BtagType, E_LeptonSelection, E_SystShift syst_shift=e_Default);
+    BTaggingScaleFactors(
+        E_BtagType, E_LeptonSelection, E_SystShift sys_bjets=e_Default, E_SystShift sys_ljets=e_Default
+    );
     ///Default destructor
     ~BTaggingScaleFactors() {};
 
@@ -178,7 +180,8 @@ public:
 
 private:
 
-    E_SystShift m_syst_shift;
+    E_SystShift m_sys_bjets;
+    E_SystShift m_sys_ljets;
     E_BtagType m_btagtype;
     E_LeptonSelection m_lepton_selection;
 
