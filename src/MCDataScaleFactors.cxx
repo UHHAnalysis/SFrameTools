@@ -190,11 +190,11 @@ double BTaggingScaleFactors::GetWeight()
             scale_jet = scale(result, jet_pt,
                               _scale_btag, _eff_btag,
                               m_sys_bjets);
-            /*std::cout << "b jet pt: " << jet_pt << " is tagged: " << result << " scale: "; 
+            /*std::cout << "b jet pt: " << jet_pt << " is tagged: " << result << " scale: ";
             if (m_sys_bjets == e_Default)
                 std::cout << _scale_btag->value(jet_pt) << " eff: " << _eff_btag->value(jet_pt);
             else if (m_sys_bjets == e_Up)
-                std::cout << _scale_btag->value_plus(jet_pt) << " eff: " << _eff_btag->value_plus(jet_pt); 
+                std::cout << _scale_btag->value_plus(jet_pt) << " eff: " << _eff_btag->value_plus(jet_pt);
             else
                 std::cout << _scale_btag->value_minus(jet_pt) << " eff: " << _eff_btag->value_minus(jet_pt);
             std::cout << " weight: " << scale_jet << std::endl;*/
@@ -204,13 +204,13 @@ double BTaggingScaleFactors::GetWeight()
             scale_jet = scale(result, jet_pt,
                               _scale_ctag, _eff_ctag,
                               m_sys_bjets);
-            /*std::cout << "c jet pt: " << jet_pt << " is tagged: " << result << " scale: ";
-            if (m_sys_bjets == e_Default)  
-                std::cout << _scale_ctag->value(jet_pt) << " eff: " << _eff_ctag->value(jet_pt);
+            /*std::cout << "b jet pt: " << jet_pt << " is tagged: " << result << " scale: ";
+            if (m_sys_bjets == e_Default)
+                std::cout << _scale_btag->value(jet_pt) << " eff: " << _eff_btag->value(jet_pt);
             else if (m_sys_bjets == e_Up)
-                std::cout << _scale_ctag->value_plus(jet_pt) << " eff: " << _eff_ctag->value_plus(jet_pt);
+                std::cout << _scale_btag->value_plus(jet_pt) << " eff: " << _eff_btag->value_plus(jet_pt);
             else
-                std::cout << _scale_ctag->value_minus(jet_pt) << " eff: " << _eff_ctag->value_minus(jet_pt);
+                std::cout << _scale_btag->value_minus(jet_pt) << " eff: " << _eff_btag->value_minus(jet_pt);
             std::cout << " weight: " << scale_jet << std::endl;*/
             break;
 
@@ -342,7 +342,7 @@ float BtagScale::error(const float &jet_pt) const
     if (_scale->GetXmin() > jet_pt)
         return 2.0 * error(_scale->GetXmin());
 
-    if (_scale->GetXmax() <= jet_pt)
+    if (_scale->GetXmax() < jet_pt)
         return 2.0 * error(_scale->GetXmax());
 
     return _errors.at(find_bin(jet_pt));
