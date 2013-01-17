@@ -27,12 +27,22 @@ enum E_LeptonSelection {
 
 /**
  * list of systematic shift options
- * @see  Cleaner::JetEnergyResolutionShifter
+ * @see Cleaner::JetEnergyResolutionShifter 
+ * @see Cleaner::JetLeptonSubtractor
 */
 enum E_SystShift {
     e_Default, /**< default, no systematic shift is applied */
     e_Up, /**< up variation */
     e_Down /**< down variation */
+};
+
+/**
+ * list of possible systematic uncertainties
+*/
+enum E_SysUnc {
+  e_None=0, /**< no systematic shift is applied */
+  e_JEC,    /**< jet energy scale uncertainty */
+  e_JER     /**< jet resolution uncertainty */
 };
 
 /**
