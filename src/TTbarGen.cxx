@@ -197,6 +197,17 @@ TTbarGen::E_DecayChannel TTbarGen::DecayChannel()
   return m_type;
 }
 
+bool TTbarGen::IsTopHadronicDecay()
+{
+  if (abs(m_pdgId1)<=5) return true;
+  else return false;
+}
+
+bool TTbarGen::IsAntiTopHadronicDecay()
+{
+  if (abs(m_pdgId2)<=5) return true;
+  else return false;
+}
 
 GenParticle TTbarGen::ChargedLepton(){
   GenParticle lepton;  
@@ -315,3 +326,4 @@ GenParticle TTbarGen::Q2(){
   else return Wdecay2();
 
 }
+

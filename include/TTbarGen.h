@@ -44,6 +44,9 @@ class TTbarGen
   GenParticle WMinusdecay2();
   E_DecayChannel DecayChannel();
 
+  bool IsTopHadronicDecay();
+  bool IsAntiTopHadronicDecay();
+
   //only for l+jets decays
   GenParticle TopLep(); 
   GenParticle TopHad();
@@ -55,6 +58,7 @@ class TTbarGen
   GenParticle Neutrino();
   GenParticle Q1();
   GenParticle Q2(); 
+
   
  private:
 
