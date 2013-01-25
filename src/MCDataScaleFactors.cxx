@@ -102,37 +102,65 @@ double LeptonScaleFactors::GetWeight()
     for(unsigned int i=0; i<m_correctionlist.size(); ++i) {
 
         double weight = m_correctionlist[i].second;
-
+	bool isok = false;
+	
         //non isolated muons
         if(m_correctionlist[i].first == "MuonRunA") {
             triggerfactor += weight*Mu40triggerRunA[etabin];
             isofactor+=weight;
             IDfactor+= weight*TightID_RunAB[etabin];
+	    isok = true;
         } else if (m_correctionlist[i].first == "MuonRunB") {
             triggerfactor += weight*Mu40triggerRunB[etabin];
             isofactor+=weight;
             IDfactor+= weight*TightID_RunAB[etabin];
+	    isok = true;
         } else if (m_correctionlist[i].first == "MuonRunC") {
             triggerfactor += weight*Mu40triggerRunC[etabin];
             isofactor+=weight;
             IDfactor+= weight*TightID_RunC[etabin];
+	    isok = true;
         }
         //isolated muons
         else if(m_correctionlist[i].first == "IsoMuonRunA") {
             triggerfactor += weight*IsoMu24triggerRunA[etabin];
             isofactor+=weight*Isolation_RunAB[etabin];
             IDfactor+= weight*TightID_RunAB[etabin];
+	    isok = true;
         } else if (m_correctionlist[i].first == "IsoMuonRunB") {
             triggerfactor += weight*IsoMu24triggerRunB[etabin];
             isofactor+=weight*Isolation_RunAB[etabin];
             IDfactor+= weight*TightID_RunAB[etabin];
+	    isok = true;
         } else if (m_correctionlist[i].first == "IsoMuonRunC") {
             triggerfactor += weight*IsoMu24triggerRunC[etabin];
             isofactor+=weight*Isolation_RunC[etabin];
             IDfactor+= weight*TightID_RunC[etabin];
+	    isok = true;
         }
-
-        else {
+	//trigger efficiency for electron trigger HLT_Ele30_CaloIdVT_TrkIdT_PFNoPUJet100_PFNoPUJet25_v*
+	if (m_correctionlist[i].first == "HLT_Ele30") {
+	  if (calc->GetElectrons()->size()<1){
+	    // do nothing, no electron found
+	  } else {
+	    double iso = calc->GetElectrons()->at(0).relIso();
+	    static TF1* trig_weight = new TF1("trig_weight", "[0]+[1]*x", 0, 1);
+	    trig_weight->SetParameter(0, 0.9791);
+	    trig_weight->SetParameter(1, -0.5412);
+	    double tw = trig_weight->Eval(iso);
+	    if (tw<1. && tw>0.){ // sanity check
+	      if (triggerfactor>0.){
+		triggerfactor *= weight*tw;
+	      } else {
+		triggerfactor += weight*tw;
+	      }
+	    }
+	  }
+	  isok = true;
+	}
+	  
+	
+	if (!isok){
             std::cerr<< "No information found for lepton correction named " << m_correctionlist[i].first <<std::endl;
         }
 
