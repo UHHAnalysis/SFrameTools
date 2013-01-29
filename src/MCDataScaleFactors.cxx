@@ -3,25 +3,66 @@
 LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist, E_SystShift syst_shift)
 {
     m_syst_shift = syst_shift;
-
+  
     if(correctionlist.size()%2!=0) {
         std::cerr<< "not a valid list of correction factors given to LeptonScaleFactors" <<std::endl;
+        std::cerr<< "usage: \"<name> <weight> <name> <weight> <name> <weight> ...\" " <<std::endl;
+	exit(EXIT_FAILURE);
     }
 
     for(unsigned int i=0; i< correctionlist.size()/2; ++i) {
         std::pair<std::string, double> correction (correctionlist[2*i], atof(correctionlist[2*i+1].c_str()));
         //std::cout << "Apply correction " << correction.first << " with factor " << correction.second <<std::endl;
         m_correctionlist.push_back(correction);
+	m_apply = true;
     }
+
+    if (correctionlist.size()==0){
+      m_apply = false;
+    }
+
+    m_current_run = 0;
 }
 
-
-double LeptonScaleFactors::GetWeight()
+bool LeptonScaleFactors::IsUpToDate()
 {
-    double triggerfactor = 0;
-    double IDfactor = 0;
-    double isofactor=0;
-    double sumofweights=0;
+  EventCalc* calc = EventCalc::Instance();
+
+  // no run dependency forseen in MC
+  if (!calc->IsRealData()){
+    if (m_current_run==0){
+      m_current_run = 1;
+      return false;
+    } else {
+      return true;
+    }
+  }
+  // check run number in data
+  if (m_current_run == calc->GetRunNum()){ 
+    return true;
+  } else {
+    m_current_run = calc->GetRunNum();
+    return false;
+  }
+}
+
+void LeptonScaleFactors::FillWeights()
+{
+    if (!m_apply) return;
+
+    // clear old scale factors
+    m_mu_id.clear();
+    m_mu_trig.clear();
+    m_mu_iso.clear();
+    m_ele_trig.clear();
+    
+    // initialise scale factors to 1.0
+    for (int i=0; i<3; ++i){
+      m_mu_id.push_back(0.0);
+      m_mu_trig.push_back(0.0);
+      m_mu_iso.push_back(0.0);
+      m_ele_trig.push_back(0.0);	
+    }
 
     double Mu40triggerRunA[3] = {0.9799, 0.9621, 0.9851};
     double Mu40triggerRunB[3] = {0.9773, 0.9573, 0.9754};
@@ -50,6 +91,8 @@ double LeptonScaleFactors::GetWeight()
     
     double Isolation_RunAB_uncertainty[3] = {0.0002, 0.0003, 0.0002};
     double Isolation_RunC_uncertainty[3] = {0.0002, 0.0003, 0.0002};
+
+    double Ele30_Trig_RelIso_Par[2] = { 0.9791, -0.5412 };
     
     if(m_syst_shift==e_Down){
       for(unsigned int i=0; i<3; ++i){
@@ -81,97 +124,201 @@ double LeptonScaleFactors::GetWeight()
     }
 
 
-    EventCalc* calc = EventCalc::Instance();
-
-    //Take lepton with highest transverse momentum as reference. Make sure that routine is called after selection of exactly one good lepton.
-    Particle* primlep = calc->GetPrimaryLepton();
-
-    if(!primlep) {
-        std::cout << "WARNING: no primary lepton found in LeptonScaleFactors; return scale factor=1" <<std::endl;
-        return 1.;
-    }
-
-    double eta = primlep->eta();
-
-    int etabin=0;
-    if(fabs(eta)<0.9) etabin=0;
-    else if(fabs(eta)>=0.9 && fabs(eta)<1.2) etabin=1;
-    else if(fabs(eta)>=1.2) etabin=2;
-
-
+    double sum_mu_weights = 0;    
+    // parse arguments of configuration
     for(unsigned int i=0; i<m_correctionlist.size(); ++i) {
 
         double weight = m_correctionlist[i].second;
+	sum_mu_weights    += weight;
 	bool isok = false;
 	
-        //non isolated muons
-        if(m_correctionlist[i].first == "MuonRunA") {
-            triggerfactor += weight*Mu40triggerRunA[etabin];
-            isofactor+=weight;
-            IDfactor+= weight*TightID_RunAB[etabin];
+	// ----------------- muons ------------------
+	// muons: loop over eta bins
+	for (int etabin=0; etabin<3; ++etabin){
+
+	  //non isolated muons
+	  if(m_correctionlist[i].first == "MuonRunA") {
+            m_mu_trig[etabin] += weight*Mu40triggerRunA[etabin];
+            m_mu_iso[etabin]  += weight;
+            m_mu_id[etabin]   += weight*TightID_RunAB[etabin];
 	    isok = true;
-        } else if (m_correctionlist[i].first == "MuonRunB") {
-            triggerfactor += weight*Mu40triggerRunB[etabin];
-            isofactor+=weight;
-            IDfactor+= weight*TightID_RunAB[etabin];
+	  } else if (m_correctionlist[i].first == "MuonRunB") {
+            m_mu_trig[etabin] += weight*Mu40triggerRunB[etabin];
+            m_mu_iso[etabin]  += weight;
+            m_mu_id[etabin]   += weight*TightID_RunAB[etabin];
 	    isok = true;
-        } else if (m_correctionlist[i].first == "MuonRunC") {
-            triggerfactor += weight*Mu40triggerRunC[etabin];
-            isofactor+=weight;
-            IDfactor+= weight*TightID_RunC[etabin];
+	  } else if (m_correctionlist[i].first == "MuonRunC") {
+            m_mu_trig[etabin] += weight*Mu40triggerRunC[etabin];
+            m_mu_iso[etabin]  += weight;
+            m_mu_id[etabin]   += weight*TightID_RunC[etabin];
 	    isok = true;
-        }
-        //isolated muons
-        else if(m_correctionlist[i].first == "IsoMuonRunA") {
-            triggerfactor += weight*IsoMu24triggerRunA[etabin];
-            isofactor+=weight*Isolation_RunAB[etabin];
-            IDfactor+= weight*TightID_RunAB[etabin];
+	  }
+	  //isolated muons
+	  else if(m_correctionlist[i].first == "IsoMuonRunA") {
+            m_mu_trig[etabin] += weight*IsoMu24triggerRunA[etabin];
+            m_mu_iso[etabin]  += weight*Isolation_RunAB[etabin];
+            m_mu_id[etabin]   += weight*TightID_RunAB[etabin];
 	    isok = true;
-        } else if (m_correctionlist[i].first == "IsoMuonRunB") {
-            triggerfactor += weight*IsoMu24triggerRunB[etabin];
-            isofactor+=weight*Isolation_RunAB[etabin];
-            IDfactor+= weight*TightID_RunAB[etabin];
+	  } else if (m_correctionlist[i].first == "IsoMuonRunB") {
+            m_mu_trig[etabin] += weight*IsoMu24triggerRunB[etabin];
+            m_mu_iso[etabin]  += weight*Isolation_RunAB[etabin];
+            m_mu_id[etabin]   += weight*TightID_RunAB[etabin];
 	    isok = true;
-        } else if (m_correctionlist[i].first == "IsoMuonRunC") {
-            triggerfactor += weight*IsoMu24triggerRunC[etabin];
-            isofactor+=weight*Isolation_RunC[etabin];
-            IDfactor+= weight*TightID_RunC[etabin];
+	  } else if (m_correctionlist[i].first == "IsoMuonRunC") {
+            m_mu_trig[etabin] += weight*IsoMu24triggerRunC[etabin];
+            m_mu_iso[etabin]  += weight*Isolation_RunC[etabin];
+            m_mu_id[etabin]   += weight*TightID_RunC[etabin];
 	    isok = true;
-        }
+	  }
+
+	}
+	
+	// ----------------- electrons ------------------
+
 	//trigger efficiency for electron trigger HLT_Ele30_CaloIdVT_TrkIdT_PFNoPUJet100_PFNoPUJet25_v*
 	if (m_correctionlist[i].first == "HLT_Ele30") {
-	  if (calc->GetElectrons()->size()<1){
-	    // do nothing, no electron found
-	  } else {
-	    double iso = calc->GetElectrons()->at(0).relIso();
-	    static TF1* trig_weight = new TF1("trig_weight", "[0]+[1]*x", 0, 1);
-	    trig_weight->SetParameter(0, 0.9791);
-	    trig_weight->SetParameter(1, -0.5412);
-	    double tw = trig_weight->Eval(iso);
-	    if (tw<1. && tw>0.){ // sanity check
-	      if (triggerfactor>0.){
-		triggerfactor *= weight*tw;
-	      } else {
-		triggerfactor += weight*tw;
-	      }
-	    }
-	  }
+	  m_ele_trig[0] = Ele30_Trig_RelIso_Par[0];
+	  m_ele_trig[1] = Ele30_Trig_RelIso_Par[1];
+	  m_ele_trig[2] = weight;
 	  isok = true;
-	}
-	  
+	}	  
 	
 	if (!isok){
-            std::cerr<< "No information found for lepton correction named " << m_correctionlist[i].first <<std::endl;
+	  std::cerr<< "No information found for lepton correction named " << m_correctionlist[i].first <<std::endl;
         }
 
-        sumofweights += m_correctionlist[i].second;
+    }
+					       
+    if (sum_mu_weights > 0.){
+      for (int etabin=0; etabin<3; ++etabin){
+	m_mu_trig[etabin] /= sum_mu_weights;
+	m_mu_id[etabin]   /= sum_mu_weights;
+	m_mu_iso[etabin]  /= sum_mu_weights;	
+      }
     }
 
-    triggerfactor/=sumofweights;
-    IDfactor/=sumofweights;
-    isofactor/=sumofweights;
+    // ------------------ last check ---------------------------
+    // if weights were not filled, set them to unity
+    for (int etabin=0; etabin<3; ++etabin){
+      if (fabs(m_mu_trig[etabin])<1e-10) m_mu_trig[etabin] = 1.;
+      if (fabs(m_mu_id[etabin])<1e-10) m_mu_id[etabin] = 1.;
+      if (fabs(m_mu_iso[etabin])<1e-10) m_mu_iso[etabin] = 1.;      
+    }
+    if (fabs(m_ele_trig[0]<1e-10)) m_ele_trig[0] = 1.;
+    if (fabs(m_ele_trig[1]<1e-10)) m_ele_trig[1] = 0.;
+    if (fabs(m_ele_trig[2]<1e-10)) m_ele_trig[2] = 1.;
+      
+    return;
+}
 
-    return triggerfactor*IDfactor*isofactor;
+int LeptonScaleFactors::GetMuonEtaBin(double eta) 
+{
+  int etabin=0;
+  if(fabs(eta)<0.9) etabin=0;
+  else if(fabs(eta)>=0.9 && fabs(eta)<1.2) etabin=1;
+  else if(fabs(eta)>=1.2) etabin=2;
+  return etabin;
+
+}
+
+double LeptonScaleFactors::GetMuonIDWeight()
+{
+  if (!m_apply) return 1.;
+  if (!IsUpToDate()){
+    FillWeights();
+  }
+  static EventCalc* calc = EventCalc::Instance();
+  if (calc->GetMuons()->size()==0){
+    std::cout << "WARNING: no primary muon found in LeptonScaleFactors; return scale factor = 1" <<std::endl;
+    return 1.;
+  }
+  Muon mu = calc->GetMuons()->at(0);
+  int etabin = GetMuonEtaBin(mu.eta());
+  return m_mu_id[etabin];
+}
+
+double LeptonScaleFactors::GetMuonTrigWeight()
+{
+  if (!m_apply) return 1.;
+  if (!IsUpToDate()){
+    FillWeights();
+  }
+  static EventCalc* calc = EventCalc::Instance();
+  if (calc->GetMuons()->size()==0){
+    std::cout << "WARNING: no primary muon found in LeptonScaleFactors; return scale factor = 1" <<std::endl;
+    return 1.;
+  }
+  Muon mu = calc->GetMuons()->at(0);
+  int etabin = GetMuonEtaBin(mu.eta());
+  return m_mu_trig[etabin];
+}
+
+double LeptonScaleFactors::GetMuonIsoWeight()
+{
+  if (!m_apply) return 1.;
+  if (!IsUpToDate()){
+    FillWeights();
+  }
+  static EventCalc* calc = EventCalc::Instance();
+  if (calc->GetMuons()->size()==0){
+    std::cout << "WARNING: no primary muon found in LeptonScaleFactors; return scale factor = 1" <<std::endl;
+    return 1.;
+  }
+  Muon mu = calc->GetMuons()->at(0);
+  int etabin = GetMuonEtaBin(mu.eta());
+  return m_mu_iso[etabin];
+}
+
+double LeptonScaleFactors::GetMuonWeight()
+{
+  if (!m_apply) return 1.;
+  if (!IsUpToDate()){
+    FillWeights();
+  }
+  double id = GetMuonIDWeight();
+  double trig = GetMuonTrigWeight();
+  double iso = GetMuonIsoWeight();
+  return id*trig*iso;
+}
+
+double LeptonScaleFactors::GetElectronWeight()
+{
+  if (!m_apply) return 1.;
+  if (!IsUpToDate()){
+    FillWeights();
+  }
+  double trig = GetElectronTrigWeight();
+  return trig;
+}
+
+double LeptonScaleFactors::GetElectronTrigWeight()
+{
+  if (!m_apply) return 1.;
+  if (!IsUpToDate()){
+    FillWeights();
+  }
+  static EventCalc* calc = EventCalc::Instance();
+  if (calc->GetElectrons()->size()==0){
+    std::cout << "WARNING: no primary electron found in LeptonScaleFactors; return scale factor = 1" <<std::endl;
+    return 1.0;
+  }
+  Electron ele = calc->GetElectrons()->at(0);
+  double iso = ele.relIso();
+  double w = m_ele_trig[0] + m_ele_trig[1]*iso;
+  w *= m_ele_trig[2];
+  if (w>1. || w<0.){ // sanity check
+    w = 1.;
+  }
+  return w;
+}
+
+
+double LeptonScaleFactors::GetWeight()
+{
+    if (!m_apply) return 1.;
+    double mu_weight = GetMuonWeight();
+    double ele_weight = GetElectronWeight();
+    return mu_weight * ele_weight;
 }
 
 
