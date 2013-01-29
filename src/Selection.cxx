@@ -8,6 +8,7 @@ Selection::Selection(std::string name):
   m_name = name.c_str();
   clearSelectionModulesList();
   Ntotal=0;
+  m_isactive = true;
 }
 
 void Selection::resetCutFlow(){
@@ -30,6 +31,9 @@ void Selection::clearSelectionModulesList(){
 }
 
 bool Selection::passSelection(BaseCycleContainer *bcc){
+
+  if (!m_isactive) return true; // always true if the selection is not active
+
   Ntotal++;
   if(m_cuts.size()!=m_cutflow.size()){
     m_logger << WARNING << "size of cut list != number of entries in cut flow table "<< SLogger::endmsg;
@@ -42,6 +46,8 @@ bool Selection::passSelection(BaseCycleContainer *bcc){
 }
 
 bool Selection::passInvertedSelection(BaseCycleContainer *bcc){
+
+  if (!m_isactive) return true; // always true if the selection is not active
   
   for(unsigned int i=0; i<m_cuts.size(); ++i){
     if(!m_cuts[i]->pass(bcc)) return true;
@@ -65,7 +71,13 @@ void Selection::printCutFlow(){
 
   using namespace std;
 
-  m_logger << INFO << "-------------------------- Cut Flow Table -------------------------"<< SLogger::endmsg;
+  m_logger << INFO << "--------------- Cut Flow Table of Selection " << m_name << " ---------------"<< SLogger::endmsg;
+  if (!m_isactive){
+    m_logger << INFO <<  "Selection was not active." << SLogger::endmsg;
+    m_logger << INFO << "-----------------------------------------------------------------------------"<< SLogger::endmsg;
+    return;
+  }
+
   if(m_cuts.size()!=m_cutflow.size()){
     m_logger << WARNING << "size of cut list != number of entries in cut flow table "<< SLogger::endmsg;
   }
@@ -77,6 +89,6 @@ void Selection::printCutFlow(){
       m_logger << INFO << setw(12) << m_cutflow[i] << " | left after: " << m_cuts[i]->description() << SLogger::endmsg;
     }
   }
-  m_logger << INFO << "-------------+-----------------------------------------------------"<< SLogger::endmsg;
+  m_logger << INFO << "-------------+---------------------------------------------------------------"<< SLogger::endmsg;
 
 }
