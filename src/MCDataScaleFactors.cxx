@@ -229,7 +229,6 @@ double LeptonScaleFactors::GetMuonIDWeight()
   }
   static EventCalc* calc = EventCalc::Instance();
   if (calc->GetMuons()->size()==0){
-    std::cout << "WARNING: no primary muon found in LeptonScaleFactors; return scale factor = 1" <<std::endl;
     return 1.;
   }
   Muon mu = calc->GetMuons()->at(0);
@@ -245,7 +244,6 @@ double LeptonScaleFactors::GetMuonTrigWeight()
   }
   static EventCalc* calc = EventCalc::Instance();
   if (calc->GetMuons()->size()==0){
-    std::cout << "WARNING: no primary muon found in LeptonScaleFactors; return scale factor = 1" <<std::endl;
     return 1.;
   }
   Muon mu = calc->GetMuons()->at(0);
