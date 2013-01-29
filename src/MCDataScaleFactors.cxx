@@ -92,7 +92,7 @@ void LeptonScaleFactors::FillWeights()
     double Isolation_RunAB_uncertainty[3] = {0.0002, 0.0003, 0.0002};
     double Isolation_RunC_uncertainty[3] = {0.0002, 0.0003, 0.0002};
 
-    double Ele30_Trig_RelIso_Par[2] = { 0.9791, -0.5412 };
+    double Ele30_Trig_RelIso_Par[2] = { 0.9791, -0.5403 };
     
     if(m_syst_shift==e_Down){
       for(unsigned int i=0; i<3; ++i){
@@ -204,9 +204,9 @@ void LeptonScaleFactors::FillWeights()
       if (fabs(m_mu_id[etabin])<1e-10) m_mu_id[etabin] = 1.;
       if (fabs(m_mu_iso[etabin])<1e-10) m_mu_iso[etabin] = 1.;      
     }
-    if (fabs(m_ele_trig[0]<1e-10)) m_ele_trig[0] = 1.;
-    if (fabs(m_ele_trig[1]<1e-10)) m_ele_trig[1] = 0.;
-    if (fabs(m_ele_trig[2]<1e-10)) m_ele_trig[2] = 1.;
+    if (fabs(m_ele_trig[0])<1e-10) m_ele_trig[0] = 1.;
+    if (fabs(m_ele_trig[1])<1e-10) m_ele_trig[1] = 0.;
+    if (fabs(m_ele_trig[2])<1e-10) m_ele_trig[2] = 1.;
       
     return;
 }
