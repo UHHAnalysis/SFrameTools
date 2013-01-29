@@ -25,12 +25,49 @@ public:
     ///Default destructor
     ~LeptonScaleFactors() {};
 
-    ///return the weighted correction factor
+    ///browse configuration and fill all requested correction factors
+    void FillWeights();
+
+    ///return the total weight (muon*electron)
+    ///derived from the weighted correction factor for muons (ID, trigger and isolation)
+    ///and all electron weights
     double GetWeight();
+
+    ///return the weighted correction factor for muon ID
+    double GetMuonIDWeight();
+
+    ///return the weighted correction factor for muon trigger
+    double GetMuonTrigWeight();
+
+    ///return the weighted correction factor for muon isolation
+    double GetMuonIsoWeight();
+
+    ///return the weighted correction factor for muons (ID, trigger and isolation)
+    double GetMuonWeight();
+
+    ///return the weighted correction factor for electron trigger
+    double GetElectronTrigWeight();
+
+    ///return the weighted correction factor for electrons (right now: only trigger)
+    double GetElectronWeight();
+
+    ///check if the scale factors are up-to-date, fill them only once per run
+    ///implemented for run-dependent scale factors
+    bool IsUpToDate();
+    
+    /// return the bin number of the muon eta bin
+    int GetMuonEtaBin(double eta);
 
 private:
     E_SystShift m_syst_shift;
     std::vector<std::pair<std::string, double> > m_correctionlist;
+    bool m_apply;                   // should any scale factors be applied?
+    int m_current_run;              // run for which the scale factors are valid
+    std::vector<double> m_mu_id;    // allow for different bins, right now: 3 eta bins
+    std::vector<double> m_mu_trig;  // allow for different bins, right now: 3 eta bins
+    std::vector<double> m_mu_iso;   // allow for different bins, right now: 3 eta bins
+    std::vector<double> m_ele_trig; // two-parameter function of relative isolation times additional weight
+
 };
 
 
