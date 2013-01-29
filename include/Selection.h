@@ -63,6 +63,13 @@ class Selection{
   bool passSelection();
   bool passInvertedSelection();
 
+  /**
+   * enable or disable the selection, the selection is enabled by default
+   */
+  void DisableSelection(){m_isactive = false;}
+  void EnableSelection(){m_isactive = true;}
+  bool IsActive(){return m_isactive;}
+
   /// print the cut-flow table for the booked SelectionModules, to be called in the EndInputData routine of a cycle
   void printCutFlow();
 
@@ -75,6 +82,7 @@ class Selection{
   std::vector<SelectionModule*> m_cuts;
   std::vector<int> m_cutflow;
   int Ntotal;
+  bool m_isactive;
 
 };
 
