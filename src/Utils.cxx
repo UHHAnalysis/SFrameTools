@@ -96,91 +96,14 @@ bool variableHepTopTag(TopJet topjet, double ptJetMin, double massWindowLower, d
 }
 
 
-
-
-
-
 //HEP Tagger from Ivan
 
 bool HepTopTag(TopJet topjet)
 {
-
-    double mjet;
-    double ptjet;
-    int nsubjets;
-
-    double topmass=172.3;
-    double wmass=80.4;
-
-    nsubjets=topjet.numberOfDaughters();
-
-    LorentzVector allsubjets(0,0,0,0);
-
-    for(int j=0; j<topjet.numberOfDaughters(); ++j) {
-        allsubjets += topjet.subjets()[j].v4();
-    }
-    if(!allsubjets.isTimelike()) {
-        mjet=0;
-        return false;
-    }
-
-    mjet = allsubjets.M();
-    ptjet= allsubjets.Pt();
-
-    double m12, m13, m23;
-
-    //The subjetcs have to be three
-    if(nsubjets==3) {
-
-        std::vector<Particle> subjets = topjet.subjets();
-        sort(subjets.begin(), subjets.end(), HigherPt());
-
-        m12 = 0;
-        if( (subjets[0].v4()+subjets[1].v4()).isTimelike())
-            m12=(subjets[0].v4()+subjets[1].v4()).M();
-        m13 = 0;
-        if( (subjets[0].v4()+subjets[2].v4()).isTimelike() )
-            m13=(subjets[0].v4()+subjets[2].v4()).M();
-        m23 = 0;
-        if( (subjets[1].v4()+subjets[2].v4()).isTimelike()  )
-            m23 = (subjets[1].v4()+subjets[2].v4()).M();
-
-    } else {
-        return false;
-    }
-
-    double rmin=0.85*wmass/topmass;
-    double rmax=1.15*wmass/topmass;
-
-    int keep=0;
-
-    //Conditions on the subjects: at least one has to be true
-    //1 condition
-    if(atan(m13/m12)>0.2 && atan(m13/m12)<1.3 && m23/mjet>rmin && m23/mjet<rmax) keep=1;
-
-    //2 condition
-    double cond2left=pow(rmin,2)*(1+pow((m13/m12),2));
-    double cond2cent=1-pow(m23/mjet,2);
-    double cond2right=pow(rmax,2)*(1+pow(m13/m12,2));
-
-    if(cond2left<cond2cent && cond2cent<cond2right && m23/mjet>0.35) keep=1;
-
-    //3 condition
-    double cond3left=pow(rmin,2)*(1+pow((m12/m13),2));
-    double cond3cent=1-pow(m23/mjet,2);
-    double cond3right=pow(rmax,2)*(1+pow(m12/m13,2));
-
-    if(cond3left<cond3cent && cond3cent<cond3right && m23/mjet>0.35) keep=1;
-
-    //Final requirement: at least one of the three subjets conditions and total pt
-    if(keep==1 && ptjet>200) {
-        return true;
-    } else {
-        return false;
-    }
+  //call variable tagger with default parameters
+  return variableHepTopTag(topjet);
 
 }
-
 
 //default values (mminLower=50., mjetLower=140, mjetUpper=250.) defined in Utils.h
 bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, double mminLower, double mjetLower, double mjetUpper)
@@ -236,51 +159,11 @@ bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, do
 
 bool TopTag(TopJet topjet,  double &mjet, int &nsubjets, double &mmin)
 {
+  //call variable tagger with default parameters
+  return variableTopTag(topjet, mjet, nsubjets, mmin);
 
-    nsubjets=topjet.numberOfDaughters();
-
-    LorentzVector allsubjets(0,0,0,0);
-
-    for(int j=0; j<topjet.numberOfDaughters(); ++j) {
-        allsubjets += topjet.subjets()[j].v4();
-    }
-    if(!allsubjets.isTimelike()) {
-        mjet=0;
-        mmin=0;
-        return false;
-    }
-
-    mjet = allsubjets.M();
-
-    if(nsubjets>=3) {
-
-        std::vector<Particle> subjets = topjet.subjets();
-        sort(subjets.begin(), subjets.end(), HigherPt());
-
-        double m01 = 0;
-        if( (subjets[0].v4()+subjets[1].v4()).isTimelike())
-            m01=(subjets[0].v4()+subjets[1].v4()).M();
-        double m02 = 0;
-        if( (subjets[0].v4()+subjets[2].v4()).isTimelike() )
-            m02=(subjets[0].v4()+subjets[2].v4()).M();
-        double m12 = 0;
-        if( (subjets[1].v4()+subjets[2].v4()).isTimelike()  )
-            m12 = (subjets[1].v4()+subjets[2].v4()).M();
-
-        //minimum pairwise mass
-        mmin = std::min(m01,std::min(m02,m12));
-    }
-
-    //at least 3 sub-jets
-    if(nsubjets<3) return false;
-    //minimum pairwise mass > 50 GeV/c^2
-    if(mmin<50) return false;
-    //jet mass between 140 and 250 GeV/c^2
-    if(mjet<140 || mjet>250) return false;
-
-    return true;
 }
-
+ 
 Jet* nextJet(const Particle *p, std::vector<Jet> *jets)
 {
 
