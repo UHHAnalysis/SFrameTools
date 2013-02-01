@@ -11,7 +11,7 @@
 /**
  *  @short basic class to select a reconstruction hypothesis with a certain discriminator value
  *
- * Each class that inherits from the HypothesisDiscriminator class provides fucntions to fill disriminator values for every ReconstructionHypothesis in the actual BaseCycleContainer
+ * Each class that inherits from the HypothesisDiscriminator class provides functions to fill discriminator values for every ReconstructionHypothesis in the actual BaseCycleContainer
  * and to select the hypothesis with the best discriminator value.
  *
  */
