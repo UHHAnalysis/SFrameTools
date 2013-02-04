@@ -170,6 +170,8 @@ Jet* nextJet(const Particle *p, std::vector<Jet> *jets)
     double deltarmin = double_infinity();
     Jet* nextjet=0;
     for(unsigned int i=0; i<jets->size(); ++i) {
+        Jet ji = jets->at(i);
+	if (fabs(p->pt() - ji.pt())<1e-8) continue; // skip identical particle
         if(jets->at(i).deltaR(*p) < deltarmin) {
             deltarmin = jets->at(i).deltaR(*p);
             nextjet = &jets->at(i);
@@ -217,8 +219,8 @@ double pTrel(const Particle *p, std::vector<Jet> *jets)
 {
 
     double ptrel=0;
-
     Jet* nextjet =  nextJet(p,jets);
+    if (!nextjet) return ptrel;
 
     TVector3 p3(p->v4().Px(),p->v4().Py(),p->v4().Pz());
     TVector3 jet3(nextjet->v4().Px(),nextjet->v4().Py(),nextjet->v4().Pz());
@@ -235,7 +237,10 @@ double pTrel(const Particle *p, std::vector<Jet> *jets)
 
 double deltaRmin(const Particle *p, std::vector<Jet> *jets)
 {
-    return nextJet(p,jets)->deltaR(*p);
+    Jet* j = nextJet(p,jets);
+    double dr = 999.;
+    if (j) dr = j->deltaR(*p);
+    return dr;
 }
 
 TVector3 toVector(LorentzVector v4)
