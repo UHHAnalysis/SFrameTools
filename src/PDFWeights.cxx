@@ -92,27 +92,18 @@ std::vector<double> PDFWeights::GetWeightList(){
   
 }
 
-double PDFWeights::GetWeight(){
+
+double PDFWeights::GetWeight(unsigned int index){
 
   if(!m_libvalid) return 1.;
 
   std::vector<double> pdf_weights = GetWeightList();
 
-  //combine weights with master formula (see AN-2009-048)
-  double wplus=0;
-  double wminus=0;
-
-  for(unsigned int i=0; i<m_N_unc/2; ++i){
-    wplus += pow(std::max(std::max(pdf_weights[2*i]-1,pdf_weights[2*i+1]-1),0.),2);
-    wminus += pow(std::max(std::max(1-pdf_weights[2*i],1-pdf_weights[2*i+1]),0.),2);
+  if(index>=pdf_weights.size() || index<1){
+    m_logger << ERROR << "PDF index "  << index << " out of range, should be >=1 and <= " << pdf_weights.size() << SLogger::endmsg;
+    return 1.;
   }
 
-  wplus = sqrt(wplus);
-  wminus =sqrt(wminus);
-
-  if(m_syst_shift==e_Up)
-    return 1+wplus;
-  else
-    return 1-wminus;
+  return pdf_weights.at(index-1);
 
 }

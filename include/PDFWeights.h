@@ -19,7 +19,7 @@ public:
   ~PDFWeights() {};
 
   ///returns quadratically summed pdf uncertainties
-  double GetWeight();
+  double GetWeight(unsigned int index);
 
   ///returns list of pdf uncertainties from eigenvectors
   std::vector<double> GetWeightList();
