@@ -327,7 +327,7 @@ int JetFlavor(Jet *jet)
             GenParticle genp = genparticles->at(i);
 
             //only take status 3 particles into account
-            if(genp.status()!=3) continue;
+            //if(genp.status()!=3) continue;
 
             if(jet->deltaR(genp)<0.5)
                 matched_genparticle_ids.push_back(genp.pdgId());
