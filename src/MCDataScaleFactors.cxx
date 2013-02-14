@@ -1,4 +1,5 @@
 #include "include/MCDataScaleFactors.h"
+#include <TMath.h>
 
 LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist, E_SystShift syst_shift)
 {
@@ -50,124 +51,98 @@ void LeptonScaleFactors::FillWeights()
 {
     if (!m_apply) return;
 
+
     // clear old scale factors
     m_mu_id.clear();
     m_mu_trig.clear();
     m_mu_iso.clear();
     m_ele_trig.clear();
+    m_weights.clear();
     
     // initialise scale factors to 1.0
+    m_ele_trig.push_back(1.0);	
+    m_ele_trig.push_back(0.0);	
+    m_ele_trig.push_back(1.0);	
+
+    // initialise arrays
     for (int i=0; i<3; ++i){
-      m_mu_id.push_back(0.0);
-      m_mu_trig.push_back(0.0);
-      m_mu_iso.push_back(0.0);
-      m_ele_trig.push_back(0.0);	
+      m_mu_id.push_back(std::vector<TGraphAsymmErrors*>());
+      m_mu_trig.push_back(std::vector<TGraphAsymmErrors*>());
+      m_mu_iso.push_back(std::vector<TGraphAsymmErrors*>());
     }
-
-    double Mu40triggerRunA[3] = {0.9799, 0.9621, 0.9851};
-    double Mu40triggerRunB[3] = {0.9773, 0.9573, 0.9754};
-    double Mu40triggerRunC[3] = {0.9817, 0.9640, 0.9973};
-
-    double Mu40triggerRunA_uncertainty[3] = {0.0013, 0.0042, 0.0034};
-    double Mu40triggerRunB_uncertainty[3] = {0.0007, 0.0021, 0.0017};
-    double Mu40triggerRunC_uncertainty[3] = {0.0004, 0.0014, 0.0011};
-
-    double IsoMu24triggerRunA[3] = {0.9560, 0.9528, 0.9809};
-    double IsoMu24triggerRunB[3] = {0.9798, 0.9618, 0.9814};
-    double IsoMu24triggerRunC[3] = {0.9841, 0.9688, 1.0021};
-
-    double IsoMu24triggerRunA_uncertainty[3] = {0.0008, 0.0021, 0.0016};
-    double IsoMu24triggerRunB_uncertainty[3] = {0.0004, 0.0010, 0.0008};
-    double IsoMu24triggerRunC_uncertainty[3] = {0.0003, 0.0009, 0.0007};
-
-    double TightID_RunAB[3] = {0.9941, 0.9917, 0.9982};
-    double TightID_RunC[3] = {0.9934, 0.9903, 0.9979};
-
-    double TightID_RunAB_uncertainty[3] = {0.0003, 0.0005, 0.0004};
-    double TightID_RunC_uncertainty[3] = {0.0003, 0.0005, 0.0003};
-
-    double Isolation_RunAB[3] = {0.9923, 0.9979, 1.0019};
-    double Isolation_RunC[3] = {0.9978, 1.0005, 1.0044};
     
-    double Isolation_RunAB_uncertainty[3] = {0.0002, 0.0003, 0.0002};
-    double Isolation_RunC_uncertainty[3] = {0.0002, 0.0003, 0.0002};
-
+    // parameters of 1-d correction function for Ele30 trigger
     double Ele30_Trig_RelIso_Par[2] = { 0.9791, -0.5403 };
-    
-    if(m_syst_shift==e_Down){
-      for(unsigned int i=0; i<3; ++i){
-	Mu40triggerRunA[i] -= Mu40triggerRunA_uncertainty[i];
-	Mu40triggerRunB[i] -= Mu40triggerRunB_uncertainty[i];
-	Mu40triggerRunC[i] -= Mu40triggerRunC_uncertainty[i];
-	IsoMu24triggerRunA[i] -= IsoMu24triggerRunA_uncertainty[i];
-	IsoMu24triggerRunB[i] -= IsoMu24triggerRunB_uncertainty[i];
-	IsoMu24triggerRunC[i] -= IsoMu24triggerRunC_uncertainty[i];
-	TightID_RunAB[i] -= TightID_RunAB_uncertainty[i];
-	TightID_RunC[i] -= TightID_RunC_uncertainty[i];
-	Isolation_RunAB[i] -= Isolation_RunAB_uncertainty[i];
-	Isolation_RunC[i] -= Isolation_RunC_uncertainty[i];
-      }
-    }
-    if(m_syst_shift==e_Up){
-      for(unsigned int i=0; i<3; ++i){
-	Mu40triggerRunA[i] += Mu40triggerRunA_uncertainty[i];
-	Mu40triggerRunB[i] += Mu40triggerRunB_uncertainty[i];
-	Mu40triggerRunC[i] += Mu40triggerRunC_uncertainty[i];
-	IsoMu24triggerRunA[i] += IsoMu24triggerRunA_uncertainty[i];
-	IsoMu24triggerRunB[i] += IsoMu24triggerRunB_uncertainty[i];
-	IsoMu24triggerRunC[i] += IsoMu24triggerRunC_uncertainty[i];
-	TightID_RunAB[i] += TightID_RunAB_uncertainty[i];
-	TightID_RunC[i] += TightID_RunC_uncertainty[i];
-	Isolation_RunAB[i] += Isolation_RunAB_uncertainty[i];
-	Isolation_RunC[i] += Isolation_RunC_uncertainty[i];
-      }
-    }
 
+    // open file with scale factors 
+    TFile* file = new TFile("$SFRAME_DIR/SFrameTools/efficiencies/muon_effs_2012_53x.root", "READ");
+    if (!file->IsOpen()){
+      file = new TFile("muon_effs_2012_53x.root", "READ");
+    }
+    if (!file->IsOpen()){
+      std::cerr << "Could not find file with muon scale factors. Filename = muon_effs_2012_53x.root" << std::endl;
+      std::cerr << "I looked in directory $SFRAME_DIR/SFrameTools/efficiencies/ and ./" << std::endl;
+      std::cerr << "Please make sure the file is available." << std::endl;
+      exit(EXIT_FAILURE);
+    }
 
     double sum_mu_weights = 0;    
     // parse arguments of configuration
     for(unsigned int i=0; i<m_correctionlist.size(); ++i) {
 
         double weight = m_correctionlist[i].second;
-	sum_mu_weights    += weight;
 	bool isok = false;
 	
+	TString name = m_correctionlist[i].first;
+	if (name.Contains("Muon")){
+	  sum_mu_weights += weight;
+	}
+	m_weights.push_back(weight);
+
 	// ----------------- muons ------------------
 	// muons: loop over eta bins
 	for (int etabin=0; etabin<3; ++etabin){
+	  
+	  TString eta_name = TString::Format("eta%d", etabin);
 
 	  //non isolated muons
 	  if(m_correctionlist[i].first == "MuonRunA") {
-            m_mu_trig[etabin] += weight*Mu40triggerRunA[etabin];
-            m_mu_iso[etabin]  += weight;
-            m_mu_id[etabin]   += weight*TightID_RunAB[etabin];
+            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012A/SF_" + eta_name + "_TRIG_Mu40"));
+            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012A/SF_" + eta_name + "_ID_tight"));
 	    isok = true;
 	  } else if (m_correctionlist[i].first == "MuonRunB") {
-            m_mu_trig[etabin] += weight*Mu40triggerRunB[etabin];
-            m_mu_iso[etabin]  += weight;
-            m_mu_id[etabin]   += weight*TightID_RunAB[etabin];
+            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012B/SF_" + eta_name + "_TRIG_Mu40"));
+            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012B/SF_" + eta_name + "_ID_tight"));
 	    isok = true;
 	  } else if (m_correctionlist[i].first == "MuonRunC") {
-            m_mu_trig[etabin] += weight*Mu40triggerRunC[etabin];
-            m_mu_iso[etabin]  += weight;
-            m_mu_id[etabin]   += weight*TightID_RunC[etabin];
+            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012C/SF_" + eta_name + "_TRIG_Mu40"));
+            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012C/SF_" + eta_name + "_ID_tight"));
+	    isok = true;
+	  } else if (m_correctionlist[i].first == "MuonRunD") {
+            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012D/SF_" + eta_name + "_TRIG_Mu40"));
+            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012D/SF_" + eta_name + "_ID_tight"));
 	    isok = true;
 	  }
 	  //isolated muons
 	  else if(m_correctionlist[i].first == "IsoMuonRunA") {
-            m_mu_trig[etabin] += weight*IsoMu24triggerRunA[etabin];
-            m_mu_iso[etabin]  += weight*Isolation_RunAB[etabin];
-            m_mu_id[etabin]   += weight*TightID_RunAB[etabin];
+            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012A/SF_" + eta_name + "_TRIG_IsoMu24"));
+            m_mu_iso[etabin].push_back((TGraphAsymmErrors*) file->Get("2012A/SF_" + eta_name + "_ISO_tight"));
+            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012A/SF_" + eta_name + "_ID_tight"));
 	    isok = true;
 	  } else if (m_correctionlist[i].first == "IsoMuonRunB") {
-            m_mu_trig[etabin] += weight*IsoMu24triggerRunB[etabin];
-            m_mu_iso[etabin]  += weight*Isolation_RunAB[etabin];
-            m_mu_id[etabin]   += weight*TightID_RunAB[etabin];
+            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012B/SF_" + eta_name + "_TRIG_IsoMu24"));
+            m_mu_iso[etabin].push_back((TGraphAsymmErrors*) file->Get("2012B/SF_" + eta_name + "_ISO_tight"));
+            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012B/SF_" + eta_name + "_ID_tight"));
 	    isok = true;
 	  } else if (m_correctionlist[i].first == "IsoMuonRunC") {
-            m_mu_trig[etabin] += weight*IsoMu24triggerRunC[etabin];
-            m_mu_iso[etabin]  += weight*Isolation_RunC[etabin];
-            m_mu_id[etabin]   += weight*TightID_RunC[etabin];
+            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012C/SF_" + eta_name + "_TRIG_IsoMu24"));
+            m_mu_iso[etabin].push_back((TGraphAsymmErrors*) file->Get("2012C/SF_" + eta_name + "_ISO_tight"));
+            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012C/SF_" + eta_name + "_ID_tight"));
+	    isok = true;	  
+	  } else if (m_correctionlist[i].first == "IsoMuonRunD") {
+            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012D/SF_" + eta_name + "_TRIG_IsoMu24"));
+            m_mu_iso[etabin].push_back((TGraphAsymmErrors*) file->Get("2012D/SF_" + eta_name + "_ISO_tight"));
+            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012D/SF_" + eta_name + "_ID_tight"));
 	    isok = true;
 	  }
 
@@ -190,23 +165,10 @@ void LeptonScaleFactors::FillWeights()
     }
 					       
     if (sum_mu_weights > 0.){
-      for (int etabin=0; etabin<3; ++etabin){
-	m_mu_trig[etabin] /= sum_mu_weights;
-	m_mu_id[etabin]   /= sum_mu_weights;
-	m_mu_iso[etabin]  /= sum_mu_weights;	
+      for (unsigned int ii=0; ii<m_weights.size(); ++ii){
+	m_weights[ii] = m_weights[ii]/sum_mu_weights;
       }
     }
-
-    // ------------------ last check ---------------------------
-    // if weights were not filled, set them to unity
-    for (int etabin=0; etabin<3; ++etabin){
-      if (fabs(m_mu_trig[etabin])<1e-10) m_mu_trig[etabin] = 1.;
-      if (fabs(m_mu_id[etabin])<1e-10) m_mu_id[etabin] = 1.;
-      if (fabs(m_mu_iso[etabin])<1e-10) m_mu_iso[etabin] = 1.;      
-    }
-    if (fabs(m_ele_trig[0])<1e-10) m_ele_trig[0] = 1.;
-    if (fabs(m_ele_trig[1])<1e-10) m_ele_trig[1] = 0.;
-    if (fabs(m_ele_trig[2])<1e-10) m_ele_trig[2] = 1.;
       
     return;
 }
@@ -221,6 +183,27 @@ int LeptonScaleFactors::GetMuonEtaBin(double eta)
 
 }
 
+int LeptonScaleFactors::GetBin(double xval, TGraphAsymmErrors* graph) 
+{
+  int bin = -1;
+  double currx = -100;
+  int i = 0;
+  while (currx<xval){
+    if (i >= graph->GetN()){
+      bin = i-1;
+      break;
+    }
+    double x, y;
+    graph->GetPoint(i, x, y);
+    double xlow = x - graph->GetErrorXlow(i);
+    double xup = x + graph->GetErrorXhigh(i);
+    bin = i-1;
+    currx = xlow;
+    ++i;
+  }
+  return bin;
+}
+
 double LeptonScaleFactors::GetMuonIDWeight()
 {
   if (!m_apply) return 1.;
@@ -233,7 +216,32 @@ double LeptonScaleFactors::GetMuonIDWeight()
   }
   Muon mu = calc->GetMuons()->at(0);
   int etabin = GetMuonEtaBin(mu.eta());
-  return m_mu_id[etabin];
+  double weight = 0.;
+  for (unsigned int i=0; i<m_mu_id.size(); ++i){
+    if (m_mu_id[etabin].size()==0){
+      weight = 1.;
+      break;
+    }
+    int ptbin = GetBin(mu.pt(), m_mu_id[etabin][i]);
+    if (ptbin<0){
+      weight += m_weights[i];
+      continue;
+    }
+    double w = m_mu_id[etabin][i]->GetY()[ptbin];
+    double sys = 0.005 * w; // systematic error on muon ID: 0.5%
+    if (m_syst_shift==e_Down){
+      double stat = m_mu_id[etabin][i]->GetEYlow()[ptbin];
+      double err = TMath::Sqrt(stat*stat + sys*sys);
+      w -= err;
+    }
+    if (m_syst_shift==e_Up){
+      double stat = m_mu_id[etabin][i]->GetEYhigh()[ptbin];
+      double err = TMath::Sqrt(stat*stat + sys*sys);
+      w += err;
+    }
+    weight += m_weights[i] * w;
+  }
+  return weight;
 }
 
 double LeptonScaleFactors::GetMuonTrigWeight()
@@ -248,7 +256,32 @@ double LeptonScaleFactors::GetMuonTrigWeight()
   }
   Muon mu = calc->GetMuons()->at(0);
   int etabin = GetMuonEtaBin(mu.eta());
-  return m_mu_trig[etabin];
+  double weight = 0.;
+  for (unsigned int i=0; i<m_mu_trig.size(); ++i){
+    if (m_mu_trig[etabin].size()==0){
+      weight = 1.;
+      break;
+    }
+    int ptbin = GetBin(mu.pt(), m_mu_trig[etabin][i]);
+    if (ptbin<0){
+      weight += m_weights[i];
+      continue;
+    }
+    double w = m_mu_trig[etabin][i]->GetY()[ptbin];
+    double sys = 0.002 * w; // systematic error on single muon trigger: 0.2%
+    if (m_syst_shift==e_Down){
+      double stat = m_mu_trig[etabin][i]->GetEYlow()[ptbin];
+      double err = TMath::Sqrt(stat*stat + sys*sys);
+      w -= err;
+    }
+    if (m_syst_shift==e_Up){
+      double stat = m_mu_trig[etabin][i]->GetEYhigh()[ptbin];
+      double err = TMath::Sqrt(stat*stat + sys*sys);
+      w += err;
+    }
+    weight += m_weights[i] * w;
+  }
+  return weight;
 }
 
 double LeptonScaleFactors::GetMuonIsoWeight()
@@ -259,12 +292,36 @@ double LeptonScaleFactors::GetMuonIsoWeight()
   }
   static EventCalc* calc = EventCalc::Instance();
   if (calc->GetMuons()->size()==0){
-    std::cout << "WARNING: no primary muon found in LeptonScaleFactors; return scale factor = 1" <<std::endl;
     return 1.;
   }
   Muon mu = calc->GetMuons()->at(0);
   int etabin = GetMuonEtaBin(mu.eta());
-  return m_mu_iso[etabin];
+  double weight = 0.;
+  for (unsigned int i=0; i<m_mu_iso.size(); ++i){
+    if (m_mu_iso[etabin].size()==0){
+      weight = 1.;
+      break;
+    }
+    int ptbin = GetBin(mu.pt(), m_mu_iso[etabin][i]);
+    if (ptbin<0){
+      weight += m_weights[i];
+      continue;
+    }
+    double w = m_mu_iso[etabin][i]->GetY()[ptbin];
+    double sys = 0.002 * w; // systematic error on single muon isolation: 0.2%
+    if (m_syst_shift==e_Down){
+      double stat = m_mu_iso[etabin][i]->GetEYlow()[ptbin];
+      double err = TMath::Sqrt(stat*stat + sys*sys);      
+      w -= err;
+    }
+    if (m_syst_shift==e_Up){
+      double stat = m_mu_iso[etabin][i]->GetEYhigh()[ptbin];
+      double err = TMath::Sqrt(stat*stat + sys*sys);
+      w += err;
+    }
+    weight += m_weights[i] * w;
+  }
+  return weight;
 }
 
 double LeptonScaleFactors::GetMuonWeight()
@@ -297,7 +354,6 @@ double LeptonScaleFactors::GetElectronTrigWeight()
   }
   static EventCalc* calc = EventCalc::Instance();
   if (calc->GetElectrons()->size()==0){
-    std::cout << "WARNING: no primary electron found in LeptonScaleFactors; return scale factor = 1" <<std::endl;
     return 1.0;
   }
   Electron ele = calc->GetElectrons()->at(0);

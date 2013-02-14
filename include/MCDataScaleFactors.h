@@ -2,6 +2,7 @@
 #define MCDataScaleFactors_H
 
 #include "TF1.h"
+#include <TGraphAsymmErrors.h>
 
 #include "include/Utils.h"
 #include "include/EventCalc.h"
@@ -58,14 +59,18 @@ public:
     /// return the bin number of the muon eta bin
     int GetMuonEtaBin(double eta);
 
+    /// return the bin number of a graph corresponding to a certain value of the x coordinate
+    int GetBin(double x, TGraphAsymmErrors* graph);
+
 private:
     E_SystShift m_syst_shift;
     std::vector<std::pair<std::string, double> > m_correctionlist;
     bool m_apply;                   // should any scale factors be applied?
     int m_current_run;              // run for which the scale factors are valid
-    std::vector<double> m_mu_id;    // allow for different bins, right now: 3 eta bins
-    std::vector<double> m_mu_trig;  // allow for different bins, right now: 3 eta bins
-    std::vector<double> m_mu_iso;   // allow for different bins, right now: 3 eta bins
+    std::vector< std::vector<TGraphAsymmErrors*> > m_mu_id;    // two arrays: first index stands for eta bin, second for run period
+    std::vector< std::vector<TGraphAsymmErrors*> > m_mu_trig;  // two arrays: first index stands for eta bin, second for run period
+    std::vector< std::vector<TGraphAsymmErrors*> > m_mu_iso;   // two arrays: first index stands for eta bin, second for run period
+    std::vector<double> m_weights;  // weights for different runs
     std::vector<double> m_ele_trig; // two-parameter function of relative isolation times additional weight
 
 };
