@@ -22,7 +22,7 @@ public:
      * second argument: systematic shift
      * @see E_SystShift
      */
-    LeptonScaleFactors(std::vector<std::string> correctionlist, E_SystShift syst_shift=e_Default);
+    LeptonScaleFactors(std::vector<std::string> correctionlist);
     ///Default destructor
     ~LeptonScaleFactors() {};
 
@@ -61,11 +61,24 @@ public:
 
     /// return the bin number of a graph corresponding to a certain value of the x coordinate
     int GetBin(double x, TGraphAsymmErrors* graph);
+    
+    void DoUpVarMuonSF(bool f=true){m_muon_unc=true; m_syst_shift=e_Up;}
+    void DoDownVarMuonSF(bool f=true){m_muon_unc=true; m_syst_shift=e_Down;}
+
+    void DoUpVarEleSF(bool f=true){m_ele_unc=true; m_syst_shift=e_Up;}
+    void DoDownVarEleSF(bool f=true){m_ele_unc=true; m_syst_shift=e_Down;}
+
+    void DoUpVarTauSF(bool f=true){m_tau_unc=true; m_syst_shift=e_Up;}
+    void DoDownVarTauSF(bool f=true){m_tau_unc=true; m_syst_shift=e_Down;}
+    
 
 private:
     E_SystShift m_syst_shift;
     std::vector<std::pair<std::string, double> > m_correctionlist;
     bool m_apply;                   // should any scale factors be applied?
+    bool m_muon_unc;                // do shift of muon scale factors 
+    bool m_ele_unc;                 // do shift of electron scale factors 
+    bool m_tau_unc;                 // do shift of tau scale factors 
     int m_current_run;              // run for which the scale factors are valid
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_id;    // two arrays: first index stands for eta bin, second for run period
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_trig;  // two arrays: first index stands for eta bin, second for run period

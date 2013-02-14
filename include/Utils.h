@@ -40,9 +40,13 @@ enum E_SystShift {
  * list of possible systematic uncertainties
 */
 enum E_SysUnc {
-  e_None=0, /**< no systematic shift is applied */
-  e_JEC,    /**< jet energy scale uncertainty */
-  e_JER     /**< jet resolution uncertainty */
+  e_None=0,  /**< no systematic shift is applied */
+  e_JEC,     /**< jet energy scale uncertainty */
+  e_JER,     /**< jet resolution uncertainty */
+  e_MuonSF,  /**< muon scale factor uncertainty */
+  e_EleSF,   /**< electron scale factor uncertainty */
+  e_TauSF,   /**< tau scale factor uncertainty */
+  e_PDF,     /**< PDF uncertainty */
 };
 
 /**

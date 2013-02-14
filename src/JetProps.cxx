@@ -177,7 +177,7 @@ double JetProps::GetQjetVolatility(int seed, double R0)
     else constits = out_jets_basic.at(j).associated_cluster_sequence()->exclusive_subjets_up_to(out_jets_basic.at(j),mQJetsPreclustering);
     for(unsigned int ii = 0 ; ii < (unsigned int) mQJetsN ; ii++){
         QjetsPlugin qjet_plugin(zcut, dcut_fctr, exp_min, exp_max, rigidity);
-				qjet_plugin.SetRandSeed(seed+ii); // new feature in Qjets to set the random seed
+	qjet_plugin.SetRandSeed(seed+ii); // new feature in Qjets to set the random seed
         fastjet::JetDefinition qjet_def(&qjet_plugin);
         fastjet::ClusterSequence qjet_seq(constits, qjet_def);
         vector<fastjet::PseudoJet> inclusive_jets2 = sorted_by_pt(qjet_seq.inclusive_jets(50.0));

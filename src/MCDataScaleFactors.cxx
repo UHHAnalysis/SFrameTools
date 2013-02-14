@@ -1,10 +1,13 @@
 #include "include/MCDataScaleFactors.h"
 #include <TMath.h>
 
-LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist, E_SystShift syst_shift)
+LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist)
 {
-    m_syst_shift = syst_shift;
-  
+    m_syst_shift = e_Default;
+    m_muon_unc = false;
+    m_ele_unc = false;
+    m_tau_unc = false;
+ 
     if(correctionlist.size()%2!=0) {
         std::cerr<< "not a valid list of correction factors given to LeptonScaleFactors" <<std::endl;
         std::cerr<< "usage: \"<name> <weight> <name> <weight> <name> <weight> ...\" " <<std::endl;
@@ -50,7 +53,6 @@ bool LeptonScaleFactors::IsUpToDate()
 void LeptonScaleFactors::FillWeights()
 {
     if (!m_apply) return;
-
 
     // clear old scale factors
     m_mu_id.clear();
@@ -228,17 +230,21 @@ double LeptonScaleFactors::GetMuonIDWeight()
       continue;
     }
     double w = m_mu_id[etabin][i]->GetY()[ptbin];
-    double sys = 0.005 * w; // systematic error on muon ID: 0.5%
-    if (m_syst_shift==e_Down){
-      double stat = m_mu_id[etabin][i]->GetEYlow()[ptbin];
-      double err = TMath::Sqrt(stat*stat + sys*sys);
-      w -= err;
+    
+    if (m_muon_unc){
+      double sys = 0.005 * w; // systematic error on muon ID: 0.5%
+      if (m_syst_shift==e_Down){
+	double stat = m_mu_id[etabin][i]->GetEYlow()[ptbin];
+	double err = TMath::Sqrt(stat*stat + sys*sys);
+	w -= err;
+      }
+      if (m_syst_shift==e_Up){
+	double stat = m_mu_id[etabin][i]->GetEYhigh()[ptbin];
+	double err = TMath::Sqrt(stat*stat + sys*sys);
+	w += err;
+      }
     }
-    if (m_syst_shift==e_Up){
-      double stat = m_mu_id[etabin][i]->GetEYhigh()[ptbin];
-      double err = TMath::Sqrt(stat*stat + sys*sys);
-      w += err;
-    }
+
     weight += m_weights[i] * w;
   }
   return weight;
@@ -268,17 +274,21 @@ double LeptonScaleFactors::GetMuonTrigWeight()
       continue;
     }
     double w = m_mu_trig[etabin][i]->GetY()[ptbin];
-    double sys = 0.002 * w; // systematic error on single muon trigger: 0.2%
-    if (m_syst_shift==e_Down){
-      double stat = m_mu_trig[etabin][i]->GetEYlow()[ptbin];
-      double err = TMath::Sqrt(stat*stat + sys*sys);
-      w -= err;
+
+    if (m_muon_unc){
+      double sys = 0.002 * w; // systematic error on single muon trigger: 0.2%
+      if (m_syst_shift==e_Down){
+	double stat = m_mu_trig[etabin][i]->GetEYlow()[ptbin];
+	double err = TMath::Sqrt(stat*stat + sys*sys);
+	w -= err;
+      }
+      if (m_syst_shift==e_Up){
+	double stat = m_mu_trig[etabin][i]->GetEYhigh()[ptbin];
+	double err = TMath::Sqrt(stat*stat + sys*sys);
+	w += err;
+      }
     }
-    if (m_syst_shift==e_Up){
-      double stat = m_mu_trig[etabin][i]->GetEYhigh()[ptbin];
-      double err = TMath::Sqrt(stat*stat + sys*sys);
-      w += err;
-    }
+
     weight += m_weights[i] * w;
   }
   return weight;
@@ -308,17 +318,21 @@ double LeptonScaleFactors::GetMuonIsoWeight()
       continue;
     }
     double w = m_mu_iso[etabin][i]->GetY()[ptbin];
-    double sys = 0.002 * w; // systematic error on single muon isolation: 0.2%
-    if (m_syst_shift==e_Down){
-      double stat = m_mu_iso[etabin][i]->GetEYlow()[ptbin];
-      double err = TMath::Sqrt(stat*stat + sys*sys);      
-      w -= err;
+
+    if (m_muon_unc){
+      double sys = 0.002 * w; // systematic error on single muon isolation: 0.2%
+      if (m_syst_shift==e_Down){
+	double stat = m_mu_iso[etabin][i]->GetEYlow()[ptbin];
+	double err = TMath::Sqrt(stat*stat + sys*sys);      
+	w -= err;
+      }
+      if (m_syst_shift==e_Up){
+	double stat = m_mu_iso[etabin][i]->GetEYhigh()[ptbin];
+	double err = TMath::Sqrt(stat*stat + sys*sys);
+	w += err;
+      }
     }
-    if (m_syst_shift==e_Up){
-      double stat = m_mu_iso[etabin][i]->GetEYhigh()[ptbin];
-      double err = TMath::Sqrt(stat*stat + sys*sys);
-      w += err;
-    }
+
     weight += m_weights[i] * w;
   }
   return weight;
@@ -359,6 +373,18 @@ double LeptonScaleFactors::GetElectronTrigWeight()
   Electron ele = calc->GetElectrons()->at(0);
   double iso = ele.relIso();
   double w = m_ele_trig[0] + m_ele_trig[1]*iso;
+
+  // uncertainty	
+  if (m_ele_unc){	
+    double unc[] = {0.00829184, 0.187612};
+    if (m_syst_shift==e_Down){
+      w = (m_ele_trig[0]-unc[0]) + (m_ele_trig[1]-unc[1])*iso;
+    } 
+    if (m_syst_shift==e_Up){
+      w = (m_ele_trig[0]+unc[0]) + (m_ele_trig[1]+unc[1])*iso;
+    }
+  }
+  
   w *= m_ele_trig[2];
   if (w>1. || w<0.){ // sanity check
     w = 1.;
