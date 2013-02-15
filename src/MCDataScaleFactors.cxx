@@ -66,7 +66,7 @@ void LeptonScaleFactors::FillWeights()
     m_ele_trig.push_back(0.0);	
     m_ele_trig.push_back(1.0);	
 
-    // initialise arrays
+    // initialise arrays for eta bins
     for (int i=0; i<3; ++i){
       m_mu_id.push_back(std::vector<TGraphAsymmErrors*>());
       m_mu_trig.push_back(std::vector<TGraphAsymmErrors*>());
@@ -122,7 +122,7 @@ void LeptonScaleFactors::FillWeights()
 	    isok = true;
 	  } else if (m_correctionlist[i].first == "MuonRunD") {
             m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012D/SF_" + eta_name + "_TRIG_Mu40"));
-            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012D/SF_" + eta_name + "_ID_tight"));
+            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012D/SF_" + eta_name + "_ID_tight"));	    
 	    isok = true;
 	  }
 	  //isolated muons
@@ -171,7 +171,6 @@ void LeptonScaleFactors::FillWeights()
 	m_weights[ii] = m_weights[ii]/sum_mu_weights;
       }
     }
-      
     return;
 }
 
@@ -219,11 +218,10 @@ double LeptonScaleFactors::GetMuonIDWeight()
   Muon mu = calc->GetMuons()->at(0);
   int etabin = GetMuonEtaBin(mu.eta());
   double weight = 0.;
-  for (unsigned int i=0; i<m_mu_id.size(); ++i){
-    if (m_mu_id[etabin].size()==0){
-      weight = 1.;
-      break;
-    }
+  if (m_mu_id[etabin].size()==0){
+    return 1.;
+  }
+  for (unsigned int i=0; i<m_mu_id[etabin].size(); ++i){
     int ptbin = GetBin(mu.pt(), m_mu_id[etabin][i]);
     if (ptbin<0){
       weight += m_weights[i];
@@ -244,9 +242,9 @@ double LeptonScaleFactors::GetMuonIDWeight()
 	w += err;
       }
     }
-
     weight += m_weights[i] * w;
   }
+
   return weight;
 }
 
@@ -263,11 +261,10 @@ double LeptonScaleFactors::GetMuonTrigWeight()
   Muon mu = calc->GetMuons()->at(0);
   int etabin = GetMuonEtaBin(mu.eta());
   double weight = 0.;
-  for (unsigned int i=0; i<m_mu_trig.size(); ++i){
-    if (m_mu_trig[etabin].size()==0){
-      weight = 1.;
-      break;
-    }
+  if (m_mu_trig[etabin].size()==0){
+    return 1.;
+  }
+  for (unsigned int i=0; i<m_mu_trig[etabin].size(); ++i){
     int ptbin = GetBin(mu.pt(), m_mu_trig[etabin][i]);
     if (ptbin<0){
       weight += m_weights[i];
@@ -288,7 +285,6 @@ double LeptonScaleFactors::GetMuonTrigWeight()
 	w += err;
       }
     }
-
     weight += m_weights[i] * w;
   }
   return weight;
@@ -307,11 +303,10 @@ double LeptonScaleFactors::GetMuonIsoWeight()
   Muon mu = calc->GetMuons()->at(0);
   int etabin = GetMuonEtaBin(mu.eta());
   double weight = 0.;
-  for (unsigned int i=0; i<m_mu_iso.size(); ++i){
-    if (m_mu_iso[etabin].size()==0){
-      weight = 1.;
-      break;
-    }
+  if (m_mu_iso[etabin].size()==0){
+    return 1.;
+  }
+  for (unsigned int i=0; i<m_mu_iso[etabin].size(); ++i){
     int ptbin = GetBin(mu.pt(), m_mu_iso[etabin][i]);
     if (ptbin<0){
       weight += m_weights[i];
