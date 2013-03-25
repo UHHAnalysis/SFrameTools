@@ -54,6 +54,7 @@ void EventCalc::Reset()
   m_TotalWeight = 1.;
   
   m_primlep = NULL;
+  delete m_ttgen;
   m_ttgen = NULL;
 
 }
