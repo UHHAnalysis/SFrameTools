@@ -68,6 +68,13 @@ enum E_EventFlavor {
     e_LFlavor
 };
 
+
+int subJetBTag(TopJet topjet, E_BtagType type);
+
+bool HiggsTag(TopJet topjet, E_BtagType type1, E_BtagType type2);
+
+bool HepTopTagFull(TopJet topjet);
+
 // return if a jet is tagged given a btag operating point
 bool IsTagged(Jet &, E_BtagType);
 

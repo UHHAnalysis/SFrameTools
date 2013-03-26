@@ -1,5 +1,146 @@
 #include "../include/Utils.h"
 
+#include <fastjet/JetDefinition.hh>
+#include <fastjet/PseudoJet.hh>
+#include <fastjet/ClusterSequence.hh>
+#include <fastjet/ClusterSequenceArea.hh>
+#include <fastjet/GhostedAreaSpec.hh>
+namespace external {
+#include "../include/HEPTopTagger.h"
+}
+
+
+
+//subjet b-tagger, returns number of b-tagged subjets
+
+int subJetBTag(TopJet topjet, E_BtagType type){
+  int nBTagsSub = 0;
+  float discriminator_cut;
+  if(type==e_CSVL) discriminator_cut = 0.244;
+  if(type==e_CSVM) discriminator_cut = 0.679;
+  if(type==e_CSVT) discriminator_cut = 0.898;
+
+  //Create a vector of subjets
+  std::vector<Particle> subjets_top;
+  //Create a float vector of the subjets discriminators
+  std::vector<float> btagsub_combinedSecondaryVertex_top;
+
+  //Fill the vector of subjets with the subjets of a topjet
+  subjets_top=topjet.subjets();
+  //Fill the vector of discriminators with the discriminators of the subjets of a certain topjet
+  btagsub_combinedSecondaryVertex_top=topjet.btagsub_combinedSecondaryVertex();
+
+  //Looping over subjets and checking if they are b-tagged
+  for(unsigned int i=0; i < btagsub_combinedSecondaryVertex_top.size(); ++i){
+    float test=btagsub_combinedSecondaryVertex_top[i];
+    if(test>discriminator_cut){
+      nBTagsSub += 1;
+      //This means it is b-tagged
+    }
+  }
+  return nBTagsSub;
+}
+
+
+bool HiggsTag(TopJet topjet, E_BtagType type1, E_BtagType type2){
+  int nBTagsSub1 = 0;
+  int nBTagsSub2 = 0;
+  float discriminator_cut1;
+  float discriminator_cut2;
+  if(type1==e_CSVL) discriminator_cut1 = 0.244;
+  if(type1==e_CSVM) discriminator_cut1 = 0.679;
+  if(type1==e_CSVT) discriminator_cut1 = 0.898;
+  if(type2==e_CSVL) discriminator_cut2 = 0.244;
+  if(type2==e_CSVM) discriminator_cut2 = 0.679;
+  if(type2==e_CSVT) discriminator_cut2 = 0.898;
+  // std::cout << "discriminator_cut1: " <<  discriminator_cut1 << " discriminator_cut2: "<< discriminator_cut1 << std::endl;
+  //Create a vector of subjets
+  std::vector<Particle> subjets_top;
+  //Create a float vector of the subjets discriminators
+  std::vector<float> btagsub_combinedSecondaryVertex_top;
+
+  //Fill the vector of subjets with the subjets of a topjet
+  subjets_top=topjet.subjets();
+  //Fill the vector of discriminators with the discriminators of the subjets of a certain topjet
+  btagsub_combinedSecondaryVertex_top=topjet.btagsub_combinedSecondaryVertex();
+
+  //Looping over subjets and checking if they are b-tagged
+  for(unsigned int i=0; i < btagsub_combinedSecondaryVertex_top.size(); ++i){
+    float test=btagsub_combinedSecondaryVertex_top[i];
+    if (nBTagsSub1 != 0 && test>discriminator_cut2) nBTagsSub2 =+ 1;
+    if(test>discriminator_cut1){
+      if(test>discriminator_cut2 && nBTagsSub2==0) nBTagsSub2+=1;
+      else nBTagsSub1 += 1;      //This means it is b-tagged  
+ 
+    }
+  }
+  if (nBTagsSub1!=0 && nBTagsSub2!=0) return true;
+  else return false;
+}
+
+
+bool HepTopTagFull(TopJet topjet){
+
+  //Transform the SFrame TopJet object in a fastjet::PseudoJet
+ 
+  std::vector<fastjet::PseudoJet> jetpart;
+  std::vector<Particle> pfconstituents_jet;
+
+  fastjet::ClusterSequence* JetFinder;
+  fastjet::JetDefinition* JetDef ;
+
+  pfconstituents_jet=topjet.pfconstituents();
+   
+  for(unsigned int ic=0; ic<pfconstituents_jet.size(); ++ic){ 
+   
+    jetpart.push_back( fastjet::PseudoJet(
+pfconstituents_jet[ic].pt()*cos(pfconstituents_jet[ic].phi()),
+pfconstituents_jet[ic].pt()*sin(pfconstituents_jet[ic].phi()),
+pfconstituents_jet[ic].pt()*sinh(pfconstituents_jet[ic].eta()),
+pfconstituents_jet[ic].energy() ) );
+
+  }
+ 
+  //Clustering definition
+  double conesize=3;
+  JetDef = new
+fastjet::JetDefinition(fastjet::cambridge_algorithm,conesize); 
+
+  JetFinder = new fastjet::ClusterSequence(jetpart, *JetDef);
+
+  std::vector<fastjet::PseudoJet> tops = JetFinder->inclusive_jets(10.);
+
+  if (tops.size() != 1){
+    std::cout << "Problem! Doesn't give exactly one jet!!!!!!!!!!!!!!Gives " << tops.size() << " jets" << std::endl;
+    delete JetFinder;
+    delete JetDef;
+    return false;
+  }
+
+  std::vector<fastjet::PseudoJet> SortedJets = sorted_by_pt(tops);
+
+
+  //Run the HEPTopTagger
+  external::HEPTopTagger tagger(*JetFinder, SortedJets[0]);
+
+  //Mass window to be applied in a second step
+  tagger.set_top_range(0.0, 10000.0);
+  tagger.set_mass_drop_threshold(0.8);
+  tagger.set_max_subjet_mass(30);
+
+  tagger.run_tagger();
+
+  delete JetFinder;
+  delete JetDef;
+ 
+  if (tagger.is_masscut_passed()) return true;
+  else return false;
+
+  return true;
+ 
+}
+
+
 
 // global function to define a tagged jet
 
