@@ -2,6 +2,7 @@
 #define TTbarGen_H
 
 // Local include(s):
+#include "TLorentzVector.h"
 #include "include/ObjectHandler.h"
 
 /**

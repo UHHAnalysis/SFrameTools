@@ -82,12 +82,13 @@ TTbarGen::TTbarGen()
   // W not linked correctly -> W decay products have top as mother
   if(m_pdgId1==0 || m_pdgId2==0 ){
     //search all particles with top as mother; store that ones which are not W or b (or equivalent light quark)
+    bool notfilled1=true;
+    bool notfilled2=true;
+
     for(unsigned int i=0; i<bcc->genparticles->size(); ++i)
       {
 	GenParticle genp = bcc->genparticles->at(i);
 	
-	bool notfilled1=true;
-	bool notfilled2=true;
 
 	if(genp.mother(bcc->genparticles,1)){
 	  if(genp.mother(bcc->genparticles,1)->pdgId()==6 && abs(genp.pdgId())!=24 &&  genp.pdgId()!=1 && genp.pdgId()!=3 && genp.pdgId()!=5 ){
@@ -101,6 +102,7 @@ TTbarGen::TTbarGen()
 	      m_Wdecay2 = genp;
 	    }
 	  }
+	  
 
 	  if(genp.mother(bcc->genparticles,1)->pdgId()==-6 && abs(genp.pdgId())!=24 && genp.pdgId()!=-1 && genp.pdgId()!=-3 && genp.pdgId()!=-5 ){
 	    if(notfilled2){
@@ -112,9 +114,32 @@ TTbarGen::TTbarGen()
 	      m_WMinusdecay2 = genp;
 	    }
 	  }
+	  if(genp.mother(bcc->genparticles,1)->pdgId()==6 && abs(genp.pdgId())!=24 &&  (genp.pdgId()==1 || genp.pdgId()==3 || genp.pdgId()==5) ){
+	    m_bTop = genp;
+	  }
+	  if(genp.mother(bcc->genparticles,1)->pdgId()==-6 && abs(genp.pdgId())!=24 &&  (genp.pdgId()==-1 || genp.pdgId()==-3 || genp.pdgId()==-5) ){
+	    m_bAntitop = genp;
+	  }
 	}
 
       }
+    //fill the missing W bosons
+    GenParticle Wplus, Wminus;
+
+    LorentzVector Wp, Wm;
+    Wp.SetPxPyPzE( Wdecay1().v4().Px()+ Wdecay2().v4().Px(),  Wdecay1().v4().Py()+ Wdecay2().v4().Py(),  Wdecay1().v4().Pz()+ Wdecay2().v4().Pz(),  Wdecay1().v4().E()+ Wdecay2().v4().E() );
+    Wm.SetPxPyPzE( WMinusdecay1().v4().Px()+ WMinusdecay2().v4().Px(),  WMinusdecay1().v4().Py()+ WMinusdecay2().v4().Py(),  WMinusdecay1().v4().Pz()+ WMinusdecay2().v4().Pz(),  WMinusdecay1().v4().E()+ WMinusdecay2().v4().E() );
+
+    Wplus.set_v4( Wp );
+    Wplus.set_charge(1.);
+    Wplus.set_pdgId(24);
+    Wplus.set_status(3);
+    Wminus.set_v4( Wm );
+    Wminus.set_charge(-1.);
+    Wminus.set_pdgId(-24);
+    Wminus.set_status(3);
+    m_WTop = Wplus;
+    m_WAntitop = Wminus;
   }
 
 
