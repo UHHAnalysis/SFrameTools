@@ -9,11 +9,12 @@
 // ROOT include(s):
 #include <TObject.h>
 #include <TString.h>
+#include <TList.h>
 
 // Local include(s):
 //#include "include/ISCycleBaseHist.h"
-#include "include/SCycleBaseHist.h"
-#include "include/SCycleBaseBase.h"
+#include "include/SCycleBase.h"
+//#include "include/SCycleBaseBase.h"
 #include "include/SError.h"
 
 // Forward declaration(s):
@@ -32,10 +33,10 @@ class TList;
  *   The derived objects have to be initialised in each 
  *   SCycleBase::BeginInputData(...)
  *
- *   @version $Revision: 0 $
+ *   @version $Revision: 1.1 $
  */
 
-class BaseHists : public SCycleBaseHist {
+class BaseHists : public SCycleBase {
 
 
 public:
@@ -55,6 +56,16 @@ public:
 
    TString GetName() {return m_name;}
    void SetName(TString name) {m_name = name;}
+
+  // class has to inherit from SCycleBase to have access to histogram functionality in SFrame
+  // implement virtual routines but throw exception in case they are called 
+   void BeginCycle()throw( SError ) {  m_logger << ERROR << "This should not happen: BeginCycle called for BaseHist class" << SLogger::endmsg; } ;
+   void EndCycle()throw( SError ){  m_logger << ERROR << "This should not happen: EndCycle called for BaseHist class" << SLogger::endmsg; } ;
+   void BeginInputData(const SInputData&)throw( SError ){  m_logger << ERROR << "This should not happen: BeginInputData called for BaseHist class" << SLogger::endmsg; } ;
+   void EndInputData(const SInputData&)throw( SError ){  m_logger << ERROR << "This should not happen: EndInputData called for BaseHist class" << SLogger::endmsg; } ;
+   void BeginInputFile(const SInputData&)throw( SError ){  m_logger << ERROR << "This should not happen: BeginInputFile called for BaseHist class" << SLogger::endmsg; } ;
+   void ExecuteEvent(const SInputData&, Double_t)throw( SError ){  m_logger << ERROR << "This should not happen: ExecuteEvent called for BaseHist class" << SLogger::endmsg; } ;
+
 
 protected:
    /// Function placing a ROOT object in the output file
