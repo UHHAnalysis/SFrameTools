@@ -49,6 +49,7 @@ class EventCalc
   std::vector< TopJet >* GetCAJets() {return (m_bcc ? m_bcc->topjets : NULL);}
   std::vector< TopJet >* GetPrunedCAJets() {return (m_bcc ? m_bcc->prunedjets : NULL);}
   std::vector< GenParticle >* GetGenParticles() {return (m_bcc ? m_bcc->genparticles : NULL);}
+  std::vector< Particle >* GetGenJets() {return (m_bcc ? m_bcc->genjets : NULL);}
   MET* GetMET() {return (m_bcc ? m_bcc->met : NULL);}
 
   GenInfo* GetGenInfo() {return (m_bcc ? m_bcc->genInfo : NULL);}
