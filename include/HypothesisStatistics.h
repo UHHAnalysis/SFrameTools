@@ -4,7 +4,6 @@
 
 #include <TString.h>
 #include "BaseCycleContainer.h"
-#include "ObjectHandler.h"
 #include "../../core/include/SLogger.h"
 #include "include/ReconstructionHypothesis.h"
 

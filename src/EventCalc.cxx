@@ -42,9 +42,9 @@ void EventCalc::Reset()
   // when they are accessed
   
   // (re-)set the pointers using the ObjectHandler
-  ObjectHandler* objs = ObjectHandler::Instance();
-  m_bcc = objs->GetBaseCycleContainer();
-  m_lumi = objs->GetLumiHandler();
+
+  //m_bcc = ?
+  //m_lumi = ?
 
   // reset booleans
   b_HT = false;
@@ -57,6 +57,20 @@ void EventCalc::Reset()
   delete m_ttgen;
   m_ttgen = NULL;
 
+}
+
+void EventCalc::SetBaseCycleContainer(BaseCycleContainer* bcc)
+{
+  // set the internal pointer to the container with all objects
+  m_bcc = bcc;
+  m_logger << DEBUG << "Pointer to BaseCycleContainer set." << SLogger::endmsg;
+}
+
+void EventCalc::SetLumiHandler(LuminosityHandler* lh)
+{
+  // set the internal pointer to the container with all objects
+  m_lumi = lh;
+  m_logger << DEBUG << "Pointer to LumiHandler set." << SLogger::endmsg;
 }
 
 BaseCycleContainer* EventCalc::GetBaseCycleContainer()
@@ -161,7 +175,7 @@ Particle* EventCalc::GetPrimaryLepton(){
 TTbarGen* EventCalc::GetTTbarGen(){
 
   if(!m_ttgen){
-    m_ttgen = new TTbarGen();
+    m_ttgen = new TTbarGen(m_bcc);
   }
 
   return m_ttgen;

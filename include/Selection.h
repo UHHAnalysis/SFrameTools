@@ -5,7 +5,7 @@
 #include <TString.h>
 #include "Objects.h"
 #include "BaseCycleContainer.h"
-#include "ObjectHandler.h"
+#include "EventCalc.h"
 #include "../../core/include/SLogger.h"
 
 /**
@@ -57,7 +57,7 @@ class Selection{
   bool passSelection(BaseCycleContainer *bcc);
   bool passInvertedSelection(BaseCycleContainer *bcc);
   /**
-   * same as passSelection(BaseCycleContainer *bcc) but takes BaseCycleContainer from ObjectHandler
+   * same as passSelection(BaseCycleContainer *bcc) but takes BaseCycleContainer from EventCalc
    * @see passSelection(BaseCycleContainer *bcc)
    */
   bool passSelection();

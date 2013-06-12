@@ -3,7 +3,9 @@
 
 // Local include(s):
 #include "TLorentzVector.h"
-#include "include/ObjectHandler.h"
+//#include "include/EventCalc.h"
+#include "Objects.h"
+#include "BaseCycleContainer.h"
 
 /**
  *   Class for ttbar generator truth information
@@ -14,7 +16,7 @@ class TTbarGen
   
  public:
   /// Default constructor, loops over generator particle list and fills the relevant particles
-  TTbarGen();
+  TTbarGen(BaseCycleContainer* bcc);
   
   /// Default destructor
   ~TTbarGen();

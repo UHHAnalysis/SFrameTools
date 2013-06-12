@@ -56,14 +56,14 @@ bool Selection::passInvertedSelection(BaseCycleContainer *bcc){
 }
 
 bool Selection::passSelection(){
-  ObjectHandler* objs = ObjectHandler::Instance();
-  BaseCycleContainer* bcc = objs->GetBaseCycleContainer();
+  EventCalc* calc = EventCalc::Instance();
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
   return passSelection(bcc);
 }
 
 bool Selection::passInvertedSelection(){
-  ObjectHandler* objs = ObjectHandler::Instance();
-  BaseCycleContainer* bcc = objs->GetBaseCycleContainer();
+  EventCalc* calc = EventCalc::Instance();
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
   return passInvertedSelection(bcc);
 }
 

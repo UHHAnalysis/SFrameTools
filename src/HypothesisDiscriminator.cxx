@@ -7,8 +7,8 @@ HypothesisDiscriminator::HypothesisDiscriminator(std::string label_name):  m_log
 }
 
 void HypothesisDiscriminator::FillDiscriminatorValues(){
-  ObjectHandler* objs = ObjectHandler::Instance();
-  BaseCycleContainer* bcc = objs->GetBaseCycleContainer();
+  EventCalc* calc = EventCalc::Instance();
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
   if(!bcc->recoHyps || bcc->recoHyps->size()==0){
     m_logger << ERROR << "No reconstruction hypotheses in this event."<< SLogger::endmsg;
   }
@@ -18,8 +18,8 @@ void HypothesisDiscriminator::FillDiscriminatorValues(){
 
 ReconstructionHypothesis* HypothesisDiscriminator::GetHypWithSmallestDiscriminator(){
 
-  ObjectHandler* objs = ObjectHandler::Instance();
-  BaseCycleContainer* bcc = objs->GetBaseCycleContainer();
+  EventCalc* calc = EventCalc::Instance();
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
 
   float min=double_infinity();
 
@@ -39,8 +39,8 @@ ReconstructionHypothesis* HypothesisDiscriminator::GetHypWithSmallestDiscriminat
 
 ReconstructionHypothesis* HypothesisDiscriminator::GetHypWithLargestDiscriminator(){
 
-  ObjectHandler* objs = ObjectHandler::Instance();
-  BaseCycleContainer* bcc = objs->GetBaseCycleContainer();
+  EventCalc* calc = EventCalc::Instance();
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
 
   float max=-1*double_infinity();
 
@@ -63,8 +63,8 @@ void Chi2Discriminator::FillDiscriminatorValues(){
   HypothesisDiscriminator::FillDiscriminatorValues();
   if(m_filled) return;
 
-  ObjectHandler* objs = ObjectHandler::Instance();
-  BaseCycleContainer* bcc = objs->GetBaseCycleContainer();
+  EventCalc* calc = EventCalc::Instance();
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
 
   for(unsigned int i=0; i<bcc->recoHyps->size(); ++i){
 
@@ -163,8 +163,8 @@ void SumDeltaRDiscriminator::FillDiscriminatorValues(){
   HypothesisDiscriminator::FillDiscriminatorValues();
   if(m_filled) return;
 
-  ObjectHandler* objs = ObjectHandler::Instance();
-  BaseCycleContainer* bcc = objs->GetBaseCycleContainer();
+  EventCalc* calc = EventCalc::Instance();
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
 
   for(unsigned int i=0; i<bcc->recoHyps->size(); ++i){
 

@@ -2,11 +2,12 @@
 #ifndef EventCalc_H
 #define EventCalc_H
 
-#include "ObjectHandler.h"
 #include "SLogger.h"
 #include "TVector3.h"
 #include "Utils.h"
 #include "TTbarGen.h"
+#include "LuminosityHandler.h"
+#include "BaseCycleContainer.h"
 
 /**
  *  @short class for the calculation of basic event variables
@@ -28,6 +29,9 @@ class EventCalc
   
   BaseCycleContainer* GetBaseCycleContainer();
   LuminosityHandler* GetLumiHandler();
+
+  void SetLumiHandler(LuminosityHandler* lh);
+  void SetBaseCycleContainer(BaseCycleContainer* bcc);
 
   int GetRunNum() {return (m_bcc ? m_bcc->run : -1);}
   int GetLumiBlock() {return (m_bcc ? m_bcc->luminosityBlock : -1);}
@@ -129,7 +133,6 @@ class EventCalc
   EventCalc();
   ~EventCalc();
 
-  // same as for ObjectHandler, to make things easier
   BaseCycleContainer* m_bcc;
   LuminosityHandler* m_lumi;
 

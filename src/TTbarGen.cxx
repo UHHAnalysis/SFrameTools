@@ -2,10 +2,8 @@
 
 using namespace std;
 
-TTbarGen::TTbarGen()
+TTbarGen::TTbarGen(  BaseCycleContainer* bcc )
 {
-  ObjectHandler* objs = ObjectHandler::Instance();
-  BaseCycleContainer* bcc = objs->GetBaseCycleContainer();
   m_pdgId1 = 0;
   m_pdgId2 = 0;
   for(unsigned int i=0; i<bcc->genparticles->size(); ++i)

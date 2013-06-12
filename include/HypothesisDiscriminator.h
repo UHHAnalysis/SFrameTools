@@ -2,7 +2,7 @@
 #define HypothesisDiscriminator_H
 
 #include "BaseCycleContainer.h"
-#include "ObjectHandler.h"
+#include "EventCalc.h"
 #include "Utils.h"
 #include "ReconstructionHypothesis.h"
 #include "EventCalc.h"
