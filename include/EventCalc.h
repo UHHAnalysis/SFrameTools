@@ -121,10 +121,16 @@ class EventCalc
 
   /// print a list of all objects in the actual BaseCycleContainer
   void PrintEventContent();
+  
+  /// print a list of all generator level particles stored in the event
+  /// it is possible to give the list a name, for example if the print
+  /// function is called from different places in the code
+  void PrintGenParticles(string name = "std");
 
+  /// update the stored weight by multiplying it by the argument 'w'
+  void ProduceWeight(double w);
 
-  void ProduceWeight(double weight);
-
+  /// get the event weight
   double GetWeight();
 
  private:

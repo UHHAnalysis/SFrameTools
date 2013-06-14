@@ -381,3 +381,49 @@ double EventCalc::GetWeight()
 return m_TotalWeight;
 }
 
+void EventCalc::PrintGenParticles(string name)
+{
+  
+  m_logger << INFO << "Printing generator particles for event " << GetEventNum() << " (name = " << name << ")" << SLogger::endmsg;
+  if (GetGenParticles()->size()>0){
+
+    std::cout << setw(10) << "index" << '|';
+    std::cout << setw(10) << "pdgId" << '|';
+    std::cout << setw(10) << "status" << '|';
+    std::cout << setw(20) << "mother1" << '|';
+    std::cout << setw(20) << "mother2" << '|';
+    std::cout << setw(20) << "daughter1" << '|';
+    std::cout << setw(20) << "daughter2" << '|';
+    std::cout << setw(10) << "Px" << '|';
+    std::cout << setw(10) << "Py" << '|';
+    std::cout << setw(10) << "Pz"<< '|';
+    std::cout << setw(10) << "energy" << '|';
+    std::cout << setw(10) << "Pt" << '|';
+    std::cout << setw(10) << "M" << std::endl; 
+
+    std::cout.fill('-');
+    std::cout << setw(11) << "+";
+    std::cout << setw(11) << "+";
+    std::cout << setw(11) << "+";
+    std::cout << setw(21) << "+";
+    std::cout << setw(21) << "+";
+    std::cout << setw(21) << "+";
+    std::cout << setw(21) << "+";
+    std::cout << setw(11) << "+";
+    std::cout << setw(11) << "+";
+    std::cout << setw(11) << "+";
+    std::cout << setw(11) << "+";
+    std::cout << setw(11) << "+";
+    std::cout << setw(11) << "" << std::endl; 
+    std::cout.fill(' ');
+
+    for (unsigned int i=0; i<GetGenParticles()->size(); ++i){
+      GenParticle gp = GetGenParticles()->at(i);
+      gp.Print(GetGenParticles());
+    }
+    std::cout << std::endl;
+  } else {
+    m_logger << INFO << "No generator particles found." << SLogger::endmsg;
+  }
+
+}
