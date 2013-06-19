@@ -435,7 +435,7 @@ double BTaggingScaleFactors::GetWeight()
         double scale_jet = 1.0;
         float jet_pt = jet.pt();
 
-        switch(abs(JetFlavor(&jet))) {
+        switch(abs(jet.flavor())) {
         case 5: // b-quark
             scale_jet = scale(result, jet_pt,
                               _scale_btag, _eff_btag,

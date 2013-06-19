@@ -1,4 +1,6 @@
 #include "Objects/Particle.h"
+#include "Objects/FlavorParticle.h"
+#include "Objects/PFParticle.h"
 #include "Objects/Jet.h"
 #include "Objects/Electron.h"
 #include "Objects/Muon.h"

@@ -75,11 +75,8 @@ bool HiggsTag(TopJet topjet, E_BtagType type1, E_BtagType type2);
 
 bool HepTopTagFull(TopJet topjet);
 
-// return if a jet is tagged given a btag operating point
+/// return if a jet is tagged given a btag operating point
 bool IsTagged(Jet &, E_BtagType);
-
-// return flavor of Jet jet, return value is pdg ID of a matched GenParticle (b,c,d,u,s,g)
-int JetFlavor(Jet* jet);
 
 
 /**
