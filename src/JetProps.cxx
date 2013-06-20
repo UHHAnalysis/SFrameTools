@@ -32,8 +32,8 @@ JetProps::JetProps(TopJet* jet) : m_logger( "JetProps" )
 JetProps::~JetProps()
 {
   // destructor, clean up
-  if (m_JetFinder) delete m_JetFinder;
-  if (m_JetDef) delete m_JetDef;
+  delete m_JetFinder;
+  delete m_JetDef;
 }
 
 double JetProps::GetNsubjettiness(int N, Njettiness::AxesMode mode, double beta, double R0, double Rcutoff)
@@ -75,6 +75,10 @@ double JetProps::GetPrunedNsubjettiness(int N, Njettiness::AxesMode mode, double
   }
 
   std::vector<fastjet::PseudoJet> jets = GetFastJet(2.0);   // something large to make sure jet is inside radius
+  if (jets.empty()){
+    m_logger << WARNING << "JetProps::GetNsubjettiness: no jet found!" << SLogger::endmsg; 
+    return 0.;
+  }
   fastjet::PseudoJet pjet = GetPrunedJet(jets[0]);
 
   // first: create a fastjet-jet from the TopJet
@@ -93,9 +97,9 @@ std::vector<fastjet::PseudoJet> JetProps::GetJetConstituents()
 {
   // get the jet constituents as Fastjet pseudojets
 
+  std::vector<Particle> pfconstituents_jet = m_jet->pfconstituents();
   std::vector<fastjet::PseudoJet> FJparticles;
-  std::vector<Particle> pfconstituents_jet;
-  pfconstituents_jet=m_jet->pfconstituents();
+  FJparticles.reserve(pfconstituents_jet.size());
 
   for(unsigned int ic=0; ic<pfconstituents_jet.size(); ++ic){
     FJparticles.push_back( fastjet::PseudoJet(
@@ -116,13 +120,9 @@ vector<fastjet::PseudoJet> JetProps::GetFastJet(double R0, fastjet::JetAlgorithm
 
   std::vector<fastjet::PseudoJet> InputParticles = GetJetConstituents();
 
-  if (m_JetDef){
-    delete m_JetDef;
-  }
+  delete m_JetDef;
   m_JetDef = new fastjet::JetDefinition(jet_algo, R0);  
-  if (m_JetFinder){
-    delete m_JetFinder;
-  }
+  delete m_JetFinder;
   m_JetFinder = new fastjet::ClusterSequence(InputParticles, *m_JetDef);
 
   vector<fastjet::PseudoJet> Jets = m_JetFinder->inclusive_jets(10.);
@@ -136,7 +136,6 @@ vector<fastjet::PseudoJet> JetProps::GetFastJet(double R0, fastjet::JetAlgorithm
   vector<fastjet::PseudoJet> SortedJets = sorted_by_pt(Jets);
 
   return SortedJets;
-  
 }
 
 fastjet::PseudoJet JetProps::GetPrunedJet(fastjet::PseudoJet injet)
@@ -166,6 +165,10 @@ double JetProps::GetQjetVolatility(int seed, double R0)
 
     fastjet::ClusterSequence thisClustering_basic(FJparticles, jetDef);
     std::vector<fastjet::PseudoJet> out_jets_basic = sorted_by_pt(thisClustering_basic.inclusive_jets(50.0));
+    if(out_jets_basic.empty()){
+        m_logger << WARNING << "JetProps::GetQjetVolatility: no jets found!" << SLogger::endmsg; 
+        return 0.;
+    }
     
     int j = 0; // the hardest jet
     
