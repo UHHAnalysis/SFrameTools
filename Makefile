@@ -10,6 +10,8 @@ INCLUDES += -I$(SFRAME_DIR)/SFrameTools/include
 INCLUDES += -I$(SFRAME_DIR)/core
 INCLUDES += -I$(SFRAME_DIR)/core/include
 INCLUDES += -I$(SFRAME_DIR)/include
+INCLUDES += -I$(SFRAME_DIR)/NtupleWriter
+INCLUDES += -I$(SFRAME_DIR)/NtupleWriter/include
 
 # configure FastJet
 INCLUDES += -I$(FASTJETDIR)/include
