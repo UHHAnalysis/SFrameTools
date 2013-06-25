@@ -1,4 +1,5 @@
-#include "../include/Utils.h"
+#include "include/Utils.h"
+#include "include/JetProps.h"
 
 #include <fastjet/JetDefinition.hh>
 #include <fastjet/PseudoJet.hh>
@@ -79,32 +80,21 @@ bool HiggsTag(TopJet topjet, E_BtagType type1, E_BtagType type2){
 }
 
 
-bool HepTopTagFull(TopJet topjet){
+bool HepTopTagFull(TopJet topjet, std::vector<PFParticle>* allparts){
 
   //Transform the SFrame TopJet object in a fastjet::PseudoJet
- 
-  std::vector<fastjet::PseudoJet> jetpart;
-  std::vector<Particle> pfconstituents_jet;
+
+  if (!allparts) return false;
 
   fastjet::ClusterSequence* JetFinder;
   fastjet::JetDefinition* JetDef ;
 
-  pfconstituents_jet=topjet.pfconstituents();
-   
-  for(unsigned int ic=0; ic<pfconstituents_jet.size(); ++ic){ 
-   
-    jetpart.push_back( fastjet::PseudoJet(
-pfconstituents_jet[ic].pt()*cos(pfconstituents_jet[ic].phi()),
-pfconstituents_jet[ic].pt()*sin(pfconstituents_jet[ic].phi()),
-pfconstituents_jet[ic].pt()*sinh(pfconstituents_jet[ic].eta()),
-pfconstituents_jet[ic].energy() ) );
-
-  }
+  JetProps jp(&topjet, allparts);
+  std::vector<fastjet::PseudoJet> jetpart = jp.GetJetConstituents();
  
   //Clustering definition
   double conesize=3;
-  JetDef = new
-fastjet::JetDefinition(fastjet::cambridge_algorithm,conesize); 
+  JetDef = new fastjet::JetDefinition(fastjet::cambridge_algorithm,conesize); 
 
   JetFinder = new fastjet::ClusterSequence(jetpart, *JetDef);
 

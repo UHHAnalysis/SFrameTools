@@ -34,9 +34,10 @@ struct BaseCycleContainer{
   std::vector< PrimaryVertex >* pvs;
   std::vector< Jet >* jets;
   std::vector< TopJet >* topjets;
-  std::vector< TopJet >* topjetsgen;
+  std::vector< GenTopJet >* topjetsgen;
   std::vector< TopJet >* prunedjets;
   std::vector< GenParticle >* genparticles;
+  std::vector< PFParticle >* pfparticles;
   std::vector< Particle>* genjets;
 
   MET* met;

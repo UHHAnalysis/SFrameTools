@@ -1,5 +1,5 @@
 // Dear emacs, this is -*- c++ -*-
-// $Id: SFrameTools_LinkDef.h,v 1.6 2013/06/12 12:33:41 peiffer Exp $
+// $Id: SFrameTools_LinkDef.h,v 1.7 2013/06/19 16:15:46 peiffer Exp $
 #ifdef __CINT__
 
 #pragma link off all globals;
@@ -21,31 +21,8 @@
 #pragma link C++ struct Selection+;
 #pragma link C++ struct PUWeightProducer+;
 #pragma link C++ class BaseHists+;
+#pragma link C++ class LeptonScaleFactors+;
 
-#pragma link C++ class Particle+;
-#pragma link C++ class std::vector<Particle>+;
-#pragma link C++ class FlavorParticle+;
-#pragma link C++ class std::vector<FlavorParticle>+;
-#pragma link C++ class PFParticle+;
-#pragma link C++ class std::vector<PFParticle>+;
-#pragma link C++ class Jet+;
-#pragma link C++ class std::vector<Jet>+;
-#pragma link C++ class TopJet+;
-#pragma link C++ class std::vector<TopJet>+;
-#pragma link C++ class Electron+;
-#pragma link C++ class std::vector<Electron>+;
-#pragma link C++ class Muon+;
-#pragma link C++ class std::vector<Muon>+;
-#pragma link C++ class Tau+;
-#pragma link C++ class std::vector<Tau>+;
-#pragma link C++ class Photon+;
-#pragma link C++ class std::vector<Photon>+;
-#pragma link C++ class PrimaryVertex+;
-#pragma link C++ class std::vector<PrimaryVertex>+;
-#pragma link C++ class MET+;
-#pragma link C++ class GenInfo+;
-#pragma link C++ class GenParticle+;
-#pragma link C++ class std::vector<GenParticle>+;
 #pragma link C++ class ReconstructionHypothesis+;
 #pragma link C++ class std::vector<ReconstructionHypothesis>+;
 #pragma link C++ struct qualityflag+;
