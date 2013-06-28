@@ -54,6 +54,16 @@ class EventCalc
   std::vector< TopJet >* GetPrunedCAJets() {return (m_bcc ? m_bcc->prunedjets : NULL);}
   std::vector< GenParticle >* GetGenParticles() {return (m_bcc ? m_bcc->genparticles : NULL);}
   std::vector< Particle >* GetGenJets() {return (m_bcc ? m_bcc->genjets : NULL);}
+  /// returns all stored PF particles independently of their origin (to be used with care!)
+  std::vector< PFParticle >* GetPFParticles() {return (m_bcc ? m_bcc->pfparticles : NULL);}
+
+  /// PF particles clustered to a top-jet
+  std::vector< PFParticle >* GetJetPFParticles();
+  /// PF particles used to calculate lepton isolation
+  std::vector< PFParticle >* GetIsoPFParticles();
+  /// PF particles used to calculate pile-up contribution to lepton isolation
+  std::vector< PFParticle >* GetPUIsoPFParticles();
+
   MET* GetMET() {return (m_bcc ? m_bcc->met : NULL);}
 
   GenInfo* GetGenInfo() {return (m_bcc ? m_bcc->genInfo : NULL);}
@@ -147,6 +157,10 @@ class EventCalc
   bool b_HTlep;
   bool b_Reconstruction;
 
+  bool b_jetparticles;
+  bool b_isoparticles;
+  bool b_puisoparticles;
+
   // data members to store calculated results
   double m_HT;
   double m_HTlep;
@@ -156,6 +170,9 @@ class EventCalc
   Particle* m_primlep;
   TTbarGen* m_ttgen;
 
+  std::vector<PFParticle> m_jetparticles;
+  std::vector<PFParticle> m_isoparticles;
+  std::vector<PFParticle> m_puisoparticles;
 
 };
 

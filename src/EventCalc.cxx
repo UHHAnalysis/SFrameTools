@@ -50,6 +50,10 @@ void EventCalc::Reset()
   b_HT = false;
   b_HTlep = false;
   b_Reconstruction = false;
+  b_jetparticles = false;
+  b_isoparticles = false;
+  b_puisoparticles = false;
+
 
   m_TotalWeight = 1.;
   
@@ -326,6 +330,46 @@ void EventCalc::FillHighMassTTbarHypotheses(){
 }
 
 
+std::vector< PFParticle >* EventCalc::GetJetPFParticles(){
+  if(b_jetparticles) return &m_jetparticles;
+
+  std::vector<PFParticle>* pfps = GetPFParticles();
+  m_jetparticles.clear();
+
+  for(unsigned int i=0; i< pfps->size(); ++i){
+    if(pfps->at(i).isJetParticle()) m_jetparticles.push_back(pfps->at(i));
+  }
+  b_jetparticles=true;
+  return &m_jetparticles;
+}
+ 
+std::vector< PFParticle >* EventCalc::GetIsoPFParticles(){
+  if(b_isoparticles) return &m_isoparticles;
+
+  std::vector<PFParticle>* pfps = GetPFParticles();
+  m_isoparticles.clear();
+
+  for(unsigned int i=0; i< pfps->size(); ++i){
+    if(pfps->at(i).isIsoParticle()) m_isoparticles.push_back(pfps->at(i));
+  }
+  b_isoparticles=true;
+  return &m_isoparticles;
+}
+ 
+std::vector< PFParticle >* EventCalc::GetPUIsoPFParticles(){
+  if(b_puisoparticles) return &m_puisoparticles;
+
+  std::vector<PFParticle>* pfps = GetPFParticles();
+  m_puisoparticles.clear();
+
+  for(unsigned int i=0; i< pfps->size(); ++i){
+    if(pfps->at(i).isPUIsoParticle()) m_puisoparticles.push_back(pfps->at(i));
+  }
+  b_puisoparticles=true;
+  return &m_puisoparticles;
+}
+
+
 void EventCalc::PrintEventContent(){
 
   m_logger << INFO << "----------------- event content -----------------" << SLogger::endmsg;
@@ -427,3 +471,4 @@ void EventCalc::PrintGenParticles(string name)
   }
 
 }
+
