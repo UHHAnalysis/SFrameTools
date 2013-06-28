@@ -346,6 +346,35 @@ bool WTag(TopJet prunedjet,  double& mjet, int &nsubjets, double& massdrop)
 
 }
 
+float relIsoMuon( Muon mu, float deltaR ){
+  float chargedHadronIso=0;
+  float neutralHadronIso=0;
+  float photonIso=0;
+  float puiso=0;
+
+  EventCalc* calc = EventCalc::Instance();
+
+  unsigned int npfp=calc->GetIsoPFParticles()->size();
+  for(unsigned int j=0; j<npfp; ++j){
+    PFParticle pfp = calc->GetIsoPFParticles()->at(j);
+    if(pfp.deltaR(mu)<deltaR ){
+      if(pfp.particleID() == PFParticle::eH && pfp.pt()>0.0 && pfp.deltaR(mu)>0.0001 ) chargedHadronIso += pfp.pt();
+      if(pfp.particleID() == PFParticle::eH0 && pfp.pt()>0.5 && pfp.deltaR(mu)>0.01) neutralHadronIso += pfp.pt();
+      if(pfp.particleID() == PFParticle::eGamma && pfp.pt()>0.5 && pfp.deltaR(mu)>0.01) photonIso += pfp.pt();
+    }
+  }
+  
+  unsigned int npfppu=calc->GetPUIsoPFParticles()->size();
+  for(unsigned int j=0; j<npfppu; ++j){
+    PFParticle pfp = calc->GetPUIsoPFParticles()->at(j);
+    if(pfp.deltaR(mu)<deltaR ){
+      if(pfp.particleID() == PFParticle::eH && pfp.pt()>0.5 && pfp.deltaR(mu)>0.01 ) puiso += pfp.pt();
+    }
+  }
+  
+  return (chargedHadronIso + std::max( 0.0, neutralHadronIso + photonIso - 0.5*puiso))/mu.pt();
+}
+
 double pTrel(const Particle *p, std::vector<Jet> *jets)
 {
 

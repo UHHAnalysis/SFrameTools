@@ -99,6 +99,9 @@ bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, do
  */
 bool WTag(TopJet prunedjet, double& mjet, int &nsubjets, double& massdrop);
 
+/// relative isolation of a muon in a variable cone radius deltaR
+float relIsoMuon( Muon mu, float deltaR = 0.4);
+
 //double HTlep(const BaseCycleContainer *bcc); ->moved to EventCalc
 
 /// returns the next jet in the list jets to the particle p in the eta-phi plane
