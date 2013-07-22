@@ -7,7 +7,8 @@ LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist)
     m_muon_unc = false;
     m_ele_unc = false;
     m_tau_unc = false;
- 
+    m_tau_eff_unc = false;
+    
     if(correctionlist.size()%2!=0) {
         std::cerr<< "not a valid list of correction factors given to LeptonScaleFactors" <<std::endl;
         std::cerr<< "usage: \"<name> <weight> <name> <weight> <name> <weight> ...\" " <<std::endl;
@@ -344,6 +345,105 @@ double LeptonScaleFactors::GetMuonWeight()
   double iso = GetMuonIsoWeight();
   return id*trig*iso;
 }
+
+double LeptonScaleFactors::GetTauWeight()
+{
+  static EventCalc* calc = EventCalc::Instance();
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
+  
+  double weight = 1;
+
+  std::vector<Tau> fake_taus;
+  bool fake = true;
+   for(unsigned int j=0; j<bcc->taus->size(); ++j)
+	{
+	  fake = true;
+	  Tau tau = bcc->taus->at(j);
+	  for(unsigned int i=0; i<bcc->genparticles->size(); ++i)
+	    {
+	      GenParticle genp = bcc->genparticles->at(i);
+	      double deltaR = genp.deltaR(tau);
+	      if (deltaR < 0.5 && abs(genp.pdgId())==15) fake = false;
+	    }
+	  if (fake) fake_taus.push_back(tau);    
+
+	}
+   static double av=0;
+    for(unsigned int i=0; i<fake_taus.size(); ++i)
+	{
+	  Tau tau = fake_taus[i];
+	  if (!m_tau_unc)
+	    {
+	      if (tau.pt() < 120) weight = weight*1.24047;
+	      if (tau.pt() > 120) weight = weight*0.829834;
+
+	    } else {
+
+	    if (m_syst_shift==e_Down)
+	      {
+		if (tau.pt() < 120) weight = weight*1.17106;
+		if (tau.pt() > 120) weight = weight*0.55023;
+	      }
+	    if (m_syst_shift==e_Up)
+	      {
+		if (tau.pt() < 120) weight = weight*1.30987;
+		if (tau.pt() > 120) weight = weight*1.11325;
+	      }
+	  }
+	  
+	}
+    av += weight;
+    //cout << "fakes = " << fakes << " reals = " << reals << " average weight = " << av/(fakes+reals) << endl;
+
+    return weight;
+}
+
+double LeptonScaleFactors::GetTauEffUnc()
+{
+  static EventCalc* calc = EventCalc::Instance();
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
+  
+  
+  double weight = 1;
+
+  std::vector<Tau> real_taus;
+
+   for(unsigned int j=0; j<bcc->taus->size(); ++j)
+	{
+	  bool real = false;
+	  Tau tau = bcc->taus->at(j);
+	  for(unsigned int i=0; i<bcc->genparticles->size(); ++i)
+	    {
+	      GenParticle genp = bcc->genparticles->at(i);
+	      double deltaR = genp.deltaR(tau);
+	      if (deltaR < 0.5 && abs(genp.pdgId())==15) real = true;
+	    }
+	  if (real) real_taus.push_back(tau);    
+	}
+    for(unsigned int i=0; i<real_taus.size(); ++i)
+	{
+	  Tau tau = real_taus[i];
+	  if (!m_tau_eff_unc)
+	    {
+	      weight = 1.;
+	    }
+	  else
+	    {
+	      if (m_syst_shift==e_Down)
+		{
+		  weight = weight*0.94;	      
+		}
+	      if (m_syst_shift==e_Up)
+		{
+		  weight = weight*1.06;
+		}
+	    }
+	}
+    return weight;
+}
+
+
+
 
 double LeptonScaleFactors::GetElectronWeight()
 {

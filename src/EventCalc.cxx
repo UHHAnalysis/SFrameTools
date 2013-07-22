@@ -185,6 +185,17 @@ TTbarGen* EventCalc::GetTTbarGen(){
   return m_ttgen;
 }
 
+void EventCalc::ApplyTauEnergySmearing(double factor)
+{
+  using namespace std;
+  for(unsigned int i=0; i<m_bcc->taus->size(); ++i){
+    LorentzVector vec = m_bcc->taus->at(i).v4();    
+    LorentzVector svec;
+    svec.SetPxPyPzE(vec.px()*factor, vec.py()*factor, vec.pz()*factor, vec.e()*factor);
+    m_bcc->taus->at(i).set_v4(svec);
+  }
+
+}
 
 std::vector<LorentzVector> EventCalc::NeutrinoReconstruction(const LorentzVector lepton, const LorentzVector met){
 

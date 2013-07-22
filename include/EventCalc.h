@@ -143,6 +143,10 @@ class EventCalc
   /// get the event weight
   double GetWeight();
 
+  /// apply smearing of the tau energy to estimate uncertainty
+  void ApplyTauEnergySmearing(double factor);
+
+
  private:
 
   mutable SLogger m_logger;

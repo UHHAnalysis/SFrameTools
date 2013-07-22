@@ -71,6 +71,14 @@ public:
     void DoUpVarTauSF(bool f=true){m_tau_unc=true; m_syst_shift=e_Up;}
     void DoDownVarTauSF(bool f=true){m_tau_unc=true; m_syst_shift=e_Down;}
     
+    void DoUpVarTauEffSF(bool f=true){m_tau_eff_unc=true; m_syst_shift=e_Up;}
+    void DoDownVarTauEffSF(bool f=true){m_tau_eff_unc=true; m_syst_shift=e_Down;}
+        /// return the scale factor for the fake rate of medium taus
+    double GetTauWeight();
+
+    /// return the scale factor for the tau efficiency
+    double GetTauEffUnc();
+
 
 private:
     E_SystShift m_syst_shift;
@@ -79,7 +87,9 @@ private:
     bool m_muon_unc;                // do shift of muon scale factors 
     bool m_ele_unc;                 // do shift of electron scale factors 
     bool m_tau_unc;                 // do shift of tau scale factors 
-    int m_current_run;              // run for which the scale factors are valid
+    int m_current_run;              // run for which the scale factors are vali
+    bool m_tau_eff_unc;             // do shift of tau efficiency scale factors 
+    
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_id;    // two arrays: first index stands for eta bin, second for run period
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_trig;  // two arrays: first index stands for eta bin, second for run period
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_iso;   // two arrays: first index stands for eta bin, second for run period
