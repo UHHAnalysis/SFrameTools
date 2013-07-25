@@ -1,9 +1,8 @@
-
 #ifndef BaseCycleContainer_H
 #define BaseCycleContainer_H
 
-#include "Objects.h"
-#include "ReconstructionHypothesis.h"
+#include "SFrameTools/include/Objects.h"
+#include "SFrameTools/include/ReconstructionHypothesis.h"
 
 /**
  *  @short container that contains all objects of the actual event

@@ -4,8 +4,8 @@
 #include "TF1.h"
 #include <TGraphAsymmErrors.h>
 
-#include "include/Utils.h"
-#include "include/EventCalc.h"
+#include "SFrameTools/include/Utils.h"
+#include "SFrameTools/include/EventCalc.h"
 
 /**
  *  @short module to apply data-MC lepton scale factors for trigger and ID

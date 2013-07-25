@@ -3,10 +3,11 @@
 #define Selection_H
 
 #include <TString.h>
-#include "Objects.h"
-#include "BaseCycleContainer.h"
-#include "EventCalc.h"
-#include "../../core/include/SLogger.h"
+
+#include "SFrameTools/include/Objects.h"
+#include "SFrameTools/include/BaseCycleContainer.h"
+#include "SFrameTools/include/EventCalc.h"
+#include "core/include/SLogger.h"
 
 /**
  *  @short basic class for selection modules

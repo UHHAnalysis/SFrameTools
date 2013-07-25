@@ -1,4 +1,4 @@
-#include "../include/PUWeightProducer.h"
+#include "include/PUWeightProducer.h"
 
 
 PUWeightProducer::PUWeightProducer(TString filename_mc, TString filename_data, TString histname_mc, TString histname_data){

@@ -2,20 +2,15 @@
 #ifndef BaseHists_H
 #define BaseHists_H
 
-// STL include(s):
 #include <map>
 #include <string>
 
-// ROOT include(s):
 #include <TObject.h>
 #include <TString.h>
 #include <TList.h>
 
-// Local include(s):
-//#include "include/ISCycleBaseHist.h"
-#include "include/SCycleBase.h"
-//#include "include/SCycleBaseBase.h"
-#include "include/SError.h"
+#include "core/include/SCycleBase.h"
+#include "core/include/SError.h"
 
 // Forward declaration(s):
 class TDirectory;

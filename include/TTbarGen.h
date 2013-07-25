@@ -1,11 +1,9 @@
 #ifndef TTbarGen_H
 #define TTbarGen_H
 
-// Local include(s):
 #include "TLorentzVector.h"
-//#include "include/EventCalc.h"
-#include "Objects.h"
-#include "BaseCycleContainer.h"
+#include "SFrameTools/include/Objects.h"
+#include "SFrameTools/include/BaseCycleContainer.h"
 
 /**
  *   Class for ttbar generator truth information

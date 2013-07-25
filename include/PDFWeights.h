@@ -1,7 +1,8 @@
 #ifndef PDFWeights_H
 #define PDFWeights_H
 
-#include "EventCalc.h"
+#include "SFrameTools/include/EventCalc.h"
+
 #include "LHAPDF/LHAPDF.h"
 #include "TSystem.h"
 

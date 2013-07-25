@@ -3,9 +3,10 @@
 #define HypothesisStatistics_H
 
 #include <TString.h>
-#include "BaseCycleContainer.h"
-#include "../../core/include/SLogger.h"
-#include "include/ReconstructionHypothesis.h"
+#include "SFrameTools/include/BaseCycleContainer.h"
+#include "SFrameTools/include/ReconstructionHypothesis.h"
+#include "core/include/SLogger.h"
+
 
 
 /**

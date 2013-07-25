@@ -2,12 +2,13 @@
 #ifndef EventCalc_H
 #define EventCalc_H
 
-#include "SLogger.h"
+#include "core/include/SLogger.h"
+#include "SFrameTools/include/Utils.h"
+#include "SFrameTools/include/TTbarGen.h"
+#include "SFrameTools/include/LuminosityHandler.h"
+#include "SFrameTools/include/BaseCycleContainer.h"
+
 #include "TVector3.h"
-#include "Utils.h"
-#include "TTbarGen.h"
-#include "LuminosityHandler.h"
-#include "BaseCycleContainer.h"
 
 /**
  *  @short class for the calculation of basic event variables

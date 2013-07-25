@@ -1,6 +1,6 @@
 #include <iomanip>
 
-#include "../include/Selection.h"
+#include "include/Selection.h"
 
 Selection::Selection(std::string name):
   m_logger ( name.c_str() ){

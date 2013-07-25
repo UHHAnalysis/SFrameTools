@@ -4,8 +4,7 @@
 #ifndef BaseHists_ICC
 #define BaseHists_ICC
 
-// SFrame include(s):
-#include "SCycleBase.h"
+#include "core/include/SCycleBase.h"
 
 template< class T >
 T* BaseHists::Book( const T& histo ) throw( SError ) {

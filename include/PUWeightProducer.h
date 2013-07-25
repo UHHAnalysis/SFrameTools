@@ -1,9 +1,11 @@
 #ifndef PUWeightProducer_H
 #define PUWeightProducer_H
 
-#include "Objects.h"
-#include "BaseCycleContainer.h"
+#include "SFrameTools/include/Objects.h"
+#include "SFrameTools/include/BaseCycleContainer.h"
+
 #include <algorithm>
+
 #include "TH1.h"
 #include "TFile.h"
 

@@ -4,7 +4,7 @@
 #include <vector>
 #include "TObjArray.h"
 #include "TClonesArray.h"
-#include "../include/Objects.h"
+#include "SFrameTools/include/Objects.h"
 #include "fastjet/JetDefinition.hh"
 #include "fastjet/AreaDefinition.hh"
 #include "fastjet/ClusterSequenceArea.hh"

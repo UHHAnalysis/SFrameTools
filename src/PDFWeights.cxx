@@ -1,5 +1,4 @@
-#include "PDFWeights.h"
-
+#include "include/PDFWeights.h"
 
 PDFWeights::PDFWeights(E_SystShift syst_shift, TString pdfname, TString pdfweightdir) : m_logger( "PDFWeights" )
 {

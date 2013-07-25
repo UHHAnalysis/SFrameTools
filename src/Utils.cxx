@@ -1,5 +1,5 @@
 #include "include/Utils.h"
-#include "include/JetProps.h"
+#include "NtupleWriter/include/JetProps.h"
 
 #include <fastjet/JetDefinition.hh>
 #include <fastjet/PseudoJet.hh>
@@ -7,7 +7,7 @@
 #include <fastjet/ClusterSequenceArea.hh>
 #include <fastjet/GhostedAreaSpec.hh>
 namespace external {
-#include "../include/HEPTopTagger.h"
+#include "include/HEPTopTagger.h"
 }
 
 

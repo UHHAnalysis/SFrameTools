@@ -1,12 +1,13 @@
 #ifndef Utils_H
 #define Utils_H
 
-#include "Objects.h"
-#include "BaseCycleContainer.h"
+#include "SFrameTools/include/Objects.h"
+#include "SFrameTools/include/BaseCycleContainer.h"
+#include "SFrameTools/include/EventCalc.h"
+
 #include "TVector3.h"
 #include <limits>
 #include <algorithm>
-#include "EventCalc.h"
 
 typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > LorentzVectorXYZE;
 

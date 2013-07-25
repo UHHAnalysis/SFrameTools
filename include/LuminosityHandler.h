@@ -29,8 +29,8 @@
 #include "TRandom2.h"
 
 // Local include(s)
-#include "include/SLogger.h"
-#include "LuminosityUtils.h"
+#include "core/include/SLogger.h"
+#include "SFrameTools/include/LuminosityUtils.h"
 
 using namespace LuminosityUtils;
 

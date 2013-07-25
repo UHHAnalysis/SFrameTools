@@ -1,4 +1,4 @@
-#include "HypothesisDiscriminator.h"
+#include "include/HypothesisDiscriminator.h"
 
 HypothesisDiscriminator::HypothesisDiscriminator(std::string label_name):  m_logger ( "HypothesisDiscriminator" ){
 

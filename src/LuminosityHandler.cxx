@@ -12,9 +12,7 @@
 **********************************************************************************/
 #include <cstdlib>
 
-// Local include(s):
 #include "include/LuminosityHandler.h"
-//#include "GoodRunsLists/include/TGoodRunsListReader.h"
 
 ClassImp(LuminosityHandler)
 

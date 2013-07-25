@@ -1,12 +1,11 @@
 #ifndef HypothesisDiscriminator_H
 #define HypothesisDiscriminator_H
 
-#include "BaseCycleContainer.h"
-#include "EventCalc.h"
-#include "Utils.h"
-#include "ReconstructionHypothesis.h"
-#include "EventCalc.h"
-#include "TTbarGen.h"
+#include "SFrameTools/include/BaseCycleContainer.h"
+#include "SFrameTools/include/EventCalc.h"
+#include "SFrameTools/include/Utils.h"
+#include "SFrameTools/include/ReconstructionHypothesis.h"
+#include "SFrameTools/include/TTbarGen.h"
 
 /**
  *  @short basic class to select a reconstruction hypothesis with a certain discriminator value

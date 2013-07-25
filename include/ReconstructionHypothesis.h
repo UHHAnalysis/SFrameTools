@@ -1,7 +1,7 @@
 #ifndef ReconstructionHypothesis_H
 #define ReconstructionHypothesis_H
 
-#include "Objects.h"
+#include "SFrameTools/include/Objects.h"
 
 struct qualityflag{
   std::string label;
