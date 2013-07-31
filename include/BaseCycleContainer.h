@@ -51,6 +51,33 @@ struct BaseCycleContainer{
 
   std::vector< ReconstructionHypothesis >* recoHyps;
   
+  
+  void reset(){
+      run = luminosityBlock = event = -1;
+      rho = beamspot_x0 = beamspot_y0 = beamspot_z0 = NAN;
+      electrons = 0;
+      muons = 0;
+      taus = 0;
+      photons = 0;
+      pvs = 0;
+      jets = 0;
+      topjets = 0;
+      topjetsgen = 0;
+      prunedjets = 0;
+      genparticles = 0;
+      pfparticles = 0;
+      genjets = 0;
+      met = 0;
+      genInfo = 0;
+      triggerNames = 0;
+      triggerResults = 0;
+      triggerNames_actualrun.clear();
+      recoHyps = 0;
+  }
+  
+  BaseCycleContainer(){
+      reset();
+  }  
 };
 
 
