@@ -9,7 +9,7 @@
 namespace external {
 #include "include/HEPTopTagger.h"
 }
-
+#include "SFrameTools/include/EventCalc.h"
 
 
 //subjet b-tagger, returns number of b-tagged subjets

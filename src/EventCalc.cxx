@@ -341,6 +341,19 @@ void EventCalc::FillHighMassTTbarHypotheses(){
 }
 
 
+std::vector< PFParticle > EventCalc::GetJetPFParticles(Jet* jet){
+
+  std::vector<PFParticle>* pfps = GetPFParticles();
+  std::vector<unsigned int> jet_parts_ind = jet->pfconstituents_indices();
+  
+  std::vector<PFParticle> jetparticles;
+  for(unsigned int ic=0; ic<jet_parts_ind.size(); ++ic){
+    PFParticle p = pfps->at(jet_parts_ind[ic]);
+    jetparticles.push_back(p);
+  }
+  return jetparticles;
+}
+
 std::vector< PFParticle >* EventCalc::GetJetPFParticles(){
   if(b_jetparticles) return &m_jetparticles;
 
@@ -380,6 +393,68 @@ std::vector< PFParticle >* EventCalc::GetPUIsoPFParticles(){
   return &m_puisoparticles;
 }
 
+double EventCalc::IntegratedJetShape(Jet* jet, double rmax, double rmin, E_JetType type ){
+
+  double R = 0;
+  if (type == e_CA8) R=0.8;
+  else if (type == e_CA15) R=1.5; 
+  else if (type == e_AK5) R=0.5;
+  else {
+    m_logger << ERROR << "EventCalc::IntegratedJetShape: can not determine radius for this type of jet, return Psi=-1" << SLogger::endmsg;
+    return -1;
+  }
+
+  std::vector<PFParticle> pfps = GetJetPFParticles(jet);
+
+  double pt_tot=0;
+  double pt_frac=0;
+
+  for(unsigned int i=0; i< pfps.size(); i++){
+    if( pfps[i].deltaR(*jet) >= rmin && pfps[i].deltaR(*jet) <= rmax) pt_frac += pfps[i].pt();
+    if( pfps[i].deltaR(*jet) >= rmin && pfps[i].deltaR(*jet) <= R) pt_tot += pfps[i].pt(); 
+  }
+  
+  double psi=0;
+  if(pt_tot>0) psi=pt_frac/pt_tot;
+  return psi;
+}
+
+double EventCalc::JetCharge(Jet* jet){
+
+  double charge = 0;
+
+  std::vector<PFParticle> pfps = GetJetPFParticles(jet);
+  for(unsigned int i=0; i< pfps.size(); i++){
+    charge += pfps[i].charge();
+  }
+  return charge;
+}
+
+double EventCalc::EnergyWeightedJetCharge(Jet* jet, double kappa){
+
+  double Q = 0;
+  std::vector<PFParticle> pfps = GetJetPFParticles(jet);
+  for(unsigned int i=0; i< pfps.size(); i++){
+    Q += pfps[i].charge() * pow(pfps[i].energy(),kappa);
+  }
+  
+  LorentzVector jet_v4_raw = jet->v4()*jet->JEC_factor_raw();
+  double E_jet = jet_v4_raw.E();
+  Q*= 1/pow(E_jet, kappa);
+  return Q;
+}
+
+double EventCalc::JetMoment(Jet* jet, int n){
+  
+  double moment = 0;
+  std::vector<PFParticle> pfps = GetJetPFParticles(jet);
+  for(unsigned int i=0; i< pfps.size(); i++){
+    moment += pow(jet->deltaR(pfps[i]),n);
+  }
+  
+  if(pfps.size()!=0) moment /= 1.*pfps.size();
+  return moment;
+}
 
 void EventCalc::PrintEventContent(){
 

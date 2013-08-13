@@ -58,8 +58,10 @@ class EventCalc
   /// returns all stored PF particles independently of their origin (to be used with care!)
   std::vector< PFParticle >* GetPFParticles() {return (m_bcc ? m_bcc->pfparticles : NULL);}
 
-  /// PF particles clustered to a top-jet
+  /// PF particles clustered to all (top-)jets
   std::vector< PFParticle >* GetJetPFParticles();
+  /// PF particles clustered to a specific jet
+  std::vector< PFParticle > GetJetPFParticles( Jet* topjet);
   /// PF particles used to calculate lepton isolation
   std::vector< PFParticle >* GetIsoPFParticles();
   /// PF particles used to calculate pile-up contribution to lepton isolation
@@ -146,6 +148,24 @@ class EventCalc
 
   /// apply smearing of the tau energy to estimate uncertainty
   void ApplyTauEnergySmearing(double factor);
+
+  /** @short integrated jet shape variable psi
+   *
+   * Psi = pT(rmin,rmax)/pT(rmin,R)
+   *
+   * R = jet radius, determined from jet type argument 
+   * pT(r1,r2) = summed transverse momenta of all jet constituents between r1 and r2
+   */
+  double IntegratedJetShape(Jet* jet, double rmax, double rmin, E_JetType type );
+
+  /// Jet charge, defined as summed charges of the PF constituents
+  double JetCharge(Jet* jet);
+
+  ///energy weighted jet charge, (1/Ejet * sum_j q_j*E_j^kappa), kappa to be chosen between ~0.2 and 1
+  double EnergyWeightedJetCharge(Jet* jet, double kappa=1.);
+
+  ///first jet moment <R^n>, where R_j is the distance of particle j to the jet axis
+  double JetMoment(Jet* jet, int n=1);
 
 
  private:

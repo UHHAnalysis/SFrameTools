@@ -3,7 +3,6 @@
 
 #include "SFrameTools/include/Objects.h"
 #include "SFrameTools/include/BaseCycleContainer.h"
-#include "SFrameTools/include/EventCalc.h"
 
 #include "TVector3.h"
 #include <limits>
@@ -69,6 +68,16 @@ enum E_EventFlavor {
     e_BFlavor, 
     e_CFlavor, 
     e_LFlavor
+};
+
+/**
+ * list of possible jet types, needed to determine the jet radius in jet shape function
+ * @see EventCalc::IntegratedJetShape
+*/
+enum E_JetType {
+    e_CA8, 
+    e_CA15, 
+    e_AK5
 };
 
 
