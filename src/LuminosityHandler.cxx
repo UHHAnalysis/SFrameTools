@@ -148,7 +148,9 @@ bool LuminosityHandler::Initialise()
 
       m_mapIntLumiRunNr.insert( make_pair( m_targetLumi, runNr_help) );
       lumifile->Close();
-     
+      delete hltpath_pointer;
+      delete lumifile;
+
       m_logger << INFO << m_targetLumi << " (pb-1) found in luminosity file: " << m_lumiFileName << SLogger::endmsg;
       
       // divide target lumi in equally large lumi bins
