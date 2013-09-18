@@ -8,7 +8,6 @@ INCDIR  = include
 # configure FastJet
 INCLUDES += -I$(FASTJETDIR)/../include
 
-USERLDFLAGS += $(ROOTLIBS) -lMinuit 
 USERCXXFLAGS := -g
 
 #INCLUDES += -I$(LHAPDFDIR)/include

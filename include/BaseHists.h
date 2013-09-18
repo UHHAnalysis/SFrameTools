@@ -32,25 +32,21 @@ class TList;
  */
 
 class BaseHists : public SCycleBase {
-
-
 public:
-   /// Named constructor
-   BaseHists(const char* name);
+   explicit BaseHists(const char* name);
 
-   /// Default destructor
-   ~BaseHists();
+   virtual ~BaseHists();
 
    virtual void Init() = 0;
 
    virtual void Fill() = 0;
 
-   virtual void Finish() = 0;
+   virtual void Finish(){}
 
    double* MakeLogBinning(int n_bins, double xmin, double xmax);
 
    TString GetName() {return m_name;}
-   void SetName(TString name) {m_name = name;}
+   void SetName(const TString & name) {m_name = name;}
 
   // class has to inherit from SCycleBase to have access to histogram functionality in SFrame
   // implement virtual routines but throw exception in case they are called 
@@ -80,16 +76,13 @@ private:
    BaseHists(){}
 
    TString m_name;
-
-
 }; // class BaseHists
+
 
 // Don't include the templated function(s) when we're generating
 // a dictionary:
 #ifndef __CINT__
 #include "BaseHists.icc"
 #endif
-
-
 
 #endif // BaseHists_H
