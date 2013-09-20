@@ -18,7 +18,8 @@
 #pragma link C++ class BaseHists+;
 #pragma link C++ class LuminosityHandler+;
 #pragma link C++ struct BaseCycleContainer+;
-#pragma link C++ struct Selection+;
+//#pragma link C++ struct Selection+;
+#pragma link C++ class AnalysisModuleRunner+;
 #pragma link C++ struct PUWeightProducer+;
 #pragma link C++ class BaseHists+;
 #pragma link C++ class LeptonScaleFactors+;

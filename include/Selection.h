@@ -12,18 +12,26 @@
 /**
  *  @short basic class for selection modules
  *  @author Thomas Peiffer
+ * 
+ * New classes chould implement pass(EventCalc &), the pass(BaseCycleContainer*) is only kept
+ * for backward compatibility.
  */
-
 class SelectionModule{
- public:
-  //Default constructor
-  SelectionModule(){};
-  //Default destructor
-  virtual ~SelectionModule(){};
+public:
+   virtual ~SelectionModule(){}
+  
+   // return whether or not the event passes the selection
+   virtual bool pass(BaseCycleContainer*) {
+       assert(false);
+   }
    
-  virtual bool pass(BaseCycleContainer*)=0;
-  virtual std::string description()=0;
+   // please override this for new classes. The default implementation
+   // provided here is for backwards-compatibility and calls the BaseCycleContainer* variant
+   virtual bool pass(EventCalc & event);
+   
+   virtual std::string description() = 0;
 };
+
 
 /**
  *  @short basic class for a selection
@@ -36,12 +44,8 @@ class SelectionModule{
 
 class Selection{
  public:
-  
-  //Selection(){};
   /// Default constructor
-  Selection(std::string name);
-  /// Default destructor
-  ~Selection(){};
+  Selection(const std::string & name);
   
   /// add a new SelectionModule to the event selection
   void addSelectionModule(SelectionModule*);

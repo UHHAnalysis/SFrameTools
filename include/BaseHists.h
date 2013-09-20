@@ -11,6 +11,7 @@
 
 #include "core/include/SCycleBase.h"
 #include "core/include/SError.h"
+#include "SFrameTools/include/Utils.h"
 
 // Forward declaration(s):
 class TDirectory;
@@ -41,9 +42,13 @@ public:
 
    virtual void Fill() = 0;
 
+   // This is called at the end of the histograms. IMPORTANT: it's best not to use this method, since
+   // it's called on each proof worker node (in proof node), and thus things like taking ratios of histograms
+   // might work in local mode, but do not make sense in proof mode, as the divided histograms are combined
+   // by adding them ...
    virtual void Finish(){}
 
-   double* MakeLogBinning(int n_bins, double xmin, double xmax);
+   double* MakeLogBinning(int n_bins, double xmin, double xmax);// DEPRECATED_MSG("use log_binning in Utils.h instead");
 
    TString GetName() {return m_name;}
    void SetName(const TString & name) {m_name = name;}

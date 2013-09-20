@@ -2,11 +2,24 @@
 #define Utils_H
 
 #include "SFrameTools/include/Objects.h"
-#include "SFrameTools/include/BaseCycleContainer.h"
+#include "SFrameTools/include/fwd.h"
 
 #include "TVector3.h"
 #include <limits>
 #include <algorithm>
+#include <memory>
+
+#define DEPRECATED __attribute__ ((deprecated))
+#define DEPRECATED_MSG(msg) __attribute__ ((deprecated(msg)))
+
+#ifndef __CINT__
+
+template<typename T, typename ...Args>
+inline std::unique_ptr<T> make_unique(Args&& ...args){
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)... ));
+}
+
+#endif
 
 typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > LorentzVectorXYZE;
 
@@ -80,6 +93,32 @@ enum E_JetType {
     e_AK5
 };
 
+/** \brief Format information in a table.
+ * 
+ */
+class TableOutput{
+public:
+    
+    /// construct, setting the column headings. Note that this defines now and for always the number of columns.
+    explicit TableOutput(std::vector<std::string> header);
+    
+    /// Append a row to the end of the table; the number of columns must match the one defined at the time of construction
+    void add_row(std::vector<std::string> row);
+    
+    /// print the table to the supplied stream.
+    void print(std::ostream & out);
+    
+private:
+    
+    size_t ncols;
+    std::vector<std::string> header;
+    std::vector<std::vector<std::string>> rows;
+};
+
+
+// make a logarithmic binning. The resulting array conatins n_bins+1 entries with the lower and upper
+// end of n_bins bins, suitable for passing it to the TH1 constructor.
+std::unique_ptr<double[]> log_binning(size_t n_bins, double xmin, double xmax);
 
 int subJetBTag(TopJet topjet, E_BtagType type);
 
@@ -111,8 +150,10 @@ bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, do
  */
 bool WTag(TopJet prunedjet, double& mjet, int &nsubjets, double& massdrop);
 
-/// relative isolation of a muon in a variable cone radius deltaR
-float relIsoMuon( Muon mu, float deltaR = 0.4);
+float relIsoMuon(const Muon & mu, float deltaR = 0.4); //DEPRECATED_MSG("use the version with EventCalc argument");
+
+/// re-calculate the PF relative isolation of a muon in a cone radius deltaR, using the PFCandidates in event
+float relIsoMuon(EventCalc & event, const Muon & mu, float deltaR = 0.4);
 
 //double HTlep(const BaseCycleContainer *bcc); ->moved to EventCalc
 

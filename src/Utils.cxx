@@ -11,9 +11,23 @@ namespace external {
 }
 #include "SFrameTools/include/EventCalc.h"
 
+using namespace std;
+
+
+std::unique_ptr<double[]> log_binning(size_t n_bins, double xmin, double xmax){
+    assert(xmin > 0 && xmin < xmax);
+    std::unique_ptr<double[]> result(new double[n_bins + 1]);
+    
+    // equidistant binning og log-scale means always use the same ratio between bin borders:
+    double ratio = pow(xmax / xmin, 1.0 / n_bins);
+    result[0] = xmin;
+    for(size_t i=1;i <= n_bins; ++i){
+        result[i] = ratio * result[i-1];
+    }
+    return result;
+}
 
 //subjet b-tagger, returns number of b-tagged subjets
-
 int subJetBTag(TopJet topjet, E_BtagType type){
   int nBTagsSub = 0;
   float discriminator_cut;
@@ -346,33 +360,33 @@ bool WTag(TopJet prunedjet,  double& mjet, int &nsubjets, double& massdrop)
 
 }
 
-float relIsoMuon( Muon mu, float deltaR ){
+float relIsoMuon(EventCalc & event, const Muon & mu, float deltaR){
   float chargedHadronIso=0;
   float neutralHadronIso=0;
   float photonIso=0;
   float puiso=0;
 
-  EventCalc* calc = EventCalc::Instance();
-
-  unsigned int npfp=calc->GetIsoPFParticles()->size();
-  for(unsigned int j=0; j<npfp; ++j){
-    PFParticle pfp = calc->GetIsoPFParticles()->at(j);
-    if(pfp.deltaR(mu)<deltaR ){
-      if(pfp.particleID() == PFParticle::eH && pfp.pt()>0.0 && pfp.deltaR(mu)>0.0001 ) chargedHadronIso += pfp.pt();
-      if(pfp.particleID() == PFParticle::eH0 && pfp.pt()>0.5 && pfp.deltaR(mu)>0.01) neutralHadronIso += pfp.pt();
-      if(pfp.particleID() == PFParticle::eGamma && pfp.pt()>0.5 && pfp.deltaR(mu)>0.01) photonIso += pfp.pt();
-    }
+  for(PFParticle & pfp : *event.GetIsoPFParticles()){
+      auto dr = pfp.deltaR(mu);
+      if(dr < deltaR){
+         if(pfp.particleID() == PFParticle::eH && pfp.pt()>0.0 && dr > 0.0001 ) chargedHadronIso += pfp.pt();
+         if(pfp.particleID() == PFParticle::eH0 && pfp.pt()>0.5 && dr > 0.01) neutralHadronIso += pfp.pt();
+         if(pfp.particleID() == PFParticle::eGamma && pfp.pt()>0.5 && dr > 0.01) photonIso += pfp.pt();
+      }
   }
   
-  unsigned int npfppu=calc->GetPUIsoPFParticles()->size();
-  for(unsigned int j=0; j<npfppu; ++j){
-    PFParticle pfp = calc->GetPUIsoPFParticles()->at(j);
-    if(pfp.deltaR(mu)<deltaR ){
-      if(pfp.particleID() == PFParticle::eH && pfp.pt()>0.5 && pfp.deltaR(mu)>0.01 ) puiso += pfp.pt();
+  for(PFParticle & pfp : *event.GetPUIsoPFParticles()){
+    auto dr = pfp.deltaR(mu);
+    if(dr<deltaR ){
+      if(pfp.particleID() == PFParticle::eH && pfp.pt()>0.5 && dr>0.01 ) puiso += pfp.pt();
     }
   }
   
   return (chargedHadronIso + std::max( 0.0, neutralHadronIso + photonIso - 0.5*puiso))/mu.pt();
+}
+
+float relIsoMuon(const Muon & mu, float deltaR ){
+     return relIsoMuon(*EventCalc::Instance(), mu, deltaR);
 }
 
 double pTrel(const Particle *p, std::vector<Jet> *jets)
@@ -472,38 +486,84 @@ int myPow(int x, unsigned int p)
     return i;
 }
 
-double pTrel( Particle p1, Particle p2)
-{
- 
-  double ptrel=0;
-  
+
+double pTrel(const Particle & p1, const Particle & p2){
   TVector3 p3(p1.v4().Px(),p1.v4().Py(),p1.v4().Pz());
   TVector3 p4(p2.v4().Px(),p2.v4().Py(),p2.v4().Pz());
   
   if(p3.Mag()!=0 && p4.Mag()!=0) {
     double sin_alpha = (p3.Cross(p4)).Mag()/p3.Mag()/p4.Mag();
-    ptrel = p3.Mag()*sin_alpha;
+    return p3.Mag()*sin_alpha;
   } else {
-    std::cout << "something strange happend in the ptrel calculation: either lepton or jet momentum is 0" <<std::endl;
+    throw runtime_error("pTrel: something strange happend in the ptrel calculation: either lepton or jet momentum is 0");
   }
- 
-  return ptrel;
 }
  
-double pTrel( LorentzVector p1, LorentzVector p2)
-{
-  
-  double ptrel=0;
-  
+double pTrel(const LorentzVector & p1, const LorentzVector & p2){
   TVector3 p3(p1.Px(),p1.Py(),p1.Pz());
   TVector3 p4(p2.Px(),p2.Py(),p2.Pz());
   
   if(p3.Mag()!=0 && p4.Mag()!=0) {
     double sin_alpha = (p3.Cross(p4)).Mag()/p3.Mag()/p4.Mag();
-    ptrel = p3.Mag()*sin_alpha;
+    return p3.Mag()*sin_alpha;
   } else {
-    std::cout << "something strange happend in the ptrel calculation: either lepton or jet momentum is 0" <<std::endl;
+    throw runtime_error("something strange happend in the ptrel calculation: either lepton or jet momentum is 0");
   }
-  
-  return ptrel;
 }
+
+TableOutput::TableOutput(vector<std::string> header_): ncols(header_.size()), header(std::move(header_)){
+}
+
+void TableOutput::print(ostream & out){
+    const string sep = " | ";
+    // calculate column sizes, given by maximum entry:
+    vector<size_t> colsize(ncols, 0);
+    for(size_t i=0; i<ncols; ++i){
+        colsize[i] = header[i].size();
+    }
+    for(auto & row: rows){
+        for(size_t i=0; i<ncols; ++i){
+            colsize[i] = max(colsize[i], row[i].size());
+        }
+    }
+    size_t total_width = 0;
+    for(size_t i=0; i<ncols; ++i){
+        total_width += sep.size() + colsize[i];
+    }
+    total_width += sep.size();
+    
+    // output helpers for a horizontal line and for a single row:
+    auto hline = [&](){
+            out << " ";
+            for(size_t i=1; i+1<total_width; ++i){
+                out << "-";
+            }
+            out << endl;};
+    auto out_row = [&](const vector<string> & row){
+        for(size_t i=0; i<ncols; ++i){
+            out << sep << row[i];
+            size_t nfill = colsize[i] - row[i].size();
+            for(size_t j=0; j<nfill; ++j){
+                out << " ";
+            }
+        }
+        out << sep << endl;
+    };
+
+    // output table:
+    hline();
+    out_row(header);
+    hline();
+    for(auto & row : rows){
+        out_row(row);
+    }
+    hline();
+}
+
+// entries.size() == ncols must hold
+void TableOutput::add_row(vector<string> row){
+    assert(ncols == row.size());
+    rows.push_back(std::move(row));
+}
+
+
