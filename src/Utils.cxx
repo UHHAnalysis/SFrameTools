@@ -472,3 +472,38 @@ int myPow(int x, unsigned int p)
     return i;
 }
 
+double pTrel( Particle p1, Particle p2)
+{
+ 
+  double ptrel=0;
+  
+  TVector3 p3(p1.v4().Px(),p1.v4().Py(),p1.v4().Pz());
+  TVector3 p4(p2.v4().Px(),p2.v4().Py(),p2.v4().Pz());
+  
+  if(p3.Mag()!=0 && p4.Mag()!=0) {
+    double sin_alpha = (p3.Cross(p4)).Mag()/p3.Mag()/p4.Mag();
+    ptrel = p3.Mag()*sin_alpha;
+  } else {
+    std::cout << "something strange happend in the ptrel calculation: either lepton or jet momentum is 0" <<std::endl;
+  }
+ 
+  return ptrel;
+}
+ 
+double pTrel( LorentzVector p1, LorentzVector p2)
+{
+  
+  double ptrel=0;
+  
+  TVector3 p3(p1.Px(),p1.Py(),p1.Pz());
+  TVector3 p4(p2.Px(),p2.Py(),p2.Pz());
+  
+  if(p3.Mag()!=0 && p4.Mag()!=0) {
+    double sin_alpha = (p3.Cross(p4)).Mag()/p3.Mag()/p4.Mag();
+    ptrel = p3.Mag()*sin_alpha;
+  } else {
+    std::cout << "something strange happend in the ptrel calculation: either lepton or jet momentum is 0" <<std::endl;
+  }
+  
+  return ptrel;
+}

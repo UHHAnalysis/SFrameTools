@@ -143,4 +143,11 @@ int int_infinity();
 /// x^p
 int myPow(int x, unsigned int p) ;
 
+//overload
+double pTrel(const Particle & p1, const Particle & p2);
+double pTrel(const LorentzVector & p1,const LorentzVector & p2);
+
+
+
+
 #endif
