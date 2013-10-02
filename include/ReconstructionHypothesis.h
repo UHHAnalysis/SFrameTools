@@ -28,6 +28,7 @@ class ReconstructionHypothesis{
     m_lepton.set_v4(v4);
     m_lepton.set_charge(0);
     m_qualityflags.clear();
+    m_blep_v4=v4;
   };
   ~ReconstructionHypothesis(){};
 
@@ -40,6 +41,7 @@ class ReconstructionHypothesis{
   LorentzVector top_v4() const{ return m_lepton.charge() > 0 ? m_toplep_v4 : m_tophad_v4;}
   LorentzVector antitop_v4() const{ return m_lepton.charge() < 0 ? m_toplep_v4 : m_tophad_v4;}
   LorentzVector wlep_v4() const{ return m_neutrino_v4+m_lepton.v4();}
+  LorentzVector blep_v4() const{return m_blep_v4;}
   int blep_index() const{ return m_blep_ind;}
 
   /// get the discriminator value for this hypothesis
@@ -56,7 +58,8 @@ class ReconstructionHypothesis{
     if(!found) std::cerr << "WARNING: discriminator with label " << l << " not found in hypothesis, return 0." <<std::endl;
     return discr;
   }
-
+  
+  void set_blep_v4(LorentzVector v4){m_blep_v4=v4;}
   void set_toplep_v4(LorentzVector v4){m_toplep_v4=v4;}
   void set_tophad_v4(LorentzVector v4){m_tophad_v4=v4;} 
   void set_neutrino_v4(LorentzVector v4){m_neutrino_v4=v4;}
@@ -87,6 +90,7 @@ class ReconstructionHypothesis{
 
  private:
 
+  LorentzVector m_blep_v4;
   LorentzVector m_toplep_v4;
   LorentzVector m_tophad_v4;
   LorentzVector m_neutrino_v4;

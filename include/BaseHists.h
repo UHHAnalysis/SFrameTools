@@ -11,6 +11,7 @@
 
 #include "core/include/SCycleBase.h"
 #include "core/include/SError.h"
+#include "SFrameTools/include/Utils.h"
 
 // Forward declaration(s):
 class TDirectory;
@@ -32,25 +33,25 @@ class TList;
  */
 
 class BaseHists : public SCycleBase {
-
-
 public:
-   /// Named constructor
-   BaseHists(const char* name);
+   explicit BaseHists(const char* name);
 
-   /// Default destructor
-   ~BaseHists();
+   virtual ~BaseHists();
 
    virtual void Init() = 0;
 
    virtual void Fill() = 0;
 
-   virtual void Finish() = 0;
+   // This is called at the end of the histograms. IMPORTANT: it's best not to use this method, since
+   // it's called on each proof worker node (in proof node), and thus things like taking ratios of histograms
+   // might work in local mode, but do not make sense in proof mode, as the divided histograms are combined
+   // by adding them ...
+   virtual void Finish(){}
 
-   double* MakeLogBinning(int n_bins, double xmin, double xmax);
+   double* MakeLogBinning(int n_bins, double xmin, double xmax);// DEPRECATED_MSG("use log_binning in Utils.h instead");
 
    TString GetName() {return m_name;}
-   void SetName(TString name) {m_name = name;}
+   void SetName(const TString & name) {m_name = name;}
 
   // class has to inherit from SCycleBase to have access to histogram functionality in SFrame
   // implement virtual routines but throw exception in case they are called 
@@ -80,16 +81,13 @@ private:
    BaseHists(){}
 
    TString m_name;
-
-
 }; // class BaseHists
+
 
 // Don't include the templated function(s) when we're generating
 // a dictionary:
 #ifndef __CINT__
 #include "BaseHists.icc"
 #endif
-
-
 
 #endif // BaseHists_H

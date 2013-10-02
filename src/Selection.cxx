@@ -2,8 +2,12 @@
 
 #include "include/Selection.h"
 
-Selection::Selection(std::string name):
-  m_logger ( name.c_str() ){
+bool SelectionModule::pass(EventCalc & event){
+    BaseCycleContainer* bcc = event.GetBaseCycleContainer();
+    return pass(bcc);
+}
+
+Selection::Selection(const std::string & name): m_logger ( name.c_str() ){
 
   m_name = name.c_str();
   clearSelectionModulesList();
@@ -31,13 +35,9 @@ void Selection::clearSelectionModulesList(){
 }
 
 bool Selection::passSelection(BaseCycleContainer *bcc){
-
   if (!m_isactive) return true; // always true if the selection is not active
-
   Ntotal++;
-  if(m_cuts.size()!=m_cutflow.size()){
-    m_logger << WARNING << "size of cut list != number of entries in cut flow table "<< SLogger::endmsg;
-  }
+  assert(m_cuts.size()==m_cutflow.size());
   for(unsigned int i=0; i<m_cuts.size(); ++i){
     if(!m_cuts[i]->pass(bcc)) return false;
     m_cutflow[i]++;

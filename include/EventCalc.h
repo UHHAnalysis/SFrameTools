@@ -4,6 +4,7 @@
 
 #include "core/include/SLogger.h"
 #include "SFrameTools/include/Utils.h"
+#include "SFrameTools/include/identifier.h"
 #include "SFrameTools/include/TTbarGen.h"
 #include "SFrameTools/include/LuminosityHandler.h"
 #include "SFrameTools/include/BaseCycleContainer.h"
@@ -167,6 +168,15 @@ class EventCalc
   ///first jet moment <R^n>, where R_j is the distance of particle j to the jet axis
   double JetMoment(Jet* jet, int n=1);
 
+  bool selection_passed(const identifier & selid) const{
+      auto it = selections.find(selid);
+      if(it!=selections.end()) return it->second;
+      throw std::runtime_error("did not find selection result for '" + selid.name() + "'");
+  }
+  
+  void set_selection_passed(const identifier & selid, bool passed){
+      selections[selid] = passed;
+  }
 
  private:
 
@@ -198,7 +208,8 @@ class EventCalc
   std::vector<PFParticle> m_jetparticles;
   std::vector<PFParticle> m_isoparticles;
   std::vector<PFParticle> m_puisoparticles;
-
+  
+  std::map<identifier, bool> selections;
 };
 
 

@@ -53,6 +53,7 @@ void EventCalc::Reset()
   b_jetparticles = false;
   b_isoparticles = false;
   b_puisoparticles = false;
+  selections.clear();
 
 
   m_TotalWeight = 1.;
@@ -60,7 +61,6 @@ void EventCalc::Reset()
   m_primlep = NULL;
   delete m_ttgen;
   m_ttgen = NULL;
-
 }
 
 void EventCalc::SetBaseCycleContainer(BaseCycleContainer* bcc)
@@ -90,7 +90,7 @@ LuminosityHandler* EventCalc::GetLumiHandler()
 {
   // return the pointer to the container with all objects
   if (!m_lumi){
-    m_logger << WARNING << "Pointer to LumiHandler is NULL." << SLogger::endmsg;
+    m_logger << DEBUG << "Pointer to LumiHandler is NULL." << SLogger::endmsg;
   }
   return m_lumi;
 }
