@@ -107,52 +107,25 @@ void LeptonScaleFactors::FillWeights()
 	for (int etabin=0; etabin<3; ++etabin){
 	  
 	  TString eta_name = TString::Format("eta%d", etabin);
-
-	  //non isolated muons
-	  if(m_correctionlist[i].first == "MuonRunA") {
-            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012A/SF_" + eta_name + "_TRIG_Mu40"));
-            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012A/SF_" + eta_name + "_ID_tight"));
+	  
+ 	  //non isolated muons
+ 	  if(m_correctionlist[i].first == "MuonRunABCD") {
+ 	    m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012ABCD/SF_" + eta_name + "_TRIG_Mu40"));
+ 	    m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012ABCD/SF_" + eta_name + "_ID_tight"));
+ 	    isok = true;
+ 	  }
+	  
+	   //isolated muons
+	  else if(m_correctionlist[i].first == "IsoMuonRunABCD") {
+	    m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012ABCD/SF_" + eta_name + "_TRIG_IsoMu24"));
+	    m_mu_iso[etabin].push_back((TGraphAsymmErrors*) file->Get("2012ABCD/SF_" + eta_name + "_ISO_tight"));
+	    m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012ABCD/SF_" + eta_name + "_ID_tight"));
 	    isok = true;
-	  } else if (m_correctionlist[i].first == "MuonRunB") {
-            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012B/SF_" + eta_name + "_TRIG_Mu40"));
-            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012B/SF_" + eta_name + "_ID_tight"));
-	    isok = true;
-	  } else if (m_correctionlist[i].first == "MuonRunC") {
-            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012C/SF_" + eta_name + "_TRIG_Mu40"));
-            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012C/SF_" + eta_name + "_ID_tight"));
-	    isok = true;
-	  } else if (m_correctionlist[i].first == "MuonRunD") {
-            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012D/SF_" + eta_name + "_TRIG_Mu40"));
-            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012D/SF_" + eta_name + "_ID_tight"));	    
-	    isok = true;
-	  }
-	  //isolated muons
-	  else if(m_correctionlist[i].first == "IsoMuonRunA") {
-            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012A/SF_" + eta_name + "_TRIG_IsoMu24"));
-            m_mu_iso[etabin].push_back((TGraphAsymmErrors*) file->Get("2012A/SF_" + eta_name + "_ISO_tight"));
-            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012A/SF_" + eta_name + "_ID_tight"));
-	    isok = true;
-	  } else if (m_correctionlist[i].first == "IsoMuonRunB") {
-            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012B/SF_" + eta_name + "_TRIG_IsoMu24"));
-            m_mu_iso[etabin].push_back((TGraphAsymmErrors*) file->Get("2012B/SF_" + eta_name + "_ISO_tight"));
-            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012B/SF_" + eta_name + "_ID_tight"));
-	    isok = true;
-	  } else if (m_correctionlist[i].first == "IsoMuonRunC") {
-            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012C/SF_" + eta_name + "_TRIG_IsoMu24"));
-            m_mu_iso[etabin].push_back((TGraphAsymmErrors*) file->Get("2012C/SF_" + eta_name + "_ISO_tight"));
-            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012C/SF_" + eta_name + "_ID_tight"));
-	    isok = true;	  
-	  } else if (m_correctionlist[i].first == "IsoMuonRunD") {
-            m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012D/SF_" + eta_name + "_TRIG_IsoMu24"));
-            m_mu_iso[etabin].push_back((TGraphAsymmErrors*) file->Get("2012D/SF_" + eta_name + "_ISO_tight"));
-            m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012D/SF_" + eta_name + "_ID_tight"));
-	    isok = true;
-	  }
-
+ 	  }
 	}
 	
 	// ----------------- electrons ------------------
-
+	
 	//trigger efficiency for electron trigger HLT_Ele30_CaloIdVT_TrkIdT_PFNoPUJet100_PFNoPUJet25_v*
 	if (m_correctionlist[i].first == "HLT_Ele30") {
 	  m_ele_trig[0] = Ele30_Trig_RelIso_Par[0];
@@ -368,33 +341,48 @@ double LeptonScaleFactors::GetTauWeight()
 	  if (fake) fake_taus.push_back(tau);    
 
 	}
-   static double av=0;
-    for(unsigned int i=0; i<fake_taus.size(); ++i)
+   for(unsigned int i=0; i<fake_taus.size(); ++i)
 	{
 	  Tau tau = fake_taus[i];
-	  if (!m_tau_unc)
+	  for(unsigned int i=0; i<bcc->genparticles->size(); ++i)
 	    {
-	      if (tau.pt() < 120) weight = weight*1.24047;
-	      if (tau.pt() > 120) weight = weight*0.829834;
-
-	    } else {
-
-	    if (m_syst_shift==e_Down)
-	      {
-		if (tau.pt() < 120) weight = weight*1.17106;
-		if (tau.pt() > 120) weight = weight*0.55023;
-	      }
-	    if (m_syst_shift==e_Up)
-	      {
-		if (tau.pt() < 120) weight = weight*1.30987;
-		if (tau.pt() > 120) weight = weight*1.11325;
-	      }
-	  }
+	      GenParticle genp = bcc->genparticles->at(i);
+	      double deltaR = genp.deltaR(tau);
+	      
+	      if (deltaR < 0.5 && abs(genp.pdgId())==11)
+		{
+		  if (fabs(tau.eta()) <= 2.1) weight = weight*0.85;
+		  if (fabs(tau.eta()) > 2.1) weight = weight*0.65;
+		}
+	      else
+		{
+		  if (deltaR < 0.5 && abs(genp.pdgId()) != 13)
+		    {
+		      if (!m_tau_unc)
+			{
+			  if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.13959;
+			  if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.820116;
+			  if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.374411;
+			  if (tau.pt() > 200) weight = weight*1.04871;
+			  
+			} else {
+			
+			if (m_syst_shift==e_Down)
+			  {
+			    if (tau.pt() < 120) weight = weight*1.17106; //old numbers
+			    if (tau.pt() > 120) weight = weight*0.55023; //old numbers
+			  }
+			if (m_syst_shift==e_Up)
+			  {
+			    if (tau.pt() < 120) weight = weight*1.30987;//old numbers
+			    if (tau.pt() > 120) weight = weight*1.11325;//old numbers
+			  }
+		      }
+		    }
+		}
+	    }
 	  
 	}
-    av += weight;
-    //cout << "fakes = " << fakes << " reals = " << reals << " average weight = " << av/(fakes+reals) << endl;
-
     return weight;
 }
 

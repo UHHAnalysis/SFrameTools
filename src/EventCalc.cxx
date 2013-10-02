@@ -345,7 +345,7 @@ std::vector< PFParticle > EventCalc::GetJetPFParticles(Jet* jet){
 
   std::vector<PFParticle>* pfps = GetPFParticles();
   std::vector<unsigned int> jet_parts_ind = jet->pfconstituents_indices();
-  
+
   std::vector<PFParticle> jetparticles;
   for(unsigned int ic=0; ic<jet_parts_ind.size(); ++ic){
     PFParticle p = pfps->at(jet_parts_ind[ic]);
