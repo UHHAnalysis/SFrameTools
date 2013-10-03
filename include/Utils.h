@@ -147,8 +147,9 @@ bool IsTagged(Jet &, E_BtagType);
  */
 
 bool variableHepTopTag(TopJet topjet, double ptJetMin = 150., double massWindowLower = 0.85, double massWindowUpper = 1.15, double cutCondition2 = 0.35, double cutCondition3 = 0.35);
-
+bool variableHepTopTagWithMatch(TopJet topjet, double ptJetMin = 150., double massWindowLower = 0.85, double massWindowUpper = 1.15, double cutCondition2 = 0.35, double cutCondition3 = 0.35);
 bool HepTopTag(TopJet topjet);
+bool HepTopTagWithMatch(TopJet topjet);
 bool HepTopTagInverted(TopJet topjet);
 bool TopTag(TopJet topjet, double& mjet, int& nsubjets, double& mmin);
 bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, double mminLower = 50., double mjetLower = 140., double mjetUpper = 250.);

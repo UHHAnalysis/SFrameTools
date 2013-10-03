@@ -804,7 +804,7 @@ bool IsTagged(Jet & jet, E_BtagType type)
 
 //variable HEP Tagger from Rebekka
 
-bool variableHepTopTag(TopJet topjet, double ptJetMin, double massWindowLower, double massWindowUpper, double cutCondition2, double cutCondition3)
+bool variableHepTopTagWithMatch(TopJet topjet, double ptJetMin, double massWindowLower, double massWindowUpper, double cutCondition2, double cutCondition3)
 {
 
   //Taking the top tag from the proper jet collection
@@ -910,6 +910,90 @@ bool variableHepTopTag(TopJet topjet, double ptJetMin, double massWindowLower, d
 
 
 
+//variable HEP Tagger from Rebekka
+
+bool variableHepTopTag(TopJet topjet, double ptJetMin, double massWindowLower, double massWindowUpper, double cutCondition2, double cutCondition3)
+{
+
+  TopJet nextjet=topjet;
+  
+  double mjet;
+  double ptjet;
+  int nsubjets;
+  
+  double topmass=172.3;
+  double wmass=80.4;
+  
+  nsubjets=nextjet.numberOfDaughters();
+  
+  LorentzVector allsubjets(0,0,0,0);
+  
+  for(int j=0; j<nextjet.numberOfDaughters(); ++j) {
+    allsubjets += nextjet.subjets()[j].v4();
+  }
+  if(!allsubjets.isTimelike()) {
+    mjet=0;
+    return false;
+  }
+  
+  mjet = allsubjets.M();
+  ptjet= nextjet.pt();
+    
+  double m12, m13, m23;
+  
+  //The subjetcs have to be three
+  if(nsubjets==3) {
+    
+    std::vector<Particle> subjets = nextjet.subjets();
+    sort(subjets.begin(), subjets.end(), HigherPt());
+    
+    m12 = 0;
+    if( (subjets[0].v4()+subjets[1].v4()).isTimelike())
+      m12=(subjets[0].v4()+subjets[1].v4()).M();
+    m13 = 0;
+    if( (subjets[0].v4()+subjets[2].v4()).isTimelike() )
+      m13=(subjets[0].v4()+subjets[2].v4()).M();
+    m23 = 0;
+    if( (subjets[1].v4()+subjets[2].v4()).isTimelike()  )
+      m23 = (subjets[1].v4()+subjets[2].v4()).M();
+    
+  } else {
+    return false;
+  }
+  
+  double rmin=massWindowLower*wmass/topmass;
+  double rmax=massWindowUpper*wmass/topmass;
+  
+  int keep=0;
+  
+  //Conditions on the subjects: at least one has to be true
+  //1 condition
+  if(atan(m13/m12)>0.2 && atan(m13/m12)<1.3 && m23/mjet>rmin && m23/mjet<rmax) keep=1;
+  
+  //2 condition
+  double cond2left=pow(rmin,2)*(1+pow((m13/m12),2));
+  double cond2cent=1-pow(m23/mjet,2);
+  double cond2right=pow(rmax,2)*(1+pow(m13/m12,2));
+  
+  if(cond2left<cond2cent && cond2cent<cond2right && m23/mjet>cutCondition2) keep=1;
+  
+  //3 condition
+  double cond3left=pow(rmin,2)*(1+pow((m12/m13),2));
+  double cond3cent=1-pow(m23/mjet,2);
+  double cond3right=pow(rmax,2)*(1+pow(m12/m13,2));
+  
+  if(cond3left<cond3cent && cond3cent<cond3right && m23/mjet>cutCondition3) keep=1;
+  
+  if( nextjet.v4().M() < 140 || nextjet.v4().M() > 250) keep=0;
+  
+  //Final requirement: at least one of the three subjets conditions and total pt
+  if(keep==1 && ptjet>ptJetMin) {
+    return true;
+  } else {
+    return false;
+  }
+  
+}
 
 
 
@@ -1017,6 +1101,16 @@ bool HepTopTag(TopJet topjet)
 
   //call variable tagger with default parameters
   return variableHepTopTag(topjet);
+
+}
+
+//HEP Tagger from Ivan
+
+bool HepTopTagWithMatch(TopJet topjet)
+{
+
+  //call variable tagger with default parameters
+  return variableHepTopTagWithMatch(topjet);
 
 }
 
