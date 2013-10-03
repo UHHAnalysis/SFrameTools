@@ -65,7 +65,7 @@ float HepTopTagMatchMass(TopJet topjet){
 
   }
 
-   if(deltarmin<0.3){
+   if(deltarmin>=0.3){
 
      return -99999.;
 
