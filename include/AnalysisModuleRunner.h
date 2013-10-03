@@ -77,7 +77,7 @@ private:
     void setup_output();
     
     std::string m_JetCollection, m_GenJetCollection, m_ElectronCollection, m_MuonCollection, 
-       m_TauCollection, m_PhotonCollection, m_PrimaryVertexCollection, m_METName, m_TopJetCollection, m_TopJetCollectionGen,
+      m_TauCollection, m_PhotonCollection, m_PrimaryVertexCollection, m_METName, m_TopJetCollection, m_TopTagJetCollection, m_HiggsTagJetCollection, m_TopJetCollectionGen,
        m_PrunedJetCollection, m_GenParticleCollection, m_PFParticleCollection;
     bool m_readTTbarReco, m_readCommonInfo, m_addGenInfo;
     

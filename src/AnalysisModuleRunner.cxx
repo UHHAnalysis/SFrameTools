@@ -201,6 +201,8 @@ AnalysisModuleRunner::AnalysisModuleRunner(){
     DeclareProperty( "PrimaryVertexCollection", m_PrimaryVertexCollection );
     DeclareProperty( "METName", m_METName );
     DeclareProperty( "TopJetCollection", m_TopJetCollection );
+    DeclareProperty( "TopTagJetCollection", m_TopTagJetCollection );
+    DeclareProperty( "HiggsTagJetCollection", m_HiggsTagJetCollection );
     DeclareProperty( "TopJetCollectionGen", m_TopJetCollectionGen );
     DeclareProperty( "PrunedJetCollection", m_PrunedJetCollection );
     DeclareProperty( "GenParticleCollection", m_GenParticleCollection);
@@ -237,6 +239,8 @@ void AnalysisModuleRunner::BeginInputFile( const SInputData& ) throw( SError ){
     if(m_METName.size()>0) ConnectVariable( "AnalysisTree", m_METName.c_str(), m_bcc.met);
     if(m_PrimaryVertexCollection.size()>0) ConnectVariable( "AnalysisTree", m_PrimaryVertexCollection.c_str() , m_bcc.pvs);
     if(m_TopJetCollection.size()>0) ConnectVariable( "AnalysisTree", m_TopJetCollection.c_str(), m_bcc.topjets);
+    if(m_TopTagJetCollection.size()>0) ConnectVariable( "AnalysisTree", m_TopTagJetCollection.c_str(), m_bcc.toptagjets);
+    if(m_HiggsTagJetCollection.size()>0) ConnectVariable( "AnalysisTree", m_HiggsTagJetCollection.c_str(), m_bcc.higgstagjets);
     if(m_addGenInfo && m_TopJetCollectionGen.size()>0) ConnectVariable( "AnalysisTree", m_TopJetCollectionGen.c_str() , m_bcc.topjetsgen);
     if(m_PrunedJetCollection.size()>0) ConnectVariable( "AnalysisTree", m_PrunedJetCollection.c_str() , m_bcc.prunedjets);
     if(m_addGenInfo && m_GenParticleCollection.size()>0) ConnectVariable( "AnalysisTree", m_GenParticleCollection.c_str() , m_bcc.genparticles);
@@ -302,6 +306,8 @@ void AnalysisModuleRunner::setup_output(){
     setup_branch(outtree, m_METName.c_str(), m_bcc.met);
     setup_branch(outtree, m_PrimaryVertexCollection.c_str() , m_bcc.pvs);
     setup_branch(outtree, m_TopJetCollection.c_str(), m_bcc.topjets);
+    setup_branch(outtree, m_TopTagJetCollection.c_str(), m_bcc.toptagjets);
+    setup_branch(outtree, m_HiggsTagJetCollection.c_str(), m_bcc.higgstagjets);
     setup_branch(outtree, m_TopJetCollectionGen.c_str() , m_bcc.topjetsgen);
     setup_branch(outtree, m_PrunedJetCollection.c_str() , m_bcc.prunedjets);
     setup_branch(outtree, m_GenParticleCollection.c_str() , m_bcc.genparticles);
