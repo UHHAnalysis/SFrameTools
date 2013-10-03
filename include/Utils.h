@@ -129,6 +129,8 @@ bool HiggsTag(TopJet topjet, E_BtagType type1, E_BtagType type2, TString mode="d
 
 bool HepTopTagMatch(TopJet topjet);
 
+float HepTopTagMatchMass(TopJet topjet);
+
 /* int subJetBTag(TopJet topjet, E_BtagType type); */
 
 /* bool HiggsTag(TopJet topjet, E_BtagType type1, E_BtagType type2); */
@@ -146,8 +148,8 @@ bool IsTagged(Jet &, E_BtagType);
  * @see NTopTagSelection
  */
 
-bool variableHepTopTag(TopJet topjet, double ptJetMin = 150., double massWindowLower = 0.85, double massWindowUpper = 1.15, double cutCondition2 = 0.35, double cutCondition3 = 0.35);
-bool variableHepTopTagWithMatch(TopJet topjet, double ptJetMin = 150., double massWindowLower = 0.85, double massWindowUpper = 1.15, double cutCondition2 = 0.35, double cutCondition3 = 0.35);
+bool variableHepTopTag(TopJet topjet, double ptJetMin = 200., double massWindowLower = 0.85, double massWindowUpper = 1.15, double cutCondition2 = 0.35, double cutCondition3 = 0.35);
+bool variableHepTopTagWithMatch(TopJet topjet, double ptJetMin = 200., double massWindowLower = 0.85, double massWindowUpper = 1.15, double cutCondition2 = 0.35, double cutCondition3 = 0.35);
 bool HepTopTag(TopJet topjet);
 bool HepTopTagWithMatch(TopJet topjet);
 bool HepTopTagInverted(TopJet topjet);

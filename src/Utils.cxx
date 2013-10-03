@@ -44,6 +44,36 @@ bool HepTopTagMatch(TopJet topjet){
 
 }
 
+float HepTopTagMatchMass(TopJet topjet){
+
+   EventCalc* calc = EventCalc::Instance();
+
+   BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
+
+   double deltarmin = double_infinity();
+
+   TopJet nextjet;
+
+   for(unsigned int it=0; it<bcc->toptagjets->size();++it){
+
+     TopJet top4jet=bcc->toptagjets->at(it);
+
+     if(top4jet.deltaR(topjet) < deltarmin){
+       deltarmin = top4jet.deltaR(topjet);
+       nextjet = top4jet;
+     }
+
+  }
+
+   if(deltarmin<0.3){
+
+     return -99999.;
+
+   }
+   else return nextjet.v4().M();
+
+}
+
 std::unique_ptr<double[]> log_binning(size_t n_bins, double xmin, double xmax){
     assert(xmin > 0 && xmin < xmax);
     std::unique_ptr<double[]> result(new double[n_bins + 1]);
@@ -984,7 +1014,7 @@ bool variableHepTopTag(TopJet topjet, double ptJetMin, double massWindowLower, d
   
   if(cond3left<cond3cent && cond3cent<cond3right && m23/mjet>cutCondition3) keep=1;
   
-  if( nextjet.v4().M() < 140 || nextjet.v4().M() > 250) keep=0;
+  if( mjet < 140 || mjet > 250) keep=0;
   
   //Final requirement: at least one of the three subjets conditions and total pt
   if(keep==1 && ptjet>ptJetMin) {
@@ -1079,11 +1109,11 @@ bool HepTopTagInverted(TopJet topjet)
     if (m23/mjet <= 0.35) keep = 1; 
 
     //invert top mass window
-    if( nextjet.v4().M() > 140 && nextjet.v4().M() < 250) keep=0;
+    if( mjet > 140 && mjet < 250) keep=0;
 
 
     //Final requirement: at least one of the three subjets conditions and total pt
-    if(keep==1 && ptjet>150.) {
+    if(keep==1 && ptjet>200.) {
         return true;
     } else {
         return false;
