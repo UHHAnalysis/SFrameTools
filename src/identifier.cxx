@@ -42,7 +42,7 @@ identifier::identifier(const char * c): id_(identifier_registry::instance().regi
 std::string identifier::name() const{
     std::map<size_t, std::string> & id_to_name = identifier_registry::instance().id_to_name;
     std::map<size_t, std::string>::const_iterator it = id_to_name.find(id_);
-    if(it==id_to_name.end()) throw std::invalid_argument("asked for name of invalid id");
+    if(it==id_to_name.end()) return "<<invalid id>>";
     return it->second;
 }
 

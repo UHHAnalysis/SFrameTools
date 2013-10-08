@@ -36,6 +36,10 @@ public:
     }
 
     std::string name() const;
+    
+    bool valid() const{
+        return id_ >= 0;
+    }
         
 private:
     ssize_t id_;

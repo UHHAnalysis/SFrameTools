@@ -3,6 +3,8 @@
 #include "SFrameTools/include/registry.h"
 
 #include "TH1.h"
+#include "TXMLNode.h"
+#include "TXMLAttr.h"
 #include "TTree.h"
 #include "TDataType.h"
 #include "TEmulatedCollectionProxy.h"
@@ -13,8 +15,8 @@ using namespace std;
 
 namespace{
     
-    // see TTree.cxx:
-    char DataTypeToChar(EDataType datatype){
+// see TTree.cxx:
+char DataTypeToChar(EDataType datatype){
 
     switch(datatype) {
         case kChar_t:     return 'B';
@@ -43,29 +45,40 @@ namespace{
         default:
             return 0;
     }
-    }
 }
 
 
-SFrameContext::SFrameContext(SCycleBase & base_, string event_treename_): base(base_), event_treename(std::move(event_treename_)){
+}
+
+
+SFrameContext::SFrameContext(SCycleBase & base_, const SInputData& sin): base(base_) {
+    // populate settings:
     vector<pair<string, string> > props = base.GetConfig().GetProperties();
-    for(vector<pair<string, string> >::const_iterator it = props.begin(); it != props.end(); ++it){
-        settings[it->first] = it->second;
+    for(auto & kv : props){
+        set_setting(kv.first, kv.second);
     }
-    if(settings.size() != props.size()){
-        throw invalid_argument("duplicate key in Sframe settings");
+    set_setting("dataset.type", sin.GetType().Data());
+    set_setting("dataset.version", sin.GetVersion().Data());
+    // we need exactly one input event tree:
+    bool found_input_tree = false;
+    const auto & tt2trees = sin.GetTrees(); // map of treetype to vector of trees
+    for(const auto & it : tt2trees){
+        const auto & trees = it.second;
+        for(const STree & tree : trees){
+            if((tree.type & STree::EVENT_TREE) && (tree.type & STree::INPUT_TREE)){
+                if(found_input_tree){
+                    throw runtime_error("more than one input event tree");
+                }
+                found_input_tree = true;
+                event_treename = tree.treeName.Data();
+            }
+        }
+    }
+    if(!found_input_tree){
+        throw runtime_error("no input event tree");
     }
 }
 
-std::string SFrameContext::get_setting(const std::string & key) const{
-    map<string, string>::const_iterator it = settings.find(key);
-    if(it==settings.end()) throw runtime_error("SFrameContext: did not find setting with key '" + key + "'");
-    return it->second;
-}
-    
-void SFrameContext::set_setting(const string & key, const string & value){
-    settings[key] = value;
-}
     
 TDirectory * SFrameContext::get_tmpdir(){
     // see SCycleBaseHist::GetTempDir (which is private ...):
@@ -107,23 +120,61 @@ void SFrameContext::put(const identifier & id, TH1 * t){
     TList * outlist = base.GetHistOutput();
     outlist->AddLast(out);
     gROOT->cd();
-    hists[id] = t;
+}
+
+void SFrameContext::begin_input_file(){
+    input_tree = base.GetInputTree(event_treename.c_str());
+    if(input_tree==0){
+        throw runtime_error("Could not find input tree '" + event_treename + "'");
+    }
+    for(auto & name_bi : bname2bi){
+        const string & bname = name_bi.first;
+        branchinfo & bi = name_bi.second;
+        TBranch * branch = input_tree->GetBranch(bname.c_str());
+        if(branch==0){
+            throw runtime_error("Could not find branch '" + bname + "' in tree '" + event_treename + "'");
+        }
+        // now do SetBranchAddress, using address-to-address in case of a class, and simple address otherwise.
+        // Also, emulate what SFrame's ConnectVariable does with caches and such ...
+        TClass * class_ = TBuffer::GetClass(*bi.ti);
+        if(class_){
+            TClass * bclass = TBuffer::GetClass(branch->GetClassName());
+            if(class_ != bclass){
+                throw runtime_error(string("input branch has class '") + (bclass? bclass->GetName() : "<no class (primitive type)>") + "', but tried to read into object of type '" + class_->GetName() + "'");
+            }
+            branch->SetAddress(&bi.addr);
+        }
+        else{
+            // TODO: type checking!
+            branch->SetAddress(bi.addr);
+        }
+        bi.branch = branch;
+        cout << "SFrameContext::begin_input_file: set up branch '" << bname << "'" << endl;
+    }
+}
+
+
+void SFrameContext::begin_event(){
+    int ientry = input_tree->GetReadEntry();
+    assert(ientry >= 0);
+    for(auto & name_bi : bname2bi){
+        name_bi.second.branch->GetEntry(ientry);
+    }
 }
 
 
 namespace{
 
-// TTree::Branch is really strange and does not let me do in a simple
-// way what I want to do: given a pointer to T, setup a branch. While this is possible
+// Use TTree::Branch with types only known at runtime: given a pointer to T, setup a branch. While this is possible
 // with templates, it's not if the type is only known at runtime (like here), so
-// for this case, we have to so some painful stuff by readin root code ...
+// for this case, we have to so some painful stuff by reading and re-writing root code ...
 void tree_branch(TTree * tree, const char * name, void * addr, void ** addraddr, const type_info & ti){
     //emulate
     // template<typename T>
     // outtree->Branch(name, (T*)addr);
     // which expands to
     // outtree->BranchImpRef(name, TBuffer::GetClass(ti), TDataType::GetType(ti), const_cast<void*>(addr), 32000, 99),
-    // so look there to understand how this code works.
+    // so look there to understand how this code here works.
     TClass * class_ = TBuffer::GetClass(ti);
     if(class_){
         TClass * actualclass =  class_->GetActualClass(addr);
@@ -150,7 +201,7 @@ void tree_branch(TTree * tree, const char * name, void * addr, void ** addraddr,
 
 // event tree i/o
 void SFrameContext::do_declare_event_input(const char * name, void * addr, const type_info & ti){
-    
+    bname2bi[name] = {0, &ti, addr};
 }
 
 void SFrameContext::do_declare_event_output(const char * name, const void * caddr, const type_info & ti){
@@ -192,35 +243,100 @@ void SFrameContext::write_output(const identifier & tree_id){
 
 
 AnalysisModuleRunner::AnalysisModuleRunner(){
-    DeclareProperty( "JetCollection", m_JetCollection );
-    DeclareProperty( "GenJetCollection", m_GenJetCollection );
-    DeclareProperty( "ElectronCollection", m_ElectronCollection );
-    DeclareProperty( "MuonCollection", m_MuonCollection );
-    DeclareProperty( "TauCollection", m_TauCollection );
-    DeclareProperty( "PhotonCollection", m_PhotonCollection );
-    DeclareProperty( "PrimaryVertexCollection", m_PrimaryVertexCollection );
-    DeclareProperty( "METName", m_METName );
-    DeclareProperty( "TopJetCollection", m_TopJetCollection );
-    DeclareProperty( "TopTagJetCollection", m_TopTagJetCollection );
-    DeclareProperty( "HiggsTagJetCollection", m_HiggsTagJetCollection );
-    DeclareProperty( "TopJetCollectionGen", m_TopJetCollectionGen );
-    DeclareProperty( "PrunedJetCollection", m_PrunedJetCollection );
-    DeclareProperty( "GenParticleCollection", m_GenParticleCollection);
-    DeclareProperty( "PFParticleCollection", m_PFParticleCollection);
-    DeclareProperty( "readTTbarReco", m_readTTbarReco);
-    DeclareProperty( "readCommonInfo", m_readCommonInfo);
-    
-    DeclareProperty("AnalysisModule", module_classname);
-    DeclareProperty("OutputSelection", m_selection_output);
+
+}
+
+
+// I want to have a list of ALL settings the user gives in the xml config file, without
+// having to declare them at an early point. One dirty way to achieve this is
+// to override the initlizie routine here and call DeclareProperty for every
+// property appearing in the xml file, before actually calling the original Initialize routine.
+//
+// Note that in proof mode, Initialize is only called on the master, where the configuration object is constructed
+// and then distributed to the other workers.
+void AnalysisModuleRunner::Initialize( TXMLNode* node ) throw( SError ){
+    TXMLNode* nodes = node->GetChildren();
+    while( nodes != 0 ) {
+        if(!nodes->HasChildren()){
+            nodes = nodes->GetNextNode();
+            continue;
+        }
+        if(nodes->GetNodeName() == string("UserConfig")) {
+            TXMLNode* userNode = nodes->GetChildren();
+            while( userNode != 0 ) {
+                if( ! userNode->HasAttributes() || ( userNode->GetNodeName() != TString( "Item" ) ) ) {
+                    userNode = userNode->GetNextNode();
+                    continue;
+                }
+
+                std::string name, stringValue;
+                TListIter userAttributes( userNode->GetAttributes() );
+                TXMLAttr* attribute;
+                while( (attribute = dynamic_cast< TXMLAttr* >( userAttributes() ) ) != 0 ) {
+                    if(attribute->GetName() == string("Name"))  name = attribute->GetValue();
+                }
+                //cout << "got '" << name << "'" << endl;
+                dummyConfigVars[name] = "";
+                DeclareProperty(name, dummyConfigVars[name]);
+                userNode = userNode->GetNextNode();
+            }
+        }
+        nodes = nodes->GetNextNode();
+    }
+   
+    // now after having declared all properties, call the original Initialize routine:
+    SCycleBase::Initialize(node);
+}
+
+
+// This method is called in proof mode to set the configuration according to config.
+// The default implementation in SFrame will complain a lot about non-declared variables
+// on the workers, so re-implement this to declare all settings before calling the original routine ...
+void AnalysisModuleRunner::SetConfig(const SCycleConfig& config){
+    auto props = config.GetProperties();
+    for(auto & kv : props){
+        if(dummyConfigVars.find(kv.first) == dummyConfigVars.end()){
+            dummyConfigVars[kv.first] = "";
+            DeclareProperty(kv.first, dummyConfigVars[kv.first]);
+        }
+    }
+    SCycleBase::SetConfig(config);
 }
 
 void AnalysisModuleRunner::BeginInputData( const SInputData& in ) throw( SError ){
+    // 1. general setup of user config:
+    context.reset(new SFrameContext(*this, in));
+    
+    m_JetCollection = context->get_setting("JetCollection", "");
+    m_GenJetCollection = context->get_setting("GenJetCollection", "");
+    m_ElectronCollection = context->get_setting("ElectronCollection", "");
+    m_MuonCollection = context->get_setting("MuonCollection", "");
+    m_TauCollection = context->get_setting("TauCollection", "");
+    m_PhotonCollection = context->get_setting("PhotonCollection", "");
+    m_PrimaryVertexCollection = context->get_setting("PrimaryVertexCollection", "");
+    m_METName = context->get_setting("METName", "");
+    m_TopJetCollection = context->get_setting("TopJetCollection", "");
+    m_TopTagJetCollection = context->get_setting("TopTagJetCollection", "");
+    m_HiggsTagJetCollection = context->get_setting("HiggsTagJetCollection", "");
+    m_TopJetCollectionGen = context->get_setting("TopJetCollection", "");
+    m_PrunedJetCollection = context->get_setting("PrunedJetCollection", "");
+    m_GenParticleCollection = context->get_setting("GenParticleCollection", "");
+    m_PFParticleCollection = context->get_setting("PFParticleCollection", "");
+    
+    m_readTTbarReco = string2bool(context->get_setting("readTTbarReco", "false"));
+    m_readCommonInfo = string2bool(context->get_setting("readCommonInfo", "true"));
+    
+    string module_classname = context->get_setting("AnalysisModule");
+    if(context->has_setting("OutputSelection")){
+        selid_output = context->get_setting("OutputSelection");
+    }
+    
+    // read in gen info if and only if the type is Monte-Carlo:
+    m_addGenInfo = context->get_setting("dataset.type") == "MC";
+    
     EventCalc* calc = EventCalc::Instance();
     calc->SetBaseCycleContainer(&m_bcc);
     analysis = Registry<AnalysisModule>::instance().build(module_classname);
-    assert(analysis.get());
-    selid_output = m_selection_output;
-    context.reset(new SFrameContext(*this, "AnalysisTree"));
     assert(analysis.get());
     analysis->begin_dataset(*context);
     first_event_inputdata = true;
@@ -248,20 +364,22 @@ void AnalysisModuleRunner::BeginInputFile( const SInputData& ) throw( SError ){
     if(m_addGenInfo && m_readCommonInfo) ConnectVariable( "AnalysisTree", "genInfo" , m_bcc.genInfo);
     if(m_readTTbarReco) ConnectVariable( "AnalysisTree", "recoHyps", m_bcc.recoHyps);
 
-    ConnectVariable( "AnalysisTree", "run" , m_bcc.run);
-    ConnectVariable( "AnalysisTree", "luminosityBlock" , m_bcc.luminosityBlock);
-    ConnectVariable( "AnalysisTree" ,"event" ,m_bcc.event);
-    
-    ConnectVariable( "AnalysisTree", "rho" , m_bcc.rho);
-    ConnectVariable( "AnalysisTree" ,"isRealData", m_bcc.isRealData);
-
     if(m_readCommonInfo){
+        ConnectVariable( "AnalysisTree", "run" , m_bcc.run);
+        ConnectVariable( "AnalysisTree", "luminosityBlock" , m_bcc.luminosityBlock);
+        ConnectVariable( "AnalysisTree" ,"event" ,m_bcc.event);
+        
+        ConnectVariable( "AnalysisTree", "rho" , m_bcc.rho);
+        ConnectVariable( "AnalysisTree" ,"isRealData", m_bcc.isRealData);
+        
         ConnectVariable( "AnalysisTree", "triggerResults" , m_bcc.triggerResults);
         ConnectVariable( "AnalysisTree", "triggerNames" , m_bcc.triggerNames);
         ConnectVariable( "AnalysisTree" ,"beamspot_x0", m_bcc.beamspot_x0);
         ConnectVariable( "AnalysisTree" ,"beamspot_y0", m_bcc.beamspot_y0);
         ConnectVariable( "AnalysisTree" ,"beamspot_z0", m_bcc.beamspot_z0);
     }
+    
+    context->begin_input_file();
 }
 
 namespace {
@@ -335,6 +453,8 @@ void AnalysisModuleRunner::setup_output(){
 
 
 void AnalysisModuleRunner::ExecuteEvent( const SInputData&, Double_t ) throw( SError ){
+    context->begin_event();
+    
     EventCalc * ec = EventCalc::Instance();
     ec->Reset();
     assert(context.get()!=0);
@@ -349,8 +469,10 @@ void AnalysisModuleRunner::ExecuteEvent( const SInputData&, Double_t ) throw( SE
     }
     
     // prevent writing events not selected:
-    if(!ec->selection_passed(selid_output)){
-        throw SError( SError::SkipEvent );
+    if(selid_output.valid()){
+        if(!ec->selection_passed(selid_output)){
+            throw SError( SError::SkipEvent );
+        }
     }
 }
 

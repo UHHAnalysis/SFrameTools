@@ -1,10 +1,12 @@
 #include "SFrameTools/include/AnalysisModule.h"
 
+#include <strings.h>
+
 AnalysisModule::~AnalysisModule(){}
 Context::~Context(){}
 Hists::~Hists(){}
     
-AndSelection::AndSelection(const identifier & selection_id, bool create_cutflow_histo ): selid(selection_id),
+AndSelection::AndSelection(const identifier & selection_id, bool create_cutflow_histo): selid(selection_id),
     create_cutflow(create_cutflow_histo), cutflow_raw(0), cutflow_weighted(0){
 }
 
@@ -57,4 +59,15 @@ void AndSelection::process(EventCalc & event, Context & ctx){
         }
     }
     event.set_selection_passed(selid, result);
+}
+
+
+bool string2bool(const string & s){
+    for(const char * true_string : {"true", "yes", "1", "on"}){
+        if(strcasecmp(s.c_str(), true_string)==0) return true;
+    }
+    for(const char * false_string : {"false", "no", "0", "off"}){
+        if(strcasecmp(s.c_str(), false_string)==0) return false;
+    }
+    throw std::runtime_error("could not interpret '" + s + "' as boolean");
 }
