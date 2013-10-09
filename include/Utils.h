@@ -125,6 +125,8 @@ float HiggsBRweight();
 
 int subJetBTag(TopJet topjet, E_BtagType type, TString mode="default",TString filename="");
 
+int subJetBTagTop(TopJet topjet, E_BtagType type, TString mode="default",TString filename="");
+
 bool HiggsTag(TopJet topjet, E_BtagType type1, E_BtagType type2, TString mode="default",TString filename="");
 
 bool HepTopTagMatch(TopJet topjet);

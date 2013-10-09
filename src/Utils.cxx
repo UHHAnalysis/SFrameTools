@@ -203,6 +203,36 @@ endl;
 
 #include "TRandom3.h"
 
+int subJetBTagTop(TopJet topjet, E_BtagType type, TString mode, TString filename){
+
+  EventCalc* calc = EventCalc::Instance();
+  
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
+  
+  double deltarmin = double_infinity();
+  
+  TopJet nextjet;
+  
+  for(unsigned int it=0; it<bcc->toptagjets->size();++it){
+    
+    TopJet top4jet=bcc->toptagjets->at(it);
+    
+    if(top4jet.deltaR(topjet) < deltarmin){
+       deltarmin = top4jet.deltaR(topjet);
+       nextjet = top4jet;
+    }
+    
+  }
+  
+  if(deltarmin<0.3){
+    
+    return subJetBTag(nextjet, type, mode, filename);
+    
+  }
+  else return 0;
+   
+}
+
 //subjet b-tagger, returns number of b-tagged subjets
 
 int subJetBTag(TopJet topjet, E_BtagType type, TString mode, TString filename){
@@ -970,8 +1000,6 @@ bool variableHepTopTagWithMatch(TopJet topjet, double ptJetMin, double massWindo
   
 }
 
-
-
 //variable HEP Tagger from Rebekka
 
 bool variableHepTopTag(TopJet topjet, double ptJetMin, double massWindowLower, double massWindowUpper, double cutCondition2, double cutCondition3)
@@ -1056,11 +1084,6 @@ bool variableHepTopTag(TopJet topjet, double ptJetMin, double massWindowLower, d
   }
   
 }
-
-
-
-
-
 
 bool HepTopTagInverted(TopJet topjet)
 {
@@ -1152,9 +1175,6 @@ bool HepTopTagInverted(TopJet topjet)
     }
 
 }
-
-
-
 
 //HEP Tagger from Ivan
 
