@@ -318,7 +318,7 @@ void AnalysisModuleRunner::BeginInputData( const SInputData& in ) throw( SError 
     m_TopJetCollection = context->get_setting("TopJetCollection", "");
     m_TopTagJetCollection = context->get_setting("TopTagJetCollection", "");
     m_HiggsTagJetCollection = context->get_setting("HiggsTagJetCollection", "");
-    m_TopJetCollectionGen = context->get_setting("TopJetCollection", "");
+    m_TopJetCollectionGen = context->get_setting("TopJetCollectionGen", "");
     m_PrunedJetCollection = context->get_setting("PrunedJetCollection", "");
     m_GenParticleCollection = context->get_setting("GenParticleCollection", "");
     m_PFParticleCollection = context->get_setting("PFParticleCollection", "");
