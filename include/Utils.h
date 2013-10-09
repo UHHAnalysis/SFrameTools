@@ -131,6 +131,8 @@ bool HepTopTagMatch(TopJet topjet);
 
 float HepTopTagMatchMass(TopJet topjet);
 
+float HepTopTagMatchPt(TopJet topjet);
+
 /* int subJetBTag(TopJet topjet, E_BtagType type); */
 
 /* bool HiggsTag(TopJet topjet, E_BtagType type1, E_BtagType type2); */

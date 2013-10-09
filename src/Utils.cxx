@@ -74,6 +74,38 @@ float HepTopTagMatchMass(TopJet topjet){
 
 }
 
+
+float HepTopTagMatchPt(TopJet topjet){
+
+   EventCalc* calc = EventCalc::Instance();
+
+   BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
+
+   double deltarmin = double_infinity();
+
+   TopJet nextjet;
+
+   for(unsigned int it=0; it<bcc->toptagjets->size();++it){
+
+     TopJet top4jet=bcc->toptagjets->at(it);
+
+     if(top4jet.deltaR(topjet) < deltarmin){
+       deltarmin = top4jet.deltaR(topjet);
+       nextjet = top4jet;
+     }
+
+  }
+
+   if(deltarmin>=0.3){
+
+     return -99999.;
+
+   }
+   else return nextjet.v4().Pt();
+
+}
+
+
 std::unique_ptr<double[]> log_binning(size_t n_bins, double xmin, double xmax){
     assert(xmin > 0 && xmin < xmax);
     std::unique_ptr<double[]> result(new double[n_bins + 1]);
