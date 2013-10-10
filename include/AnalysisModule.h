@@ -204,7 +204,7 @@ protected:
     TH1* get_hist(const identifier & id){
         auto it = histos.find(id);
         if(it==histos.end()){
-            throw std::runtime_error("SimpleBaseHists::get_histo: did not find histogram '" + id.name() + "'");
+            throw std::runtime_error("Hists::get_hist: did not find histogram '" + id.name() + "'");
         }
         return it->second;
     }

@@ -99,6 +99,7 @@ public:
   
 private:
     void setup_output();
+    void FillTriggerNames();
     
 #ifndef __CINT__ // we don't have anything for CINT to serialize ...:
     
@@ -106,6 +107,15 @@ private:
       m_TauCollection, m_PhotonCollection, m_PrimaryVertexCollection, m_METName, m_TopJetCollection, m_TopTagJetCollection, m_HiggsTagJetCollection, m_TopJetCollectionGen,
        m_PrunedJetCollection, m_GenParticleCollection, m_PFParticleCollection;
     bool m_readTTbarReco, m_readCommonInfo, m_addGenInfo;
+    
+    // for trigger name search:
+    int m_runid_triggernames; // the run id which corresponds to the currently filled "actual" trigger names in m_bcc
+    
+    // trigger name output is special: we only write a non-empty list the first time
+    // we see this runid. So save the runid for which we already saved the triggerNames
+    // and write an empty list in ther cases:
+    std::vector<std::string> m_output_triggerNames;
+    int m_output_triggerNames_runid;
     
     BaseCycleContainer m_bcc;
     bool first_event_inputdata;
@@ -116,6 +126,7 @@ private:
        
     // the actual analysis module to run:
     std::auto_ptr<AnalysisModule> analysis;
+    
     
     std::map<std::string, std::string> dummyConfigVars;
     

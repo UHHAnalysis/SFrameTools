@@ -243,7 +243,7 @@ void SFrameContext::write_output(const identifier & tree_id){
 
 
 AnalysisModuleRunner::AnalysisModuleRunner(){
-
+    m_runid_triggernames = -1;
 }
 
 
@@ -304,6 +304,11 @@ void AnalysisModuleRunner::SetConfig(const SCycleConfig& config){
 }
 
 void AnalysisModuleRunner::BeginInputData( const SInputData& in ) throw( SError ){
+    // reset the triggernames output info:
+    m_output_triggerNames_runid = -1;
+    m_output_triggerNames.clear();
+    
+    
     // 1. general setup of user config:
     context.reset(new SFrameContext(*this, in));
     
@@ -318,7 +323,7 @@ void AnalysisModuleRunner::BeginInputData( const SInputData& in ) throw( SError 
     m_TopJetCollection = context->get_setting("TopJetCollection", "");
     m_TopTagJetCollection = context->get_setting("TopTagJetCollection", "");
     m_HiggsTagJetCollection = context->get_setting("HiggsTagJetCollection", "");
-    m_TopJetCollectionGen = context->get_setting("TopJetCollectionGen", "");
+    m_TopJetCollectionGen = context->get_setting("TopJetCollection", "");
     m_PrunedJetCollection = context->get_setting("PrunedJetCollection", "");
     m_GenParticleCollection = context->get_setting("GenParticleCollection", "");
     m_PFParticleCollection = context->get_setting("PFParticleCollection", "");
@@ -341,6 +346,48 @@ void AnalysisModuleRunner::BeginInputData( const SInputData& in ) throw( SError 
     analysis->begin_dataset(*context);
     first_event_inputdata = true;
     // note: output tree setup is defered after processing the first event in the input dataset, see ExecuteEvent.
+}
+
+
+// see AnalysisCycle::FillTriggerNames!
+void AnalysisModuleRunner::FillTriggerNames(){
+    if(!m_bcc.triggerNames) return;
+    // empty actual trigger list if the event belongs to a different run:
+    if(m_bcc.run != m_runid_triggernames){
+        m_bcc.triggerNames_actualrun.clear();
+    }
+    
+    //fill list of trigger names
+    if(m_bcc.triggerNames->size()!=0) {
+        m_bcc.triggerNames_actualrun = *m_bcc.triggerNames;
+    }
+    else{
+      m_logger << WARNING<< "No trigger table found for this event -> start trigger search on following events" << SLogger::endmsg;
+      int tmp_run= m_bcc.run;
+      TTree* tmp_tree = GetInputTree("AnalysisTree");
+      int processed_events = tmp_tree->GetReadEvent();
+      tmp_tree->SetBranchStatus("*",0);
+      tmp_tree->SetBranchStatus("run",1); 
+      tmp_tree->SetBranchStatus("triggerNames",1);
+      int N_ent= tmp_tree->GetEntriesFast();
+      for(int i=0; i<N_ent; ++i){
+        //if(i%10000==0) std::cout << "Search trigger " << i << std::endl;
+        tmp_tree->GetEntry(i);
+        //search for next event in tree with trigger table filled, check for same run number in case of real data
+        if(m_bcc.triggerNames->size()!=0 && (!m_bcc.isRealData || m_bcc.run==tmp_run)){
+          m_bcc.triggerNames_actualrun = *m_bcc.triggerNames;
+          m_logger << WARNING<< "Trigger search was succesful" << SLogger::endmsg;
+          break;
+        }
+      }
+      m_runid_triggernames = m_bcc.run;
+      //go back to original event
+      tmp_tree->SetBranchStatus("*",1);
+      tmp_tree->GetEntry(processed_events);
+    }
+    if(m_bcc.triggerNames_actualrun.size()==0){
+        m_logger << ERROR << "Trigger search was NOT succesful!!!" << SLogger::endmsg;
+    }
 }
 
 void AnalysisModuleRunner::BeginInputFile( const SInputData& ) throw( SError ){
@@ -433,7 +480,9 @@ void AnalysisModuleRunner::setup_output(){
     setup_branch(outtree, "genInfo" , m_bcc.genInfo);
     setup_branch(outtree, "recoHyps", m_bcc.recoHyps);
     setup_branch(outtree, "triggerResults", m_bcc.triggerResults);
-    setup_branch(outtree, "triggerNames", m_bcc.triggerNames);
+    
+    // trigger names is special: use our own member variable for that:
+    setup_branch(outtree, "triggerNames", &m_output_triggerNames);
 
     // b.:
     // these are always read:
@@ -453,19 +502,37 @@ void AnalysisModuleRunner::setup_output(){
 
 
 void AnalysisModuleRunner::ExecuteEvent( const SInputData&, Double_t ) throw( SError ){
-    context->begin_event();
-    
+    // call reset to get rid of any cached result from previous event:
     EventCalc * ec = EventCalc::Instance();
     ec->Reset();
+    
+    // let the context fill any additional data:
+    context->begin_event();
+    
+    // search for trigger names in input tree:
+    FillTriggerNames();
+
+    // now call the user module:
     assert(context.get()!=0);
     analysis->process(*ec, *context);
     
+    // setup output:
     // note that it is important to do the output setup *after* the event has been processed
     // as only then we know which information in the event is available (calculated), and
     // we want to write it all ...
     if(first_event_inputdata){
         first_event_inputdata = false;
         setup_output();
+    }
+    
+    // make sure list of trigger names is filled in the output for each runid once:
+    if(m_output_triggerNames_runid != m_bcc.run){
+        m_output_triggerNames_runid = m_bcc.run;
+        m_output_triggerNames = m_bcc.triggerNames_actualrun;
+    }
+    else{
+        // we already output the name list for that runid, so write empty it for this event:
+        m_output_triggerNames.clear();
     }
     
     // prevent writing events not selected:
