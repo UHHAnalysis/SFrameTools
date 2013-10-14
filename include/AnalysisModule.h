@@ -50,37 +50,58 @@ public:
 #define REGISTER_ANALYSIS_MODULE(T) REGISTER(T, AnalysisModule, T)
 
 
-/** \brief Abstract utility class for I/O and configuration passed to AnalysisModule::begin_dataset
+/** \brief Abstract utility class for configuration and I/O; passed to AnalysisModule::begin_dataset and AnalysisModule::process.
  * 
- * This class provides all information required in AnalysisModule::begin_dataset, in particular
- * it allows access to the module's configuration and provides methods to put histograms
- * or tree data in the output root file.
+ * This class provides methods to put histograms or tree data in the output root file.
  * 
  * There are two types of trees: event trees and user-defined trees. Event trees are managed by the framework
  * in the sense that each entry in the input event tree is processed once (by calling AnalysisModule::process)
  * and each selected event is written to the output event tree.
  * User-defined trees, on the other hand, only exist as output trees and can contain arbitrary, non-event data. An example
  * would be to fill data on a per-object basis. To use user-defined trees, call the 'declare_output' method, and
- * for each entry, call the 'write_output' method
- * 
- *
+ * for each entry, call the 'write_output' method.
  */
 class Context{
 public:
     
     /** \brief Get a setting from the configuration
      * 
-     * Get a setting from the configuration file, identified by the given string 'key'.
-     * 
-     * As convention, the dataset information of SFrame is provided by "dataset.type" and and "dataset.version".
+     * Throws a runtime_error if the setting with this key is not available, i.e. iff has_setting(key)==false.
      */
-    virtual std::string get_setting(const std::string & key) const = 0;
+    std::string get_setting(const std::string & key) const{
+        auto it = settings.find(key);
+        if(it==settings.end()) fail(key);
+        return it->second;
+    }
     
-    /** \brief Set a configuration setting
-     *
-     * Set a configuration value, which can be retrieved later with get_setting.
+    /** \brief Get a setting from the configuration, returning a default value if it does not exist
      */
-    virtual void set_setting(const std::string & key, const std::string & value) = 0;
+    std::string get_setting(const std::string & key, const std::string & def) const{
+        auto it = settings.find(key);
+        if(it==settings.end()) return def;
+        else return it->second;
+    }
+    
+    /** \brief Get all settings from the configuration
+     */
+    std::map<std::string, std::string> get_all_settings() const{
+        return settings;
+    }
+    
+    /** \brief Test whether a setting is available
+     */
+    bool has_setting(const std::string & key) const{
+        return settings.find(key) != settings.end();
+    }
+    
+    /** \brief Set a key to the given value
+     *
+     * Set a configuration value, which can be retrieved later with get_setting; can also be used to overwrite
+     * an existing setting.
+     */
+    void set_setting(const std::string & key, const std::string & value){
+        settings[key] = value;
+    }
         
     /** \brief Put a histogram in the output root file at the specified path
      * 
@@ -98,7 +119,7 @@ public:
     template<typename T>
     void declare_event_input(const char * name, T & t){
         static_assert(!std::is_pointer<T>::value, "T must not be of pointer type");
-        do_declare_event_input(name, static_cast<const void*>(&t), typeid(T));
+        do_declare_event_input(name, static_cast<void*>(&t), typeid(T));
     }
     
     /** \brief Declare an output variable in the event tree
@@ -132,6 +153,12 @@ private:
     virtual void do_declare_event_input(const char * name, void * addr, const type_info & ti) = 0;
     virtual void do_declare_event_output(const char * name, const void * addr, const type_info & ti) = 0;
     virtual void do_declare_output(const identifier & tree_id, const char * name, const void * t, const type_info & ti) = 0;
+    
+    void fail(const std::string & key) const{
+        throw std::runtime_error("did not find setting '" + key + "'");
+    }
+    
+    std::map<std::string, std::string> settings;
 };
 
 
@@ -177,7 +204,7 @@ protected:
     TH1* get_hist(const identifier & id){
         auto it = histos.find(id);
         if(it==histos.end()){
-            throw std::runtime_error("SimpleBaseHists::get_histo: did not find histogram '" + id.name() + "'");
+            throw std::runtime_error("Hists::get_hist: did not find histogram '" + id.name() + "'");
         }
         return it->second;
     }
@@ -229,6 +256,18 @@ private:
     TH1D * cutflow_raw, * cutflow_weighted; // owned by Context
 };
 #endif
+
+
+/** some utility methods to convert string to various other objects; mainly for interpreting the configuration
+ * file. 
+ *
+ * Will throw a runtime_error exception if a conversion is not possible.
+ */
+/** \brief Interpret the string as a boolean
+ * 
+ * Accepts "1"/"0"  "on"/"off"  "true"/"false"  "yes"/"no", ignoring case.
+ */
+bool string2bool(const string & s);
 
 #endif
 
