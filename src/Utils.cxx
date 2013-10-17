@@ -1004,6 +1004,53 @@ bool variableHepTopTagWithMatch(TopJet topjet, double ptJetMin, double massWindo
 
 
 
+
+
+
+double WMassWithMatch(TopJet topjet)
+{
+
+  //Taking the top tag from the proper jet collection
+
+  EventCalc* calc = EventCalc::Instance();
+  
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
+  
+  double deltarmin = double_infinity();
+  
+  TopJet nextjet;
+  
+  for(unsigned int it=0; it<bcc->toptagjets->size();++it){
+
+    TopJet top4jet=bcc->toptagjets->at(it);
+    
+    if(top4jet.deltaR(topjet) < deltarmin){
+      deltarmin = top4jet.deltaR(topjet);
+      nextjet = top4jet;
+    }
+    
+  }
+  
+  if(deltarmin>=0.3) return 0;
+  int nsubjets;
+  nsubjets=nextjet.numberOfDaughters();
+  
+  LorentzVector allsubjets(0,0,0,0);
+  
+ 
+  std::vector<Particle> subjets = nextjet.subjets();
+
+  double mW = 0;
+    if( (subjets[0].v4()+subjets[1].v4()).isTimelike())
+    {
+      mW=(subjets[0].v4()+subjets[1].v4()).M();
+    }
+
+    return mW;
+}
+
+
+
 // returns one of the criteria used in the HEPTopTagger:atan(m13/m12) 
 
 double HepTopTagPairwiseMassWithMatch1(TopJet topjet, double ptJetMin, double massWindowLower, double massWindowUpper, double cutCondition2, double cutCondition3)
@@ -1030,7 +1077,7 @@ double HepTopTagPairwiseMassWithMatch1(TopJet topjet, double ptJetMin, double ma
     
   }
   
-  if(deltarmin>=0.3) return 0;
+  if(deltarmin>=0.3) return -99;
 
   double mjet;
   double ptjet;
@@ -1048,7 +1095,7 @@ double HepTopTagPairwiseMassWithMatch1(TopJet topjet, double ptJetMin, double ma
   }
   if(!allsubjets.isTimelike()) {
     mjet=0;
-    return false;
+    return -99;
   }
   
   mjet = allsubjets.M();
@@ -1111,7 +1158,7 @@ double HepTopTagPairwiseMassWithMatch2(TopJet topjet, double ptJetMin, double ma
     
   }
   
-  if(deltarmin>=0.3) return 0;
+  if(deltarmin>=0.3) return -99;
 
   double mjet;
   double ptjet;
@@ -1129,7 +1176,7 @@ double HepTopTagPairwiseMassWithMatch2(TopJet topjet, double ptJetMin, double ma
   }
   if(!allsubjets.isTimelike()) {
     mjet=0;
-    return false;
+    return -99;
   }
   
   mjet = allsubjets.M();
