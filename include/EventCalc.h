@@ -169,7 +169,7 @@ class EventCalc
   double JetMoment(Jet* jet, int n=1);
 
   bool selection_passed(const identifier & selid) const{
-      auto it = selections.find(selid);
+      std::map<identifier, bool>::const_iterator it = selections.find(selid);
       if(it!=selections.end()) return it->second;
       throw std::runtime_error("did not find selection result for '" + selid.name() + "'");
   }

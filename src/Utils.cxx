@@ -106,9 +106,9 @@ float HepTopTagMatchPt(TopJet topjet){
 }
 
 
-std::unique_ptr<double[]> log_binning(size_t n_bins, double xmin, double xmax){
+boost::shared_array<double> log_binning(size_t n_bins, double xmin, double xmax){
     assert(xmin > 0 && xmin < xmax);
-    std::unique_ptr<double[]> result(new double[n_bins + 1]);
+    boost::shared_array<double> result(new double[n_bins + 1]);
     
     // equidistant binning og log-scale means always use the same ratio between bin borders:
     double ratio = pow(xmax / xmin, 1.0 / n_bins);
@@ -1528,19 +1528,21 @@ float relIsoMuon(EventCalc & event, const Muon & mu, float deltaR){
   float photonIso=0;
   float puiso=0;
 
-  for(PFParticle & pfp : *event.GetIsoPFParticles()){
-      auto dr = pfp.deltaR(mu);
+  vector<PFParticle> & pfps = *event.GetIsoPFParticles();
+  for(vector<PFParticle>::iterator pfp  = pfps.begin(); pfp != pfps.end(); ++pfp){
+      float dr = pfp->deltaR(mu);
       if(dr < deltaR){
-         if(pfp.particleID() == PFParticle::eH && pfp.pt()>0.0 && dr > 0.0001 ) chargedHadronIso += pfp.pt();
-         if(pfp.particleID() == PFParticle::eH0 && pfp.pt()>0.5 && dr > 0.01) neutralHadronIso += pfp.pt();
-         if(pfp.particleID() == PFParticle::eGamma && pfp.pt()>0.5 && dr > 0.01) photonIso += pfp.pt();
+         if(pfp->particleID() == PFParticle::eH && pfp->pt()>0.0 && dr > 0.0001 ) chargedHadronIso += pfp->pt();
+         if(pfp->particleID() == PFParticle::eH0 && pfp->pt()>0.5 && dr > 0.01) neutralHadronIso += pfp->pt();
+         if(pfp->particleID() == PFParticle::eGamma && pfp->pt()>0.5 && dr > 0.01) photonIso += pfp->pt();
       }
   }
   
-  for(PFParticle & pfp : *event.GetPUIsoPFParticles()){
-    auto dr = pfp.deltaR(mu);
+  vector<PFParticle> & pfps_pu = *event.GetIsoPFParticles();
+  for(vector<PFParticle>::iterator pfp  = pfps_pu.begin(); pfp != pfps_pu.end(); ++pfp){
+    float dr = pfp->deltaR(mu);
     if(dr<deltaR ){
-      if(pfp.particleID() == PFParticle::eH && pfp.pt()>0.5 && dr>0.01 ) puiso += pfp.pt();
+      if(pfp->particleID() == PFParticle::eH && pfp->pt()>0.5 && dr>0.01 ) puiso += pfp->pt();
     }
   }
   
@@ -1673,7 +1675,33 @@ double pTrel(const LorentzVector & p1, const LorentzVector & p2){
   }
 }
 
-TableOutput::TableOutput(vector<std::string> header_): ncols(header_.size()), header(std::move(header_)){
+TableOutput::TableOutput(const vector<std::string> & header_): ncols(header_.size()), header(header_){
+}
+
+namespace{
+void hline(ostream & out, size_t total_width){
+    out << " ";
+    for(size_t i=1; i+1<total_width; ++i){
+        out << "-";
+    }
+    out << endl;
+}
+
+
+void out_row(ostream & out, const vector<string> & row, const vector<size_t> colsize, const string & sep){
+    const size_t ncols = colsize.size();
+    assert(ncols == row.size());
+    for(size_t i=0; i<ncols; ++i){
+        out << sep << row[i];
+        size_t nfill = colsize[i] - row[i].size();
+        for(size_t j=0; j<nfill; ++j){
+            out << " ";
+        }
+    }
+    out << sep << endl;
+}
+
+
 }
 
 void TableOutput::print(ostream & out){
@@ -1683,9 +1711,9 @@ void TableOutput::print(ostream & out){
     for(size_t i=0; i<ncols; ++i){
         colsize[i] = header[i].size();
     }
-    for(auto & row: rows){
+    for(vector<vector<string> >::const_iterator row = rows.begin(); row != rows.end(); ++row){
         for(size_t i=0; i<ncols; ++i){
-            colsize[i] = max(colsize[i], row[i].size());
+            colsize[i] = max(colsize[i], (*row)[i].size());
         }
     }
     size_t total_width = 0;
@@ -1694,38 +1722,20 @@ void TableOutput::print(ostream & out){
     }
     total_width += sep.size();
     
-    // output helpers for a horizontal line and for a single row:
-    auto hline = [&](){
-            out << " ";
-            for(size_t i=1; i+1<total_width; ++i){
-                out << "-";
-            }
-            out << endl;};
-    auto out_row = [&](const vector<string> & row){
-        for(size_t i=0; i<ncols; ++i){
-            out << sep << row[i];
-            size_t nfill = colsize[i] - row[i].size();
-            for(size_t j=0; j<nfill; ++j){
-                out << " ";
-            }
-        }
-        out << sep << endl;
-    };
-
     // output table:
-    hline();
-    out_row(header);
-    hline();
-    for(auto & row : rows){
-        out_row(row);
+    hline(out, total_width);
+    out_row(out, header, colsize, sep);
+    hline(out, total_width);
+    for(vector<vector<string> >::const_iterator row = rows.begin(); row != rows.end(); ++row){
+        out_row(out, *row, colsize, sep);
     }
-    hline();
+    hline(out, total_width);
 }
 
 // entries.size() == ncols must hold
-void TableOutput::add_row(vector<string> row){
+void TableOutput::add_row(const vector<string> & row){
     assert(ncols == row.size());
-    rows.push_back(std::move(row));
+    rows.push_back(row);
 }
 
 

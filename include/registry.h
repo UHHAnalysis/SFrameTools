@@ -1,4 +1,4 @@
-#if !defined(REGISTRY_HPP) && !defined(__CINT__)
+#if !defined(REGISTRY_HPP) && !defined(__CINT__) // completely hide this from CINT, which does not like boost constructs
 #define REGISTRY_HPP
 
 #include <stdint.h>

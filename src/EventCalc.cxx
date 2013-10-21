@@ -1,8 +1,9 @@
 // Dear emacs, this is -*- c++ -*-
 
 #include "include/EventCalc.h"
-
 #include <iostream>
+
+using namespace std;
 
 EventCalc* EventCalc::m_instance = NULL;
 
@@ -100,8 +101,8 @@ double EventCalc::GetHT()
     double m_HT = GetHTlep();
     // sum over pt of all jets
     if(m_bcc->jets){
-        for(const Jet& jet : *m_bcc->jets){
-            m_HT += jet.pt();
+        for(vector<Jet>::const_iterator jet = m_bcc->jets->begin(); jet != m_bcc->jets->end(); ++jet){
+            m_HT += jet->pt();
         }
     }
     return m_HT;
@@ -115,22 +116,22 @@ double EventCalc::GetHTlep()
 
     // sum over pt of all electrons
     if(m_bcc->electrons){
-        for(const Electron& ele: *m_bcc->electrons){
-            m_HTlep += ele.pt();
+        for(vector<Electron>::const_iterator ele = m_bcc->electrons->begin(); ele != m_bcc->electrons->end(); ++ele){
+            m_HTlep += ele->pt();
         }
     }
 
     // sum over pt of all muons
     if(m_bcc->muons){
-        for(const Muon & mu : *m_bcc->muons){
-            m_HTlep += mu.pt();
+        for(vector<Muon>::const_iterator mu = m_bcc->muons->begin(); mu != m_bcc->muons->end(); ++mu){
+            m_HTlep += mu->pt();
         }
     }
 
     // sum over pt of all taus
     if(m_bcc->taus){
-        for(const Tau & tau : *m_bcc->taus){
-            m_HTlep += tau.pt();
+        for(vector<Tau>::const_iterator tau = m_bcc->taus->begin(); tau != m_bcc->taus->end(); ++tau){
+            m_HTlep += tau->pt();
         }
     }
 

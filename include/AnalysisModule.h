@@ -3,14 +3,18 @@
 
 #include "SFrameTools/include/EventCalc.h"
 #include "SFrameTools/include/Selection.h"
+#include "SFrameTools/include/boost_includes.h" // for static assert and type traits, ptr_vector
+
 #include "core/include/SCycleBaseHist.h"
 #include "core/include/SCycleBase.h"
 
 #include "registry.h"
 #include "identifier.h"
 
-#include <boost/lexical_cast.hpp>
 #include <memory>
+#include <boost/lexical_cast.hpp>
+
+
 
 class Context;
 
@@ -69,7 +73,7 @@ public:
      * Throws a runtime_error if the setting with this key is not available, i.e. iff has_setting(key)==false.
      */
     std::string get_setting(const std::string & key) const{
-        auto it = settings.find(key);
+        std::map<std::string, std::string>::const_iterator it = settings.find(key);
         if(it==settings.end()) fail(key);
         return it->second;
     }
@@ -77,7 +81,7 @@ public:
     /** \brief Get a setting from the configuration, returning a default value if it does not exist
      */
     std::string get_setting(const std::string & key, const std::string & def) const{
-        auto it = settings.find(key);
+        std::map<std::string, std::string>::const_iterator it = settings.find(key);
         if(it==settings.end()) return def;
         else return it->second;
     }
@@ -118,7 +122,7 @@ public:
      */
     template<typename T>
     void declare_event_input(const char * name, T & t){
-        static_assert(!std::is_pointer<T>::value, "T must not be of pointer type");
+        BOOST_STATIC_ASSERT_MSG(!boost::is_pointer<T>::value, "T must not be of pointer type");
         do_declare_event_input(name, static_cast<void*>(&t), typeid(T));
     }
     
@@ -128,7 +132,7 @@ public:
      */
     template<typename T>
     void declare_event_output(const char * name, const T & t){
-        static_assert(!std::is_pointer<T>::value, "T must not be of pointer type");
+        BOOST_STATIC_ASSERT_MSG(!boost::is_pointer<T>::value, "T must not be of pointer type");
         do_declare_event_output(name, static_cast<const void*>(&t), typeid(T));
     }
     
@@ -138,7 +142,7 @@ public:
      */
     template<typename T>
     void declare_output(const identifier & tree_id, const char * name, T & t){
-        static_assert(!std::is_pointer<T>::value, "T must not be of pointer type");
+        BOOST_STATIC_ASSERT_MSG(!boost::is_pointer<T>::value, "T must not be of pointer type");
         do_declare_output(tree_id, name, static_cast<const void*>(&t), typeid(T));
     }
     
@@ -190,25 +194,29 @@ public:
     
 protected:
     
-#ifndef __CINT__
-    template<typename T, typename... targs>
-    void book(const identifier & id, targs... args){
-        static_assert(std::is_base_of<TH1, T>::value, "Use book<T> only with histograms (T inheriting from TH1)");
+    // in C++11, do this:
+    //template<typename T, typename... targs>
+    // book(...)
+    // T * t = new T(name.c_str(), args...);
+    
+    void book(const identifier & id, TH1 * h){
         std::string name = id.name();
-        T * t = new T(name.c_str(), args...);
-        t->Sumw2();
-        ctx.put(dirname + "/" + name, t);
-        histos[id] = t;
+        if(name.find('/')!=string::npos){
+            throw std::runtime_error(" name '" + name + "' illegal: '/' in histogram names not allowed in Hists (use Context::put directly for putting histograms in subdirectories)");
+        }
+        h->SetName(name.c_str());
+        h->Sumw2();
+        ctx.put(dirname + "/" + name, h);
+        histos[id] = h;
     }
     
     TH1* get_hist(const identifier & id){
-        auto it = histos.find(id);
+        std::map<identifier, TH1*>::iterator it = histos.find(id);
         if(it==histos.end()){
             throw std::runtime_error("Hists::get_hist: did not find histogram '" + id.name() + "'");
         }
         return it->second;
     }
-#endif
     
 private:
     Context & ctx;
@@ -229,13 +237,12 @@ private:
  *  - in the 'process' method of your analysis class, call the 'AndSelection::process' method
  *  - to get the result of the selection, ask the EventCalc container for passed(id), using the same id as used in the construction
  */
-#ifndef __CINT__
 class AndSelection: public AnalysisModule{
 public:
     explicit AndSelection(const identifier & selection_id, bool create_cutflow_histo = true);
     
     /// add the selection module, transferring memory ownership. If alternative_description is given, it is used in the histogram and output instead of module->description()
-    void add(std::unique_ptr<SelectionModule> module, const string & alternative_description = "");
+    void add(std::auto_ptr<SelectionModule> & module, const string & alternative_description = "");
 
     /// initialize histograms based on the current list of modules; call this exactly once per dataset.
     virtual void begin_dataset(Context & ctx);
@@ -250,12 +257,11 @@ private:
     bool create_cutflow;
     
     // module info:
-    std::vector<std::unique_ptr<SelectionModule>> modules;
+    boost::ptr_vector<SelectionModule> modules;
     std::vector<std::string> descriptions;
     
     TH1D * cutflow_raw, * cutflow_weighted; // owned by Context
 };
-#endif
 
 
 /** some utility methods to convert string to various other objects; mainly for interpreting the configuration

@@ -3,7 +3,6 @@
 
 #include "SFrameTools/include/BaseCycleContainer.h"
 #include "SFrameTools/include/EventCalc.h"
-#include "SFrameTools/include/Utils.h"
 #include "SFrameTools/include/ReconstructionHypothesis.h"
 #include "SFrameTools/include/TTbarGen.h"
 
