@@ -188,8 +188,6 @@ class EventCalc
   LuminosityHandler* m_lumi;
 
   // booleans to tell weather quantities have already been derived in an event
-  bool b_HT;
-  bool b_HTlep;
   bool b_Reconstruction;
 
   bool b_jetparticles;
@@ -197,9 +195,6 @@ class EventCalc
   bool b_puisoparticles;
 
   // data members to store calculated results
-  double m_HT;
-  double m_HTlep;
-
   double m_TotalWeight;
 
   Particle* m_primlep;

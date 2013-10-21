@@ -352,10 +352,7 @@ void AnalysisModuleRunner::BeginInputData( const SInputData& in ) throw( SError 
 // see AnalysisCycle::FillTriggerNames!
 void AnalysisModuleRunner::FillTriggerNames(){
     if(!m_bcc.triggerNames) return;
-    // empty actual trigger list if the event belongs to a different run:
-    if(m_bcc.run != m_runid_triggernames){
-        m_bcc.triggerNames_actualrun.clear();
-    }
+    if(m_bcc.run == m_runid_triggernames) return;
     
     //fill list of trigger names
     if(m_bcc.triggerNames->size()!=0) {
@@ -380,11 +377,12 @@ void AnalysisModuleRunner::FillTriggerNames(){
           break;
         }
       }
-      m_runid_triggernames = m_bcc.run;
       //go back to original event
       tmp_tree->SetBranchStatus("*",1);
       tmp_tree->GetEntry(processed_events);
     }
+    m_runid_triggernames = m_bcc.run;
+    
     if(m_bcc.triggerNames_actualrun.size()==0){
         m_logger << ERROR << "Trigger search was NOT succesful!!!" << SLogger::endmsg;
     }
