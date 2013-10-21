@@ -7,6 +7,7 @@ LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist)
     m_muon_unc = false;
     m_ele_unc = false;
     m_tau_unc = false;
+    m_tauele_unc = false;
     m_tau_eff_unc = false;
     
     if(correctionlist.size()%2!=0) {
@@ -324,7 +325,7 @@ double LeptonScaleFactors::GetTauWeight()
   static EventCalc* calc = EventCalc::Instance();
   BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
   
-  double weight = 1;
+  double weight = 1.;
 
   std::vector<Tau> fake_taus;
   bool fake = true;
@@ -349,21 +350,35 @@ double LeptonScaleFactors::GetTauWeight()
 	      GenParticle genp = bcc->genparticles->at(i);
 	      double deltaR = genp.deltaR(tau);
 	      
-	      if (deltaR < 0.5 && abs(genp.pdgId())==11)
+	      if (deltaR < 0.5 && abs(genp.pdgId())==11 && genp.status()==3)
 		{
-		  if (fabs(tau.eta()) <= 2.1) weight = weight*0.85;
-		  if (fabs(tau.eta()) > 2.1) weight = weight*0.65;
+		  if (!m_tauele_unc)
+		    {
+		      if (fabs(tau.eta()) <= 2.1) weight = weight*0.85;
+		      if (fabs(tau.eta()) > 2.1) weight = weight*0.65;
+		    } else {
+		   if (m_syst_shift==e_Down)
+		     {
+		       if (fabs(tau.eta()) <= 2.1) weight = weight*0.85 - weight*0.85*0.2;
+		       if (fabs(tau.eta()) > 2.1) weight = weight*0.65 - weight*0.65*0.25;	 
+		     }
+		   if (m_syst_shift==e_Up)
+		     {
+		       if (fabs(tau.eta()) <= 2.1) weight = weight*0.85 + weight*0.85*0.2;
+		       if (fabs(tau.eta()) > 2.1) weight = weight*0.65 + weight*0.65*0.25;	 
+		     }
+		  }
 		}
 	      else
 		{
-		  if (deltaR < 0.5 && abs(genp.pdgId()) != 13)
+		  if (deltaR < 0.5 && !(abs(genp.pdgId()) == 13 && genp.status()==3))
 		    {
 		      if (!m_tau_unc)
 			{
-			  if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.13959;
-			  if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.820116;
-			  if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.374411;
-			  if (tau.pt() > 200) weight = weight*1.04871;
+			  if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.1115;
+			  if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.818294;
+			  if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.375821;
+			  if (tau.pt() > 200) weight = weight*1.03668;
 			  
 			} else {
 			
