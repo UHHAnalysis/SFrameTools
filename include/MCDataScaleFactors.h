@@ -71,6 +71,9 @@ public:
     void DoUpVarTauSF(bool f=true){m_tau_unc=true; m_syst_shift=e_Up;}
     void DoDownVarTauSF(bool f=true){m_tau_unc=true; m_syst_shift=e_Down;}
     
+    void DoUpVarTauEleSF(bool f=true){m_tauele_unc=true; m_syst_shift=e_Up;}
+    void DoDownVarTauEleSF(bool f=true){m_tauele_unc=true; m_syst_shift=e_Down;}
+
     void DoUpVarTauEffSF(bool f=true){m_tau_eff_unc=true; m_syst_shift=e_Up;}
     void DoDownVarTauEffSF(bool f=true){m_tau_eff_unc=true; m_syst_shift=e_Down;}
         /// return the scale factor for the fake rate of medium taus
@@ -87,6 +90,7 @@ private:
     bool m_muon_unc;                // do shift of muon scale factors 
     bool m_ele_unc;                 // do shift of electron scale factors 
     bool m_tau_unc;                 // do shift of tau scale factors 
+    bool m_tauele_unc;               // do shift of e -> tau fake rate
     int m_current_run;              // run for which the scale factors are vali
     bool m_tau_eff_unc;             // do shift of tau efficiency scale factors 
     

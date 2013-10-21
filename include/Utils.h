@@ -60,6 +60,7 @@ enum E_SysUnc {
   e_MuonSF,  /**< muon scale factor uncertainty */
   e_EleSF,   /**< electron scale factor uncertainty */
   e_TauSF,   /**< tau scale factor uncertainty */
+  e_TauEleSF, /**< e-> tau fake rate scale factor uncertainty */
   e_TauEffSF, /**< tau identification scale factor uncertainty */
   e_TauEnergy,/**< tau energy scale uncertainty */
   e_PDF,     /**< PDF uncertainty */
