@@ -1,0 +1,16 @@
+Index: Makefile.common
+===================================================================
+--- Makefile.common	(revision 369)
++++ Makefile.common	(working copy)
+@@ -72,6 +72,11 @@
+ INCLUDES += -I$(SFRAME_DIR) -I./
+ CXXFLAGS += -Wall -Wno-overloaded-virtual -Wno-unused $(USERCXXFLAGS) $(CPPEXPFLAGS)
+ 
++# include boost, if set:
++ifneq ($(BOOSTDIR),)
++INCLUDES += -I$(BOOSTDIR)
++endif
++
+ # Set the locations of some files
+ DICTHEAD  = $(SRCDIR)/$(LIBRARY)_Dict.h
+ DICTFILE  = $(SRCDIR)/$(LIBRARY)_Dict.$(SrcSuf)
