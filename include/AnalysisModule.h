@@ -3,7 +3,7 @@
 
 #include "SFrameTools/include/EventCalc.h"
 #include "SFrameTools/include/Selection.h"
-#include "SFrameTools/include/boost_includes.h" // for static assert and type traits, ptr_vector
+#include "SFrameTools/include/boost_includes.h" // for static assert and type traits, ptr_vector, and lexical_cast
 
 #include "core/include/SCycleBaseHist.h"
 #include "core/include/SCycleBase.h"
@@ -12,9 +12,6 @@
 #include "identifier.h"
 
 #include <memory>
-#include <boost/lexical_cast.hpp>
-
-
 
 class Context;
 

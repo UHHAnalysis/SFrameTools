@@ -63,7 +63,7 @@ std::auto_ptr<base_type> Registry<base_type>::build(const std::string & key) con
     typename boost::ptr_map<std::string, Factory>::const_iterator it = id_to_factory.find(key);
     if(it==id_to_factory.end()) throw std::runtime_error("Registry: did not find registered type of name '" + key + "'");
     try{
-        return it->operator()();
+        return it->second->operator()();
     }
     catch(std::exception & ex){
         throw std::runtime_error("Registry: exception while trying to build type '" + key + "': " + ex.what());

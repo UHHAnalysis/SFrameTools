@@ -10,6 +10,7 @@
 #include <boost/static_assert.hpp>
 #include <boost/type_traits.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/lexical_cast.hpp>
 
 #else
 

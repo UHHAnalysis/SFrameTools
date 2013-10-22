@@ -357,9 +357,10 @@ void AnalysisModuleRunner::FillTriggerNames(){
     //fill list of trigger names
     if(m_bcc.triggerNames->size()!=0) {
         m_bcc.triggerNames_actualrun = *m_bcc.triggerNames;
+        m_runid_triggernames = m_bcc.run;
     }
     else{
-      m_logger << WARNING<< "No trigger table found for this event -> start trigger search on following events" << SLogger::endmsg;
+      m_logger << WARNING<< "No trigger table found for this event (need: run " << m_bcc.run << "; have: run " << m_runid_triggernames << ") -> start trigger search on following events" << SLogger::endmsg;
       int tmp_run= m_bcc.run;
       TTree* tmp_tree = GetInputTree("AnalysisTree");
       int processed_events = tmp_tree->GetReadEvent();
