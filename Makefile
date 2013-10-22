@@ -1,3 +1,5 @@
+dummy := $(shell ./apply-sframe-patches.sh > /dev/null)
+
 # Package information
 LIBRARY = SFrameTools
 OBJDIR  = obj
