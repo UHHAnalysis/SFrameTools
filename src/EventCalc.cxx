@@ -419,7 +419,7 @@ double EventCalc::EnergyWeightedJetCharge(Jet* jet, double kappa){
   double Q = 0;
   std::vector<PFParticle> pfps = GetJetPFParticles(jet);
   for(unsigned int i=0; i< pfps.size(); i++){
-    Q += pfps[i].charge() * pow(pfps[i].energy(),kappa);
+    Q += pfps[i].charge() * ::pow(pfps[i].energy(),kappa);
   }
   
   LorentzVector jet_v4_raw = jet->v4()*jet->JEC_factor_raw();
@@ -433,7 +433,7 @@ double EventCalc::JetMoment(Jet* jet, int n){
   double moment = 0;
   std::vector<PFParticle> pfps = GetJetPFParticles(jet);
   for(unsigned int i=0; i< pfps.size(); i++){
-    moment += pow(jet->deltaR(pfps[i]),n);
+    moment += ::pow(jet->deltaR(pfps[i]),n);
   }
   
   if(pfps.size()!=0) moment /= 1.*pfps.size();
