@@ -328,6 +328,7 @@ double LeptonScaleFactors::GetTauWeight()
   double weight = 1.;
 
   std::vector<Tau> fake_taus;
+  std::vector<Tau> ele_fake_taus;
   bool fake = true;
    for(unsigned int j=0; j<bcc->taus->size(); ++j)
 	{
@@ -337,67 +338,81 @@ double LeptonScaleFactors::GetTauWeight()
 	    {
 	      GenParticle genp = bcc->genparticles->at(i);
 	      double deltaR = genp.deltaR(tau);
-	      if (deltaR < 0.5 && abs(genp.pdgId())==15) fake = false;
+	      if (deltaR < 0.5 && abs(genp.pdgId())==15) fake =false; 
 	    }
-	  if (fake) fake_taus.push_back(tau);    
-
-	}
-   for(unsigned int i=0; i<fake_taus.size(); ++i)
-	{
-	  Tau tau = fake_taus[i];
+	  if(!fake) continue;
+	  bool fakeEle = false;
 	  for(unsigned int i=0; i<bcc->genparticles->size(); ++i)
 	    {
 	      GenParticle genp = bcc->genparticles->at(i);
 	      double deltaR = genp.deltaR(tau);
-	      
-	      if (deltaR < 0.5 && abs(genp.pdgId())==11 && genp.status()==3)
-		{
-		  if (!m_tauele_unc)
-		    {
-		      if (fabs(tau.eta()) <= 2.1) weight = weight*0.85;
-		      if (fabs(tau.eta()) > 2.1) weight = weight*0.65;
-		    } else {
-		   if (m_syst_shift==e_Down)
-		     {
-		       if (fabs(tau.eta()) <= 2.1) weight = weight*0.85 - weight*0.85*0.2;
-		       if (fabs(tau.eta()) > 2.1) weight = weight*0.65 - weight*0.65*0.25;	 
-		     }
-		   if (m_syst_shift==e_Up)
-		     {
-		       if (fabs(tau.eta()) <= 2.1) weight = weight*0.85 + weight*0.85*0.2;
-		       if (fabs(tau.eta()) > 2.1) weight = weight*0.65 + weight*0.65*0.25;	 
-		     }
-		  }
-		}
-	      else
-		{
-		  if (deltaR < 0.5 && !(abs(genp.pdgId()) == 13 && genp.status()==3))
-		    {
-		      if (!m_tau_unc)
-			{
-			  if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.1115;
-			  if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.818294;
-			  if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.375821;
-			  if (tau.pt() > 200) weight = weight*1.03668;
-			  
-			} else {
-			
-			if (m_syst_shift==e_Down)
-			  {
-			    if (tau.pt() < 120) weight = weight*1.17106; //old numbers
-			    if (tau.pt() > 120) weight = weight*0.55023; //old numbers
-			  }
-			if (m_syst_shift==e_Up)
-			  {
-			    if (tau.pt() < 120) weight = weight*1.30987;//old numbers
-			    if (tau.pt() > 120) weight = weight*1.11325;//old numbers
-			  }
-		      }
-		    }
-		}
+	      if (deltaR < 0.5 && abs(genp.pdgId())==11 && genp.status()==3) fakeEle =true; 
 	    }
-	  
+	  if (fakeEle) {
+	    ele_fake_taus.push_back(tau);
+	    continue;
+	  }
+	  bool fakeMuon = false;
+	  for(unsigned int i=0; i<bcc->genparticles->size(); ++i)
+	    {
+	      GenParticle genp = bcc->genparticles->at(i);
+	      double deltaR = genp.deltaR(tau);
+	      if (deltaR < 0.5 && abs(genp.pdgId())==13 && genp.status()==3) fakeMuon =true; 
+	    }
+	  if (fakeMuon) continue;
+
+	  if (fake) fake_taus.push_back(tau);    
 	}
+   
+   for(unsigned int i=0; i<ele_fake_taus.size(); ++i)
+     {
+       Tau tau = ele_fake_taus[i];
+       if (!m_tauele_unc)
+	 {
+	   if (fabs(tau.eta()) <= 2.1) weight = weight*0.85;
+	   if (fabs(tau.eta()) > 2.1) weight = weight*0.65;
+	 } else 
+	 {
+	   if (m_syst_shift==e_Down)
+	     {
+	       if (fabs(tau.eta()) <= 2.1) weight = weight*0.85 - weight*0.85*0.2;
+	       if (fabs(tau.eta()) > 2.1) weight = weight*0.65 - weight*0.65*0.25;	 
+	     }
+	   if (m_syst_shift==e_Up)
+	     {
+	       if (fabs(tau.eta()) <= 2.1) weight = weight*0.85 + weight*0.85*0.2;
+	       if (fabs(tau.eta()) > 2.1) weight = weight*0.65 + weight*0.65*0.25;	 
+	     }
+	 }
+     }
+   for(unsigned int i=0; i<fake_taus.size(); ++i)
+     {
+       Tau tau = fake_taus[i];	      
+       if (!m_tau_unc)
+	 {
+	   if (tau.pt() > 20 && tau.pt() <= 60) weight = weight* 1.1025;
+	   if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.8238;
+	   if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.3610;
+	   if (tau.pt() > 200) weight = weight*1.1124;
+	   
+	 } else 
+	 {
+	   if (m_syst_shift==e_Down)
+	     {
+	       if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.0273; 
+	       if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.7103;
+	       if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.1086;
+	       if (tau.pt() > 200) weight = weight*0.5516;
+	     }
+	   if (m_syst_shift==e_Up)
+	     {
+	       if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.1725;
+	       if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.9374;
+	       if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.6179;
+	       if (tau.pt() > 200) weight = weight*1.7189;
+	     }
+	 }
+     }
     return weight;
 }
 
