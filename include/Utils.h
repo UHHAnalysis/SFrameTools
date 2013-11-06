@@ -119,6 +119,8 @@ float HiggsBRweight();
 
 int subJetBTag(TopJet topjet, E_BtagType type, TString mode="default",TString filename="");
 
+int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode="default", TString filename="", int whichsub=-1);
+
 int subJetBTagTop(TopJet topjet, E_BtagType type, TString mode="default",TString filename="");
 
 bool HiggsTag(TopJet topjet, E_BtagType type1, E_BtagType type2, TString mode="default",TString filename="");
@@ -168,6 +170,9 @@ bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, do
  * @see NWTagSelection
  */
 bool WTag(TopJet prunedjet, double& mjet, int &nsubjets, double& massdrop);
+
+// return flavor of subjet, mimic algorithmic definition meant only for some tests
+int SubJetFlavor(TopJet topjet, int whichsub, float matchcone=0.3);
 
 float relIsoMuon(const Muon & mu, float deltaR = 0.4); //DEPRECATED_MSG("use the version with EventCalc argument");
 
