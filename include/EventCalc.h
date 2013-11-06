@@ -169,7 +169,7 @@ class EventCalc
   double JetMoment(Jet* jet, int n=1);
 
   bool selection_passed(const identifier & selid) const{
-      auto it = selections.find(selid);
+      std::map<identifier, bool>::const_iterator it = selections.find(selid);
       if(it!=selections.end()) return it->second;
       throw std::runtime_error("did not find selection result for '" + selid.name() + "'");
   }
@@ -188,8 +188,6 @@ class EventCalc
   LuminosityHandler* m_lumi;
 
   // booleans to tell weather quantities have already been derived in an event
-  bool b_HT;
-  bool b_HTlep;
   bool b_Reconstruction;
 
   bool b_jetparticles;
@@ -197,9 +195,6 @@ class EventCalc
   bool b_puisoparticles;
 
   // data members to store calculated results
-  double m_HT;
-  double m_HTlep;
-
   double m_TotalWeight;
 
   Particle* m_primlep;

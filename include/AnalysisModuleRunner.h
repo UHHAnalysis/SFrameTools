@@ -3,6 +3,8 @@
 
 #include <memory>
 
+
+#include "SFrameTools/include/fwd.h"
 #include "core/include/SCycleBase.h"
 #include "SFrameTools/include/AnalysisModule.h"
 
@@ -53,6 +55,8 @@ private:
         TBranch * branch;
         const type_info * ti; // this is always a non-pointer type.
         void * addr; // address of an object of type ti.
+        
+        branchinfo(TBranch * branch_, const type_info * ti_, void * addr_): branch(branch_), ti(ti_), addr(addr_){}
     };
     std::map<std::string, branchinfo> bname2bi;
     
@@ -63,7 +67,6 @@ private:
     
     std::map<identifier, TTree*> output_trees;
 };
-
 
 /** \brief The SFrame cycle used to run an AnalysisModule
  * 
@@ -101,8 +104,6 @@ private:
     void setup_output();
     void FillTriggerNames();
     
-#ifndef __CINT__ // we don't have anything for CINT to serialize ...:
-    
     std::string m_JetCollection, m_GenJetCollection, m_ElectronCollection, m_MuonCollection, 
       m_TauCollection, m_PhotonCollection, m_PrimaryVertexCollection, m_METName, m_TopJetCollection, m_TopTagJetCollection, m_HiggsTagJetCollection, m_TopJetCollectionGen,
        m_PrunedJetCollection, m_GenParticleCollection, m_PFParticleCollection;
@@ -129,8 +130,6 @@ private:
     
     
     std::map<std::string, std::string> dummyConfigVars;
-    
-#endif
 };
 
 #endif

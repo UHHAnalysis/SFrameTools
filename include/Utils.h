@@ -3,6 +3,7 @@
 
 #include "SFrameTools/include/Objects.h"
 #include "SFrameTools/include/fwd.h"
+#include "SFrameTools/include/boost_includes.h" // for shared_array
 
 #include "TVector3.h"
 #include <limits>
@@ -10,17 +11,9 @@
 #include <memory>
 #include <TF1.h>
 
+
 #define DEPRECATED __attribute__ ((deprecated))
 #define DEPRECATED_MSG(msg) __attribute__ ((deprecated(msg)))
-
-#ifndef __CINT__
-
-template<typename T, typename ...Args>
-inline std::unique_ptr<T> make_unique(Args&& ...args){
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)... ));
-}
-
-#endif
 
 typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > LorentzVectorXYZE;
 
@@ -102,10 +95,10 @@ class TableOutput{
 public:
     
     /// construct, setting the column headings. Note that this defines now and for always the number of columns.
-    explicit TableOutput(std::vector<std::string> header);
+    explicit TableOutput(const std::vector<std::string> & header);
     
     /// Append a row to the end of the table; the number of columns must match the one defined at the time of construction
-    void add_row(std::vector<std::string> row);
+    void add_row(const std::vector<std::string> & row);
     
     /// print the table to the supplied stream.
     void print(std::ostream & out);
@@ -114,13 +107,13 @@ private:
     
     size_t ncols;
     std::vector<std::string> header;
-    std::vector<std::vector<std::string>> rows;
+    std::vector<std::vector<std::string> > rows;
 };
 
 
 // make a logarithmic binning. The resulting array conatins n_bins+1 entries with the lower and upper
 // end of n_bins bins, suitable for passing it to the TH1 constructor.
-std::unique_ptr<double[]> log_binning(size_t n_bins, double xmin, double xmax);
+boost::shared_array<double> log_binning(size_t n_bins, double xmin, double xmax);
 
 float HiggsBRweight();
 
@@ -213,8 +206,5 @@ int myPow(int x, unsigned int p) ;
 //overload
 double pTrel(const Particle & p1, const Particle & p2);
 double pTrel(const LorentzVector & p1,const LorentzVector & p2);
-
-
-
 
 #endif

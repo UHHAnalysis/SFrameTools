@@ -54,23 +54,23 @@ char DataTypeToChar(EDataType datatype){
 SFrameContext::SFrameContext(SCycleBase & base_, const SInputData& sin): base(base_) {
     // populate settings:
     vector<pair<string, string> > props = base.GetConfig().GetProperties();
-    for(auto & kv : props){
-        set_setting(kv.first, kv.second);
+    for(vector<pair<string, string> >::const_iterator it = props.begin(); it != props.end(); ++it){
+        set_setting(it->first, it->second);
     }
     set_setting("dataset.type", sin.GetType().Data());
     set_setting("dataset.version", sin.GetVersion().Data());
     // we need exactly one input event tree:
     bool found_input_tree = false;
-    const auto & tt2trees = sin.GetTrees(); // map of treetype to vector of trees
-    for(const auto & it : tt2trees){
-        const auto & trees = it.second;
-        for(const STree & tree : trees){
-            if((tree.type & STree::EVENT_TREE) && (tree.type & STree::INPUT_TREE)){
+    const map< Int_t, vector<STree> > & tt2trees = sin.GetTrees(); // map of treetype to vector of trees
+    for(map< Int_t, vector<STree> >::const_iterator it=tt2trees.begin(); it!=tt2trees.end(); ++it){
+        const vector<STree> & trees = it->second;
+        for(vector<STree>::const_iterator tree = trees.begin(); tree != trees.end(); ++tree){
+            if((tree->type & STree::EVENT_TREE) && (tree->type & STree::INPUT_TREE)){
                 if(found_input_tree){
                     throw runtime_error("more than one input event tree");
                 }
                 found_input_tree = true;
-                event_treename = tree.treeName.Data();
+                event_treename = tree->treeName.Data();
             }
         }
     }
@@ -127,9 +127,9 @@ void SFrameContext::begin_input_file(){
     if(input_tree==0){
         throw runtime_error("Could not find input tree '" + event_treename + "'");
     }
-    for(auto & name_bi : bname2bi){
-        const string & bname = name_bi.first;
-        branchinfo & bi = name_bi.second;
+    for(std::map<std::string, branchinfo>::iterator name_bi = bname2bi.begin(); name_bi != bname2bi.end(); ++name_bi){
+        const string & bname = name_bi->first;
+        branchinfo & bi = name_bi->second;
         TBranch * branch = input_tree->GetBranch(bname.c_str());
         if(branch==0){
             throw runtime_error("Could not find branch '" + bname + "' in tree '" + event_treename + "'");
@@ -157,8 +157,8 @@ void SFrameContext::begin_input_file(){
 void SFrameContext::begin_event(){
     int ientry = input_tree->GetReadEntry();
     assert(ientry >= 0);
-    for(auto & name_bi : bname2bi){
-        name_bi.second.branch->GetEntry(ientry);
+    for(std::map<std::string, branchinfo>::iterator name_bi = bname2bi.begin(); name_bi != bname2bi.end(); ++name_bi){
+        name_bi->second.branch->GetEntry(ientry);
     }
 }
 
@@ -201,7 +201,7 @@ void tree_branch(TTree * tree, const char * name, void * addr, void ** addraddr,
 
 // event tree i/o
 void SFrameContext::do_declare_event_input(const char * name, void * addr, const type_info & ti){
-    bname2bi[name] = {0, &ti, addr};
+    bname2bi.insert(make_pair(name, branchinfo(0, &ti, addr)));
 }
 
 void SFrameContext::do_declare_event_output(const char * name, const void * caddr, const type_info & ti){
@@ -217,7 +217,7 @@ SFrameContext::~SFrameContext(){
     
 // other tree output:
 void SFrameContext::do_declare_output(const identifier & tree_id, const char * name, const void * caddr, const type_info & ti){
-    auto it = output_trees.find(tree_id);
+    std::map<identifier, TTree*>::iterator it = output_trees.find(tree_id);
     TTree * tree;
     if(it==output_trees.end()){
         tree = base.GetOutputMetadataTree(tree_id.name().c_str());
@@ -234,7 +234,7 @@ void SFrameContext::do_declare_output(const identifier & tree_id, const char * n
 
 
 void SFrameContext::write_output(const identifier & tree_id){
-    auto it = output_trees.find(tree_id);
+    std::map<identifier, TTree*>::iterator it = output_trees.find(tree_id);
     if(it==output_trees.end()){
         throw runtime_error("called write_output for tree '" + tree_id.name() + "' which has not been declared previously");
     }
@@ -293,11 +293,11 @@ void AnalysisModuleRunner::Initialize( TXMLNode* node ) throw( SError ){
 // The default implementation in SFrame will complain a lot about non-declared variables
 // on the workers, so re-implement this to declare all settings before calling the original routine ...
 void AnalysisModuleRunner::SetConfig(const SCycleConfig& config){
-    auto props = config.GetProperties();
-    for(auto & kv : props){
-        if(dummyConfigVars.find(kv.first) == dummyConfigVars.end()){
-            dummyConfigVars[kv.first] = "";
-            DeclareProperty(kv.first, dummyConfigVars[kv.first]);
+    const SCycleConfig::property_type & props = config.GetProperties();
+    for(SCycleConfig::property_type::const_iterator it = props.begin(); it != props.end(); ++it){
+        if(dummyConfigVars.find(it->first) == dummyConfigVars.end()){
+            dummyConfigVars[it->first] = "";
+            DeclareProperty(it->first, dummyConfigVars[it->first]);
         }
     }
     SCycleBase::SetConfig(config);
@@ -323,7 +323,7 @@ void AnalysisModuleRunner::BeginInputData( const SInputData& in ) throw( SError 
     m_TopJetCollection = context->get_setting("TopJetCollection", "");
     m_TopTagJetCollection = context->get_setting("TopTagJetCollection", "");
     m_HiggsTagJetCollection = context->get_setting("HiggsTagJetCollection", "");
-    m_TopJetCollectionGen = context->get_setting("TopJetCollection", "");
+    m_TopJetCollectionGen = context->get_setting("TopJetCollectionGen", "");
     m_PrunedJetCollection = context->get_setting("PrunedJetCollection", "");
     m_GenParticleCollection = context->get_setting("GenParticleCollection", "");
     m_PFParticleCollection = context->get_setting("PFParticleCollection", "");
@@ -352,17 +352,15 @@ void AnalysisModuleRunner::BeginInputData( const SInputData& in ) throw( SError 
 // see AnalysisCycle::FillTriggerNames!
 void AnalysisModuleRunner::FillTriggerNames(){
     if(!m_bcc.triggerNames) return;
-    // empty actual trigger list if the event belongs to a different run:
-    if(m_bcc.run != m_runid_triggernames){
-        m_bcc.triggerNames_actualrun.clear();
-    }
+    if(m_bcc.run == m_runid_triggernames) return;
     
     //fill list of trigger names
     if(m_bcc.triggerNames->size()!=0) {
         m_bcc.triggerNames_actualrun = *m_bcc.triggerNames;
+        m_runid_triggernames = m_bcc.run;
     }
     else{
-      m_logger << WARNING<< "No trigger table found for this event -> start trigger search on following events" << SLogger::endmsg;
+      m_logger << WARNING<< "No trigger table found for this event (need: run " << m_bcc.run << "; have: run " << m_runid_triggernames << ") -> start trigger search on following events" << SLogger::endmsg;
       int tmp_run= m_bcc.run;
       TTree* tmp_tree = GetInputTree("AnalysisTree");
       int processed_events = tmp_tree->GetReadEvent();
@@ -380,11 +378,12 @@ void AnalysisModuleRunner::FillTriggerNames(){
           break;
         }
       }
-      m_runid_triggernames = m_bcc.run;
       //go back to original event
       tmp_tree->SetBranchStatus("*",1);
       tmp_tree->GetEntry(processed_events);
     }
+    m_runid_triggernames = m_bcc.run;
+    
     if(m_bcc.triggerNames_actualrun.size()==0){
         m_logger << ERROR << "Trigger search was NOT succesful!!!" << SLogger::endmsg;
     }
@@ -543,6 +542,22 @@ void AnalysisModuleRunner::ExecuteEvent( const SInputData&, Double_t ) throw( SE
     }
 }
 
+namespace{
+    // double to string; 
+    string d2s(double d){
+        char s[20];
+        snprintf(s, 20, "%.6g", d);
+        return s;
+    };
+    
+    //long uint to string:
+    string ul2s(unsigned long i){
+        char s[20];
+        snprintf(s, 20, "%lu", i);
+        return s;
+    };
+}
+
 void AnalysisModuleRunner::EndMasterInputData(const SInputData & d) throw (SError){
     TList * l = GetHistOutput();
     TIter next(l);
@@ -574,31 +589,27 @@ void AnalysisModuleRunner::EndMasterInputData(const SInputData & d) throw (SErro
         }
     }
     
-    // double to string; long uint to string:
-    auto d2s = [](double d)-> string{
-        char s[20];
-        snprintf(s, 20, "%.6g", d);
-        return s;
-    };
-    auto ul2s = [](unsigned long i)-> string{
-        char s[20];
-        snprintf(s, 20, "%lu", i);
-        return s;
-    };
-    
     // print them:
-    for(auto & it : cutflows){
-        TH1D * cf = it.second.first;
-        TH1D * cf_raw = it.second.second;
+    for(map<string, pair<TH1D*, TH1D*> >::const_iterator it = cutflows.begin(); it!= cutflows.end(); ++it){
+        TH1D * cf = it->second.first;
+        TH1D * cf_raw = it->second.second;
         if(cf==0 or cf_raw == 0 or cf->GetNbinsX() != cf_raw->GetNbinsX()){
             m_logger << WARNING << " did not find all cutflows (or inconsistent cutflows)" << endl;
             continue;
         }
-        cout << endl << "Cutflow for selection '" << it.first << "':" << endl;
-        TableOutput out({"Selection", "N_raw", "N_weighted"});
+        cout << endl << "Cutflow for selection '" << it->first << "':" << endl;
+        vector<string> headers;
+        headers.push_back("Selection");
+        headers.push_back("N_raw");
+        headers.push_back("N_weighted");
+        TableOutput out(headers);
         TAxis * xax = cf->GetXaxis();
         for(int ibin=1; ibin<=cf->GetNbinsX(); ++ibin){
-            out.add_row({xax->GetBinLabel(ibin), ul2s(cf_raw->GetBinContent(ibin)), d2s(cf->GetBinContent(ibin))});
+            vector<string> row;
+            row.push_back(xax->GetBinLabel(ibin));
+            row.push_back(ul2s(cf_raw->GetBinContent(ibin)));
+            row.push_back(d2s(cf->GetBinContent(ibin)));
+            out.add_row(row);
         }
         out.print(cout);
     }

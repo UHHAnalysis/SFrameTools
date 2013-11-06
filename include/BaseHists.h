@@ -11,7 +11,6 @@
 
 #include "core/include/SCycleBase.h"
 #include "core/include/SError.h"
-#include "SFrameTools/include/Utils.h"
 
 // Forward declaration(s):
 class TDirectory;

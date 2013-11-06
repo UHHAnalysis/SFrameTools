@@ -1,0 +1,25 @@
+Index: core/src/SCycleController.cxx
+===================================================================
+--- core/src/SCycleController.cxx	(revision 369)
++++ core/src/SCycleController.cxx	(working copy)
+@@ -542,11 +542,17 @@
+       const TList& configList = cycle->GetConfigurationObjects();
+ 
+       //
+-      // Calculate how many events to process:
++      // Calculate how many events to process.
++      // Note that at least at least in local mode (when using TTreePlayer to
++      // process the tree), root has problems if using a very large
++      // number for neventsmax as there is an overflow in TTreePlayer::GetEntriesToProcess.
++      // Therefore, if the user configured -1 (i.e. maximum available) stay away from maximum
++      // LongInt64_t somewhat by dividing by 2. The maximum number
++      // of events that can be processed is still > 10^18, so this should be safe for a while.
+       //
+       const Long64_t evmax = ( id->GetNEventsMax() == -1 ?
+-                               std::numeric_limits< Long64_t >::max() :
+-                               id->GetNEventsMax() );
++                               std::numeric_limits< Long64_t >::max() / 2  :
++                               id->GetNEventsMax() );      
+ 
+       // This will point to the created output objects:
+       TList* outputs = 0;

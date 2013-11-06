@@ -1,8 +1,9 @@
 // Dear emacs, this is -*- c++ -*-
 
 #include "include/EventCalc.h"
-
 #include <iostream>
+
+using namespace std;
 
 EventCalc* EventCalc::m_instance = NULL;
 
@@ -47,8 +48,6 @@ void EventCalc::Reset()
   //m_lumi = ?
 
   // reset booleans
-  b_HT = false;
-  b_HTlep = false;
   b_Reconstruction = false;
   b_jetparticles = false;
   b_isoparticles = false;
@@ -97,62 +96,47 @@ LuminosityHandler* EventCalc::GetLumiHandler()
 
 double EventCalc::GetHT()
 {
-  // calculate HT, which is defined as the scalar sum of all
-  // jets, leptons and missing transverse momentum in the event
-  if (!b_HT){
-
-    b_HT = true;
-    m_HT = 0;
-
-    // add lepton pt and MET 
-    m_HT += GetHTlep();
-
+    // calculate HT, which is defined as the scalar sum of all
+    // jets, leptons and missing transverse momentum in the event
+    double m_HT = GetHTlep();
     // sum over pt of all jets
     if(m_bcc->jets){
-      for(unsigned int i=0; i<m_bcc->jets->size(); ++i){
-	m_HT += m_bcc->jets->at(i).pt();
-      }
+        for(vector<Jet>::const_iterator jet = m_bcc->jets->begin(); jet != m_bcc->jets->end(); ++jet){
+            m_HT += jet->pt();
+        }
     }
-
-  }
-  return m_HT;
+    return m_HT;
 }
 
 double EventCalc::GetHTlep()
 {
-  // calculate HT_lep, which is defined as the scalar sum of all
-  // leptons and missing transverse momentum in the event
-  if (!b_HTlep){
-
-    b_HTlep = true;
-    m_HTlep=0;
+    // calculate HT_lep, which is defined as the scalar sum of all
+    // leptons and missing transverse momentum in the event
+    double m_HTlep=0;
 
     // sum over pt of all electrons
     if(m_bcc->electrons){
-      for(unsigned int i=0; i<m_bcc->electrons->size(); ++i){
-	m_HTlep += m_bcc->electrons->at(i).pt();
-      }
+        for(vector<Electron>::const_iterator ele = m_bcc->electrons->begin(); ele != m_bcc->electrons->end(); ++ele){
+            m_HTlep += ele->pt();
+        }
     }
 
     // sum over pt of all muons
     if(m_bcc->muons){
-      for(unsigned int i=0; i<m_bcc->muons->size(); ++i){
-	m_HTlep += m_bcc->muons->at(i).pt();
-      }
+        for(vector<Muon>::const_iterator mu = m_bcc->muons->begin(); mu != m_bcc->muons->end(); ++mu){
+            m_HTlep += mu->pt();
+        }
     }
 
     // sum over pt of all taus
     if(m_bcc->taus){
-      for(unsigned int i=0; i<m_bcc->taus->size(); ++i){
-	m_HTlep += m_bcc->taus->at(i).pt();
-      }
+        for(vector<Tau>::const_iterator tau = m_bcc->taus->begin(); tau != m_bcc->taus->end(); ++tau){
+            m_HTlep += tau->pt();
+        }
     }
-    
-    // add MET
-    if(m_bcc->met) m_HTlep += m_bcc->met->pt();   
 
-  }
-  return m_HTlep;
+    if(m_bcc->met) m_HTlep += m_bcc->met->pt();   
+    return m_HTlep;
 }
 
 Particle* EventCalc::GetPrimaryLepton(){
@@ -435,7 +419,7 @@ double EventCalc::EnergyWeightedJetCharge(Jet* jet, double kappa){
   double Q = 0;
   std::vector<PFParticle> pfps = GetJetPFParticles(jet);
   for(unsigned int i=0; i< pfps.size(); i++){
-    Q += pfps[i].charge() * pow(pfps[i].energy(),kappa);
+    Q += pfps[i].charge() * ::pow(pfps[i].energy(),kappa);
   }
   
   LorentzVector jet_v4_raw = jet->v4()*jet->JEC_factor_raw();
@@ -449,7 +433,7 @@ double EventCalc::JetMoment(Jet* jet, int n){
   double moment = 0;
   std::vector<PFParticle> pfps = GetJetPFParticles(jet);
   for(unsigned int i=0; i< pfps.size(); i++){
-    moment += pow(jet->deltaR(pfps[i]),n);
+    moment += ::pow(jet->deltaR(pfps[i]),n);
   }
   
   if(pfps.size()!=0) moment /= 1.*pfps.size();
