@@ -139,6 +139,22 @@ double EventCalc::GetHTlep()
     return m_HTlep;
 }
 
+double EventCalc::GetHThad(double ptmin_jet, double etamax_jet)
+{
+   // calculate HT, which is defined as the scalar sum of all
+   // jets above a certain pt threshold within a certain eta in the event
+   double m_HThad = 0;
+   
+   // sum over pt of all jets
+   if(m_bcc->jets){
+      for(unsigned int i=0; i<m_bcc->jets->size(); ++i){
+         if( m_bcc->jets->at(i).pt() > ptmin_jet && fabs(m_bcc->jets->at(i).eta()) < etamax_jet ) m_HThad += m_bcc->jets->at(i).pt();
+      }
+   }
+   
+   return m_HThad;
+}
+
 Particle* EventCalc::GetPrimaryLepton(){
 
   if(!m_primlep){

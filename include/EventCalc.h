@@ -85,6 +85,9 @@ class EventCalc
   /// scalar sum of missing transverse energy and the pt of all leptons in the actual BaseCycleContainer
   double GetHTlep();
 
+   /// scalar sum of the pt of all jets above certain pt-threshold within specified eta-range
+  double GetHThad(double ptmin_jet, double etamax_jet);
+
   /// electron or muon in the actual BaseCycleContainer with largest transverse momentum
   Particle* GetPrimaryLepton();
 
