@@ -777,8 +777,9 @@ bool HiggsTag(TopJet topjet, E_BtagType type1, E_BtagType type2, TString mode, T
   
   nBTagsSub1 = subJetBTag(topjet, type1, mode, filename);
   nBTagsSub2 = subJetBTag(topjet, type2, mode, filename);
-
- 
+  // if (HiggsMassFromBTaggedSubjets(topjet) < 80) return false;
+  // if (!topjet.v4().isTimelike()) return false;
+  //if (topjet.v4().M()<100 || topjet.v4().M()>150) return false;
   if (type1 == type2 &&  nBTagsSub1>= 2) return true;
   if (type1 > type2 && nBTagsSub1!=0 && nBTagsSub2 >=2) return true;
   if (type1 < type2 && nBTagsSub1 >= 2 && nBTagsSub2 != 0)return true;
@@ -1004,7 +1005,66 @@ bool variableHepTopTagWithMatch(TopJet topjet, double ptJetMin, double massWindo
 
 
 
+double HiggsMassFromSubjets(TopJet topjet)
+{
 
+  //Taking the top tag from the proper jet collection
+
+  EventCalc* calc = EventCalc::Instance();
+  
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
+    
+  int nsubjets;
+  nsubjets=topjet.numberOfDaughters();
+  
+  std::vector<Particle> subjets = topjet.subjets();
+  sort(subjets.begin(), subjets.end(), HigherPt());
+
+  double mH = 0;
+    if( (subjets[0].v4()+subjets[1].v4()).isTimelike())
+    {
+      mH=(subjets[0].v4()+subjets[1].v4()).M();
+    }
+
+    return mH;
+}
+
+
+double HiggsMassFromBTaggedSubjets(TopJet topjet)
+{
+
+  //Taking the top tag from the proper jet collection
+
+  EventCalc* calc = EventCalc::Instance();
+  
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
+    
+  int nsubjets;
+  nsubjets=topjet.numberOfDaughters();
+  
+  std::vector<Particle> subjets = topjet.subjets();
+  std::vector<float> CSVDiscriminator = topjet.btagsub_combinedSecondaryVertex();
+  std::vector<Particle> taggedSubjets;
+  for (unsigned int i=0; i< subjets.size();i++){
+    if (CSVDiscriminator[i] >=  0.679){
+      taggedSubjets.push_back(subjets[i]);
+    }
+  }
+  sort(taggedSubjets.begin(), taggedSubjets.end(), HigherPt());
+
+  double mH = -99;
+  if (taggedSubjets.size()>=2){
+    if( (taggedSubjets[0].v4()+taggedSubjets[1].v4()).isTimelike())
+      {
+	mH=(taggedSubjets[0].v4()+taggedSubjets[1].v4()).M();
+      }
+  }
+  else {
+    cout << "no 2 tagged jets" << endl;
+   } 
+
+  return mH;
+}
 
 
 double WMassWithMatch(TopJet topjet)
