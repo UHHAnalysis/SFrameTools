@@ -67,6 +67,9 @@ clean:
 	rm -rf $(OBJS) $(LIBDIR)/$(LIB) CondFormats \
 	       $(TMPDIR)/JetMETObjects_dict.h $(TMPDIR)/JetMETObjects_dict.cc
 
+distclean: clean
+
+.PHONY: clean lib
 
 ################################################################################
 # $(OBJS)
@@ -116,3 +119,4 @@ $(TMPDIR)/JetMETObjects_dict.cc: interface/JetCorrectorParameters.h \
 	interface/SimpleJetCorrector.h \
 	interface/FactorizedJetCorrector.h \
 	interface/Linkdef.h
+
