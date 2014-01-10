@@ -201,7 +201,7 @@ float HiggsBRweight(){
   BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
 
   TFile *fileweight = new
-TFile("/scratch/hh/dust/naf/cms/user/imarches/newSFrame/SFrame/SFrameAnalysis/config/correctHiggsBR.root",
+TFile("/nfs/dust/cms/user/marchesi/newSFrame/SFrame/SFrameAnalysis/config/correctHiggsBR.root",
 "READ");
 
   TH1F *Higgs_BR=(TH1F*)fileweight->Get("Higgs_BR");
