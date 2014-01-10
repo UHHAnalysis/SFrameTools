@@ -790,7 +790,7 @@ int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode, TString filename
     }
     
     if(istagged!=newtag)
-      cout << "Flavor " << flav << " was " << istagged << " is " << newtag << endl;
+      //cout << "Flavor " << flav << " was " << istagged << " is " << newtag << endl;
     
 
     if(newtag){
@@ -1310,7 +1310,7 @@ int subJetBTag(TopJet topjet, E_BtagType type, TString mode, TString filename){
     }
     
     if(istagged!=newtag)
-      cout << "Flavor " << flav << " was " << istagged << " is " << newtag << endl;
+      //cout << "Flavor " << flav << " was " << istagged << " is " << newtag << endl;
     
 
     if(newtag){
@@ -1632,7 +1632,7 @@ double HiggsMassFromSubjets(TopJet topjet)
 }
 
 
-double HiggsMassFromBTaggedSubjets(TopJet topjet)
+double HiggsMassFromBTaggedSubjets(TopJet topjet, E_BtagType type, TString mode, TString filename)
 {
 
   //Taking the top tag from the proper jet collection
@@ -1648,7 +1648,7 @@ double HiggsMassFromBTaggedSubjets(TopJet topjet)
   std::vector<float> CSVDiscriminator = topjet.btagsub_combinedSecondaryVertex();
   std::vector<Particle> taggedSubjets;
   for (unsigned int i=0; i< subjets.size();i++){
-    if (CSVDiscriminator[i] >=  0.679){
+    if (subJetBTagOne(topjet, type, mode, filename, i)){
       taggedSubjets.push_back(subjets[i]);
     }
   }
