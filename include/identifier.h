@@ -2,6 +2,7 @@
 #define IDENTIFIER_HPP
 
 #include <string>
+#include <inttypes.h>
 
 /** \brief Program-unique identifiers
  *
@@ -42,7 +43,7 @@ public:
     }
         
 private:
-    ssize_t id_;
+    int64_t id_;
 };
 
 
