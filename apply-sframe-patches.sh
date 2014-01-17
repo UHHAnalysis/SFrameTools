@@ -15,6 +15,8 @@ function apply_patches() {
   done
 }
 
+ln -sf ../../SFrameTools/fixroot.cxx core/src
+
 patches_already_applied
 if [ $? -eq 1 ]; then
 echo "It looks like the patches have been applied already, not patching again.";
@@ -26,7 +28,7 @@ fi
 # also write default BOOSTDIR in fullsetup.sh, if noit there already:
 grep 'export BOOSTDIR=' fullsetup.sh > /dev/null
 if [ $? -eq 1 ]; then
-   echo -e '\nexport BOOSTDIR=/cvmfs/cms.cern.ch/slc5_amd64_gcc462/external/boost/1.47.0/include' >> fullsetup.sh
+   echo -e '\nexport BOOSTDIR=`cd $CMSSW_BASE; scram tool tag boost include' >> fullsetup.sh
    echo "wrote BOOSTDIR to fullsetup.sh"
 fi
 
