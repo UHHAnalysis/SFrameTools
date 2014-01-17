@@ -152,7 +152,7 @@ bool variableHepTopTag(TopJet topjet, double ptJetMin = 200., double massWindowL
 bool variableHepTopTagWithMatch(TopJet topjet, double ptJetMin = 200., double massWindowLower = 0.85, double massWindowUpper = 1.15, double cutCondition2 = 0.35, double cutCondition3 = 0.35);
 
 double HiggsMassFromSubjets(TopJet topjet);
-double HiggsMassFromBTaggedSubjets(TopJet topjet, E_BtagType type, TString mode="default", TString filename="", int whichsub=-1);
+double HiggsMassFromBTaggedSubjets(TopJet topjet, E_BtagType type, TString mode="default", TString filename="");
 
 double WMassWithMatch(TopJet topjet);
 

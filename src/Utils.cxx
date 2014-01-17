@@ -789,7 +789,7 @@ int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode, TString filename
       
     }
     
-    if(istagged!=newtag)
+    //if(istagged!=newtag)
       //cout << "Flavor " << flav << " was " << istagged << " is " << newtag << endl;
     
 
@@ -1309,7 +1309,7 @@ int subJetBTag(TopJet topjet, E_BtagType type, TString mode, TString filename){
       
     }
     
-    if(istagged!=newtag)
+    //if(istagged!=newtag)
       //cout << "Flavor " << flav << " was " << istagged << " is " << newtag << endl;
     
 
@@ -2042,7 +2042,7 @@ bool HepTopTagInverted(TopJet topjet)
     if (m23/mjet <= 0.35) keep = 1; 
 
     //invert top mass window
-    if( mjet > 140 && mjet < 250) keep=0;
+    if( mjet <= 140. || mjet >= 250.) keep=0;
 
 
     //Final requirement: at least one of the three subjets conditions and total pt
