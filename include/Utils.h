@@ -182,6 +182,11 @@ float relIsoMuon(const Muon & mu, float deltaR = 0.4); //DEPRECATED_MSG("use the
 /// re-calculate the PF relative isolation of a muon in a cone radius deltaR, using the PFCandidates in event
 float relIsoMuon(EventCalc & event, const Muon & mu, float deltaR = 0.4);
 
+float relIso(const Particle & particle, float deltaR = 0.4); //DEPRECATED_MSG("use the version with EventCalc argument");
+
+/// re-calculate the PF relative isolation of a muon in a cone radius deltaR, using the PFCandidates in event
+float relIso(EventCalc & event, const Particle & particle, float deltaR = 0.4);
+
 //double HTlep(const BaseCycleContainer *bcc); ->moved to EventCalc
 
 /// returns the next jet in the list jets to the particle p in the eta-phi plane
