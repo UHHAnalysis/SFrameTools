@@ -49,6 +49,9 @@ public:
     ///return the weighted correction factor for electron trigger
     double GetElectronTrigWeight();
 
+    ///return the weighted correction factor for Ele30_OR_PFJet320 trigger
+    double GetElectronORJetTrigWeight();
+
     ///return the weighted correction factor for electrons (right now: only trigger)
     double GetElectronWeight();
 
