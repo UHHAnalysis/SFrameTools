@@ -15,8 +15,6 @@ function apply_patches() {
   done
 }
 
-ln -sf ../../SFrameTools/fixroot.cxx core/src
-
 patches_already_applied
 if [ $? -eq 1 ]; then
 echo "It looks like the patches have been applied already, not patching again.";
