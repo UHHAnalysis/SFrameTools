@@ -2215,6 +2215,36 @@ float relIsoMuon(EventCalc & event, const Muon & mu, float deltaR){
 float relIsoMuon(const Muon & mu, float deltaR ){
      return relIsoMuon(*EventCalc::Instance(), mu, deltaR);
 }
+float relIso(EventCalc & event, const Particle & particle, float deltaR){
+  float chargedHadronIso=0;
+  float neutralHadronIso=0;
+  float photonIso=0;
+  float puiso=0;
+
+  vector<PFParticle> & pfps = *event.GetIsoPFParticles();
+  for(vector<PFParticle>::iterator pfp  = pfps.begin(); pfp != pfps.end(); ++pfp){
+      float dr = pfp->deltaR(particle);
+      if(dr < deltaR){
+         if(pfp->particleID() == PFParticle::eH && pfp->pt()>0.0 && dr > 0.0001 ) chargedHadronIso += pfp->pt();
+         if(pfp->particleID() == PFParticle::eH0 && pfp->pt()>0.5 && dr > 0.01) neutralHadronIso += pfp->pt();
+         if(pfp->particleID() == PFParticle::eGamma && pfp->pt()>0.5 && dr > 0.01) photonIso += pfp->pt();
+      }
+  }
+  
+  vector<PFParticle> & pfps_pu = *event.GetIsoPFParticles();
+  for(vector<PFParticle>::iterator pfp  = pfps_pu.begin(); pfp != pfps_pu.end(); ++pfp){
+    float dr = pfp->deltaR(particle);
+    if(dr<deltaR ){
+      if(pfp->particleID() == PFParticle::eH && pfp->pt()>0.5 && dr>0.01 ) puiso += pfp->pt();
+    }
+  }
+  
+  return (chargedHadronIso + std::max( 0.0, neutralHadronIso + photonIso - 0.5*puiso))/particle.pt();
+}
+
+float relIso(const Particle & particle, float deltaR ){
+     return relIso(*EventCalc::Instance(), particle, deltaR);
+}
 
 double pTrel(const Particle *p, std::vector<Jet> *jets)
 {

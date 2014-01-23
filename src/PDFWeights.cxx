@@ -11,9 +11,9 @@ PDFWeights::PDFWeights(E_SystShift syst_shift, TString pdfname, TString pdfweigh
     }
     m_libvalid=true;
 
-
     LHAPDF::initPDFSet(1, (string)(pdfname+".LHgrid"));
     m_N_unc = LHAPDF::numberPDF();
+    cout << "got pdfset number " << m_N_unc << endl;
 
     m_normalize_to_total_sum=false;
     if(pdfweightdir!=""){
@@ -59,6 +59,7 @@ std::vector<double> PDFWeights::GetWeightList(){
   //pdf weighting code taken from https://twiki.cern.ch/twiki/bin/view/CMS/TWikiTopRefSyst#PDF_uncertainties
 
   EventCalc* calc = EventCalc::Instance();
+
 
   double x1=calc->GetGenInfo()->pdf_x1();
   double x2=calc->GetGenInfo()->pdf_x2();
