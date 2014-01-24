@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# usage from the SFrame main directory:
+# ./makeall <make parameters>
+#
+# This calls "make <make parameters>" in
+# * the current directory (to build SFrame)
+# * each direct sub directory with a Makefile (to build user cycles, SFrameTools, SFrameAnalysis, ...)
+# * SFrameTools/JetMETObjects
+#
+# typical usage to re-build everything:
+# ./makeall disctlean; ./makeall -j 4
+
+target=$*
+DIR0=$PWD
+
+for d in `find . -maxdepth 1 -mindepth 1 -type d` SFrameTools/JetMETObjects; do
+  if [ -f "${d}/Makefile" ]; then
+     echo "***** building directory $d"
+     cd ${d}
+     make $target
+     if [ $? -gt 0 ]; then
+         echo "***** Build failed in directory $d (see above for errors); stopping"
+         exit 1
+     fi
+     cd $DIR0
+   fi
+done
+

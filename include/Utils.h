@@ -151,6 +151,9 @@ bool IsTagged(Jet &, E_BtagType);
 bool variableHepTopTag(TopJet topjet, double ptJetMin = 200., double massWindowLower = 0.85, double massWindowUpper = 1.15, double cutCondition2 = 0.35, double cutCondition3 = 0.35);
 bool variableHepTopTagWithMatch(TopJet topjet, double ptJetMin = 200., double massWindowLower = 0.85, double massWindowUpper = 1.15, double cutCondition2 = 0.35, double cutCondition3 = 0.35);
 
+double HiggsMassFromSubjets(TopJet topjet);
+double HiggsMassFromBTaggedSubjets(TopJet topjet, E_BtagType type, TString mode="default", TString filename="");
+
 double WMassWithMatch(TopJet topjet);
 
 double HepTopTagPairwiseMassWithMatch1(TopJet topjet, double ptJetMin = 200., double massWindowLower = 0.85, double massWindowUpper = 1.15, double cutCondition2 = 0.35, double cutCondition3 = 0.35);
@@ -178,6 +181,11 @@ float relIsoMuon(const Muon & mu, float deltaR = 0.4); //DEPRECATED_MSG("use the
 
 /// re-calculate the PF relative isolation of a muon in a cone radius deltaR, using the PFCandidates in event
 float relIsoMuon(EventCalc & event, const Muon & mu, float deltaR = 0.4);
+
+float relIso(const Particle & particle, float deltaR = 0.4); //DEPRECATED_MSG("use the version with EventCalc argument");
+
+/// re-calculate the PF relative isolation of a muon in a cone radius deltaR, using the PFCandidates in event
+float relIso(EventCalc & event, const Particle & particle, float deltaR = 0.4);
 
 //double HTlep(const BaseCycleContainer *bcc); ->moved to EventCalc
 

@@ -1,3 +1,4 @@
+
 #include "include/Utils.h"
 #include "NtupleWriter/include/JetProps.h"
 
@@ -201,7 +202,7 @@ float HiggsBRweight(){
   BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
 
   TFile *fileweight = new
-TFile("/scratch/hh/dust/naf/cms/user/imarches/newSFrame/SFrame/SFrameAnalysis/config/correctHiggsBR.root",
+TFile("/nfs/dust/cms/user/marchesi/newSFrame/SFrame/SFrameAnalysis/config/correctHiggsBR.root",
 "READ");
 
   TH1F *Higgs_BR=(TH1F*)fileweight->Get("Higgs_BR");
@@ -789,8 +790,8 @@ int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode, TString filename
       
     }
     
-    if(istagged!=newtag)
-      cout << "Flavor " << flav << " was " << istagged << " is " << newtag << endl;
+    //if(istagged!=newtag)
+      //cout << "Flavor " << flav << " was " << istagged << " is " << newtag << endl;
     
 
     if(newtag){
@@ -1309,8 +1310,8 @@ int subJetBTag(TopJet topjet, E_BtagType type, TString mode, TString filename){
       
     }
     
-    if(istagged!=newtag)
-      cout << "Flavor " << flav << " was " << istagged << " is " << newtag << endl;
+    //if(istagged!=newtag)
+      //cout << "Flavor " << flav << " was " << istagged << " is " << newtag << endl;
     
 
     if(newtag){
@@ -1379,8 +1380,9 @@ bool HiggsTag(TopJet topjet, E_BtagType type1, E_BtagType type2, TString mode, T
   
   nBTagsSub1 = subJetBTag(topjet, type1, mode, filename);
   nBTagsSub2 = subJetBTag(topjet, type2, mode, filename);
-
- 
+  // if (HiggsMassFromBTaggedSubjets(topjet) < 80) return false;
+  // if (!topjet.v4().isTimelike()) return false;
+  //if (topjet.v4().M()<100 || topjet.v4().M()>150) return false;
   if (type1 == type2 &&  nBTagsSub1>= 2) return true;
   if (type1 > type2 && nBTagsSub1!=0 && nBTagsSub2 >=2) return true;
   if (type1 < type2 && nBTagsSub1 >= 2 && nBTagsSub2 != 0)return true;
@@ -1606,7 +1608,66 @@ bool variableHepTopTagWithMatch(TopJet topjet, double ptJetMin, double massWindo
 
 
 
+double HiggsMassFromSubjets(TopJet topjet)
+{
 
+  //Taking the top tag from the proper jet collection
+
+  EventCalc* calc = EventCalc::Instance();
+  
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
+    
+  int nsubjets;
+  nsubjets=topjet.numberOfDaughters();
+  
+  std::vector<Particle> subjets = topjet.subjets();
+  sort(subjets.begin(), subjets.end(), HigherPt());
+
+  double mH = 0;
+    if( (subjets[0].v4()+subjets[1].v4()).isTimelike())
+    {
+      mH=(subjets[0].v4()+subjets[1].v4()).M();
+    }
+
+    return mH;
+}
+
+
+double HiggsMassFromBTaggedSubjets(TopJet topjet, E_BtagType type, TString mode, TString filename)
+{
+
+  //Taking the top tag from the proper jet collection
+
+  EventCalc* calc = EventCalc::Instance();
+  
+  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
+    
+  int nsubjets;
+  nsubjets=topjet.numberOfDaughters();
+  
+  std::vector<Particle> subjets = topjet.subjets();
+  std::vector<float> CSVDiscriminator = topjet.btagsub_combinedSecondaryVertex();
+  std::vector<Particle> taggedSubjets;
+  for (unsigned int i=0; i< subjets.size();i++){
+    if (subJetBTagOne(topjet, type, mode, filename, i)){
+      taggedSubjets.push_back(subjets[i]);
+    }
+  }
+  sort(taggedSubjets.begin(), taggedSubjets.end(), HigherPt());
+
+  double mH = -99;
+  if (taggedSubjets.size()>=2){
+    if( (taggedSubjets[0].v4()+taggedSubjets[1].v4()).isTimelike())
+      {
+	mH=(taggedSubjets[0].v4()+taggedSubjets[1].v4()).M();
+      }
+  }
+  else {
+    cout << "no 2 tagged jets" << endl;
+   } 
+
+  return mH;
+}
 
 
 double WMassWithMatch(TopJet topjet)
@@ -1982,7 +2043,7 @@ bool HepTopTagInverted(TopJet topjet)
     if (m23/mjet <= 0.35) keep = 1; 
 
     //invert top mass window
-    if( mjet > 140 && mjet < 250) keep=0;
+    if( mjet > 140. && mjet < 250.) keep=0;
 
 
     //Final requirement: at least one of the three subjets conditions and total pt
@@ -2153,6 +2214,36 @@ float relIsoMuon(EventCalc & event, const Muon & mu, float deltaR){
 
 float relIsoMuon(const Muon & mu, float deltaR ){
      return relIsoMuon(*EventCalc::Instance(), mu, deltaR);
+}
+float relIso(EventCalc & event, const Particle & particle, float deltaR){
+  float chargedHadronIso=0;
+  float neutralHadronIso=0;
+  float photonIso=0;
+  float puiso=0;
+
+  vector<PFParticle> & pfps = *event.GetIsoPFParticles();
+  for(vector<PFParticle>::iterator pfp  = pfps.begin(); pfp != pfps.end(); ++pfp){
+      float dr = pfp->deltaR(particle);
+      if(dr < deltaR){
+         if(pfp->particleID() == PFParticle::eH && pfp->pt()>0.0 && dr > 0.0001 ) chargedHadronIso += pfp->pt();
+         if(pfp->particleID() == PFParticle::eH0 && pfp->pt()>0.5 && dr > 0.01) neutralHadronIso += pfp->pt();
+         if(pfp->particleID() == PFParticle::eGamma && pfp->pt()>0.5 && dr > 0.01) photonIso += pfp->pt();
+      }
+  }
+  
+  vector<PFParticle> & pfps_pu = *event.GetIsoPFParticles();
+  for(vector<PFParticle>::iterator pfp  = pfps_pu.begin(); pfp != pfps_pu.end(); ++pfp){
+    float dr = pfp->deltaR(particle);
+    if(dr<deltaR ){
+      if(pfp->particleID() == PFParticle::eH && pfp->pt()>0.5 && dr>0.01 ) puiso += pfp->pt();
+    }
+  }
+  
+  return (chargedHadronIso + std::max( 0.0, neutralHadronIso + photonIso - 0.5*puiso))/particle.pt();
+}
+
+float relIso(const Particle & particle, float deltaR ){
+     return relIso(*EventCalc::Instance(), particle, deltaR);
 }
 
 double pTrel(const Particle *p, std::vector<Jet> *jets)
