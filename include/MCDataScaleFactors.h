@@ -77,8 +77,11 @@ public:
     void DoUpVarTauEffSF(bool f=true){m_tau_eff_unc=true; m_syst_shift=e_Up;}
     void DoDownVarTauEffSF(bool f=true){m_tau_eff_unc=true; m_syst_shift=e_Down;}
         /// return the scale factor for the fake rate of medium taus
-    double GetTauWeight();
+   double GetTauWeight();
 
+   double GetDecayModeFindingWeight();
+
+   
     /// return the scale factor for the tau efficiency
     double GetTauEffUnc();
 
@@ -93,6 +96,7 @@ private:
     bool m_tauele_unc;               // do shift of e -> tau fake rate
     int m_current_run;              // run for which the scale factors are vali
     bool m_tau_eff_unc;             // do shift of tau efficiency scale factors 
+   
     
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_id;    // two arrays: first index stands for eta bin, second for run period
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_trig;  // two arrays: first index stands for eta bin, second for run period
@@ -275,5 +279,27 @@ private:
     BtagFunction* _scale_light;
     BtagFunction* _eff_light;
 };
+
+class JetpTReweightingInWJets {
+public:
+   
+   JetpTReweightingInWJets();
+   ///Default destructor
+   ~JetpTReweightingInWJets() {};
+   
+   ///return the weighted correction factor
+   double GetWeight();
+   
+   void DoUpVarJetSF(bool f=true){m_jetpTreweigting_unc=true; m_syst_shift=e_Up;}
+   void DoDownVarJetSF(bool f=true){m_jetpTreweigting_unc=true; m_syst_shift=e_Down;}
+   
+   
+private:
+   E_SystShift m_syst_shift;
+   bool m_jetpTreweigting_unc; // do shift of jet pT reweighting in W+jets
+};
+
+
+
 
 #endif
