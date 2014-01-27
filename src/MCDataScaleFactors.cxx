@@ -562,6 +562,39 @@ double LeptonScaleFactors::GetElectronTrigWeight()
   return w;
 }
 
+double LeptonScaleFactors::GetElectronORJetTrigWeight()
+{
+  if(!m_apply) return 1.;
+
+  EventCalc* calc = EventCalc::Instance();
+  std::vector< Jet >* jets = calc->GetJets();
+  if(!jets) return 1.;
+
+  TFile* file = TFile::Open("$SFRAME_DIR/SFrameTools/efficiencies/Ele30_OR_PFJet320_trigSF.root");
+  if (!file->IsOpen()){
+    std::cerr << "Could not find file with Ele30_OR_PFJet320 trigger SF";
+    std::cerr << " in $SFRAME_DIR/SFrameTools/efficiencies/.\n";
+    std::cerr << "Please make sure the file is available.\n";
+    exit(EXIT_FAILURE);
+  }
+
+  TF1* SFfit = (TF1*) file->Get("fit");
+  if (!SFfit){
+    std::cerr << "TF1 obj not found in Ele30_OR_PFJet320_trigSF.root.\n";
+    std::cerr << "Please make sure the 'fit' function is available.\n";
+    exit(EXIT_FAILURE);
+  }
+
+  float arg = jets->at(0).pt();
+  if(arg < SFfit->GetXmin()){ arg = SFfit->GetXmin(); }
+  else if(arg > SFfit->GetXmax()){ arg = SFfit->GetXmax(); }
+
+  double w(SFfit->Eval(arg));
+
+  file->Close();
+
+  return w;
+}
 
 double LeptonScaleFactors::GetWeight()
 {
