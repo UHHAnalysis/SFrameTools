@@ -562,8 +562,14 @@ double LeptonScaleFactors::GetElectronTrigWeight()
   return w;
 }
 
-double LeptonScaleFactors::GetElectronORJetTrigWeight()
+double LeptonScaleFactors::GetElectronORJetTrigWeight(const std::string& sys)
 {
+  /*  Data/MC scale factor for the "Ele30 OR PFJet320" trigger,
+   *  measured as a function of the pT of the highest-pT jet;
+   *  currently assigning a 1% flat systematic on the SF;
+   *  Ref: https://indico.cern.ch/getFile.py/access?contribId=3&resId=0&materialId=slides&confId=290680
+   */
+
   if(!m_apply) return 1.;
 
   EventCalc* calc = EventCalc::Instance();
@@ -589,7 +595,15 @@ double LeptonScaleFactors::GetElectronORJetTrigWeight()
   if(arg < SFfit->GetXmin()){ arg = SFfit->GetXmin(); }
   else if(arg > SFfit->GetXmax()){ arg = SFfit->GetXmax(); }
 
-  double w(SFfit->Eval(arg));
+  double w(1.);
+  if(sys == "none"){ w = SFfit->Eval(arg); }
+  else if(sys == "UP")  { w = SFfit->Eval(arg) + 0.01; }
+  else if(sys == "DOWN"){ w = SFfit->Eval(arg) - 0.01; }
+  else{
+    std::cerr << "Incorrect argument for LeptonScaleFactors::GetElectronORJetTrigWeight().\n";
+    std::cerr << "Must be either 'none', 'UP' or 'DOWN'. Exiting.\n";
+    exit(EXIT_FAILURE);
+  }
 
   file->Close();
 

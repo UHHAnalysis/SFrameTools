@@ -50,7 +50,7 @@ public:
     double GetElectronTrigWeight();
 
     ///return the weighted correction factor for Ele30_OR_PFJet320 trigger
-    double GetElectronORJetTrigWeight();
+    double GetElectronORJetTrigWeight(const std::string& sys="none");
 
     ///return the weighted correction factor for electrons (right now: only trigger)
     double GetElectronWeight();
