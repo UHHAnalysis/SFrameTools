@@ -597,8 +597,8 @@ double LeptonScaleFactors::GetElectronORJetTrigWeight(const std::string& sys)
 
   double w(1.);
   if(sys == "none"){ w = SFfit->Eval(arg); }
-  else if(sys == "UP")  { w = SFfit->Eval(arg) + 0.01; }
-  else if(sys == "DOWN"){ w = SFfit->Eval(arg) - 0.01; }
+  else if(sys == "UP")  { w = SFfit->Eval(arg) * (1 + 0.01); }
+  else if(sys == "DOWN"){ w = SFfit->Eval(arg) * (1 - 0.01); }
   else{
     std::cerr << "Incorrect argument for LeptonScaleFactors::GetElectronORJetTrigWeight().\n";
     std::cerr << "Must be either 'none', 'UP' or 'DOWN'. Exiting.\n";
