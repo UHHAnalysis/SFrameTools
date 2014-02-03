@@ -307,18 +307,25 @@ int subJetBTagTop(TopJet topjet, E_BtagType type, TString mode, TString filename
 
 int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode, TString filename, int whichsub){
 
-//Modes:
+  //Modes:
   //default --> no SF
   //mean --> SF
   //lightup,lightdown,bcup,bcdown --> SF systematics evaluation
 
   int nBTagsSub=0;
 
+  int isdelta[3];
+  isdelta[0]=0;
+  isdelta[1]=0;
+  isdelta[2]=0;
+
   TString syst=mode;
 
   float discriminator_cut;
 
   bool dosf=1;
+
+  double refcsv=0.;
 
   if(type==e_CSVL) discriminator_cut = 0.244;
   if(type==e_CSVM) discriminator_cut = 0.679;
@@ -332,6 +339,18 @@ int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode, TString filename
   btagsub_combinedSecondaryVertex_top=topjet.btagsub_combinedSecondaryVertex();
   flavorsub_top=topjet.flavorsub();
 
+  double dr12=subjets_top[0].deltaR(subjets_top[1]);
+  double dr13=subjets_top[0].deltaR(subjets_top[2]);
+  double dr23=subjets_top[1].deltaR(subjets_top[2]);
+ 
+  if(mode=="lightupdelta"||mode=="lightdowndelta"||mode=="bcupdelta"||mode=="bcdowndelta"){
+    
+    if(dr12<0.4||dr13<0.4) isdelta[0]=1;
+    if(dr12<0.4||dr23<0.4) isdelta[1]=1;
+    if(dr13<0.4||dr23<0.4) isdelta[2]=1;
+    
+  }
+
   if(filename==""&&mode!="default"){
     std::cout << "ATTENTION!!! Asked b-tagging SF, but no efficiencies provided! SF will NOT be applied!!!" << std::endl;
   }
@@ -340,7 +359,7 @@ int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode, TString filename
     dosf=0;
   }
   
-  if(mode!="default"&&mode!="mean"&&mode!="lightup"&&mode!="lightdown"&&mode!="bcup"&&mode!="bcdown"){
+  if(mode!="default"&&mode!="mean"&&mode!="lightup"&&mode!="lightdown"&&mode!="bcup"&&mode!="bcdown"&&mode!="lightupdelta"&&mode!="lightdowndelta"&&mode!="bcupdelta"&&mode!="bcdowndelta"){
     std::cout << "ATTENTION!!! B-tagging SF mode not known! Will NOT perform any SF re-weighting!" << std::endl;
     dosf=0;
   }
@@ -557,13 +576,15 @@ int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode, TString filename
       SF=csv->Eval(subpt);
     } 
     
+    refcsv=SF;
+
     double addSF=0;
     
     int bin;
     
     int doubleunc=0;
     
-    if((syst=="bcup"||syst=="bcdown")&&(abs(flav)==5||abs(flav)==4)){
+    if((syst=="bcup"||syst=="bcdown"||syst=="bcupdelta"||syst=="bcdowndelta")&&(abs(flav)==5||abs(flav)==4)){
       if(subpt>=800){
 	bin=errbc->GetXaxis()->GetNbins();
 	doubleunc=1;
@@ -582,14 +603,17 @@ int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode, TString filename
       if(abs(flav)==4){
 	addSF=2*addSF;
       }
-      if(syst=="bcdown"){
+      if(syst=="bcdown"||syst=="bcdowndelta"){
 	addSF=-addSF;
+      }
+      if(isdelta[i]){
+	addSF=2*addSF;
       }
     }
     
     SF=SF+addSF;
     
-    if(syst=="lightup"&&(abs(flav)==1||abs(flav)==2||abs(flav)==3||abs(flav)==21)){
+    if((syst=="lightup"||syst=="lightupdelta")&&(abs(flav)==1||abs(flav)==2||abs(flav)==3||abs(flav)==21)){
       if (csvu->GetXmin() > subpt){
 	SF=csvu->Eval(csvu->GetXmin());
       }
@@ -598,10 +622,13 @@ int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode, TString filename
       }
       else{
 	SF=csvu->Eval(subpt);
-      } 
+      }
+      if(isdelta[i]){
+	SF=SF+(SF-refcsv);
+      }
     }
     
-    if(syst=="lightdown"&&(abs(flav)==1||abs(flav)==2||abs(flav)==3||abs(flav)==21)){
+    if((syst=="lightdown"||syst=="lightdowndelta")&&(abs(flav)==1||abs(flav)==2||abs(flav)==3||abs(flav)==21)){
       if (csvd->GetXmin() > subpt){
 	SF=csvd->Eval(csvd->GetXmin());
       }
@@ -610,7 +637,10 @@ int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode, TString filename
       }
       else{
 	SF=csvd->Eval(subpt);
-      } 
+      }
+      if(isdelta[i]){
+	SF=SF+(SF-refcsv);
+      }
     }
     
     if(type==e_CSVL){
@@ -836,9 +866,16 @@ int subJetBTag(TopJet topjet, E_BtagType type, TString mode, TString filename){
 
   int nBTagsSub=0;
 
+  int isdelta[3];
+  isdelta[0]=0;
+  isdelta[1]=0;
+  isdelta[2]=0;
+
   TString syst=mode;
 
   float discriminator_cut;
+
+  double refcsv=0.;
 
   bool dosf=1;
 
@@ -854,6 +891,18 @@ int subJetBTag(TopJet topjet, E_BtagType type, TString mode, TString filename){
   btagsub_combinedSecondaryVertex_top=topjet.btagsub_combinedSecondaryVertex();
   flavorsub_top=topjet.flavorsub();
 
+  double dr12=subjets_top[0].deltaR(subjets_top[1]);
+  double dr13=subjets_top[0].deltaR(subjets_top[2]);
+  double dr23=subjets_top[1].deltaR(subjets_top[2]);
+ 
+  if(mode=="lightupdelta"||mode=="lightdowndelta"||mode=="bcupdelta"||mode=="bcdowndelta"){
+    
+    if(dr12<0.4||dr13<0.4) isdelta[0]=1;
+    if(dr12<0.4||dr23<0.4) isdelta[1]=1;
+    if(dr13<0.4||dr23<0.4) isdelta[2]=1;
+    
+  }
+
   if(filename==""&&mode!="default"){
     std::cout << "ATTENTION!!! Asked b-tagging SF, but no efficiencies provided! SF will NOT be applied!!!" << std::endl;
   }
@@ -862,7 +911,7 @@ int subJetBTag(TopJet topjet, E_BtagType type, TString mode, TString filename){
     dosf=0;
   }
   
-  if(mode!="default"&&mode!="mean"&&mode!="lightup"&&mode!="lightdown"&&mode!="bcup"&&mode!="bcdown"){
+  if(mode!="default"&&mode!="mean"&&mode!="lightup"&&mode!="lightdown"&&mode!="bcup"&&mode!="bcdown"&&mode!="lightupdelta"&&mode!="lightdowndelta"&&mode!="bcupdelta"&&mode!="bcdowndelta"){
     std::cout << "ATTENTION!!! B-tagging SF mode not known! Will NOT perform any SF re-weighting!" << std::endl;
     dosf=0;
   }
@@ -1077,13 +1126,15 @@ int subJetBTag(TopJet topjet, E_BtagType type, TString mode, TString filename){
       SF=csv->Eval(subpt);
     } 
     
+    refcsv=SF;
+
     double addSF=0;
     
     int bin;
     
     int doubleunc=0;
     
-    if((syst=="bcup"||syst=="bcdown")&&(abs(flav)==5||abs(flav)==4)){
+    if((syst=="bcup"||syst=="bcdown"||syst=="bcupdelta"||syst=="bcdowndelta")&&(abs(flav)==5||abs(flav)==4)){
       if(subpt>=800){
 	bin=errbc->GetXaxis()->GetNbins();
 	doubleunc=1;
@@ -1102,14 +1153,17 @@ int subJetBTag(TopJet topjet, E_BtagType type, TString mode, TString filename){
       if(abs(flav)==4){
 	addSF=2*addSF;
       }
-      if(syst=="bcdown"){
+      if(syst=="bcdown"||syst=="bcdowndelta"){
 	addSF=-addSF;
+      }
+      if(isdelta[i]){
+	addSF=2*addSF;
       }
     }
     
     SF=SF+addSF;
     
-    if(syst=="lightup"&&(abs(flav)==1||abs(flav)==2||abs(flav)==3||abs(flav)==21)){
+    if((syst=="lightup"||syst=="lightupdelta")&&(abs(flav)==1||abs(flav)==2||abs(flav)==3||abs(flav)==21)){
       if (csvu->GetXmin() > subpt){
 	SF=csvu->Eval(csvu->GetXmin());
       }
@@ -1118,10 +1172,13 @@ int subJetBTag(TopJet topjet, E_BtagType type, TString mode, TString filename){
       }
       else{
 	SF=csvu->Eval(subpt);
-      } 
+      }
+      if(isdelta[i]){
+	SF=SF+(SF-refcsv);
+      }
     }
     
-    if(syst=="lightdown"&&(abs(flav)==1||abs(flav)==2||abs(flav)==3||abs(flav)==21)){
+    if((syst=="lightdown"||syst=="lightdowndelta")&&(abs(flav)==1||abs(flav)==2||abs(flav)==3||abs(flav)==21)){
       if (csvd->GetXmin() > subpt){
 	SF=csvd->Eval(csvd->GetXmin());
       }
@@ -1130,7 +1187,10 @@ int subJetBTag(TopJet topjet, E_BtagType type, TString mode, TString filename){
       }
       else{
 	SF=csvd->Eval(subpt);
-      } 
+      }
+      if(isdelta[i]){
+	SF=SF+(SF-refcsv);
+      }
     }
     
     if(type==e_CSVL){
