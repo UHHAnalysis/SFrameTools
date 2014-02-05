@@ -18,7 +18,7 @@ class TriggerWeight{
 
   ~TriggerWeight(){};
 
-  double produceWeight(GenInfo* genInfo);
+  double produceWeight(BaseCycleContainer * bcc);
   
  private:
 

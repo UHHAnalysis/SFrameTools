@@ -12,10 +12,7 @@ TriggerWeight::TriggerWeight(TString filename_mc, TString mode){
 
 }
 
-double TriggerWeight::produceWeight(GenInfo* genInfo){
-
-  EventCalc* calc = EventCalc::Instance();
-  BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
+double TriggerWeight::produceWeight(BaseCycleContainer* bcc){
 
   double HTSubJets = 0.;
 
