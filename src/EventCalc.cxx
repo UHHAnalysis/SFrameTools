@@ -124,15 +124,15 @@ for(unsigned int m = 0; m< m_bcc->topjets->size();++m){
 	TopTag(topjet,mjet,nsubjets,mmin);
 	if (topjet.pt() < 250.) continue;
 	if (nsubjets>1){
-// loop over subjets, find minimum DeltaR between them
+        // loop over subjets, find minimum DeltaR between them
 	double min_dr = 5.;
 	for(unsigned int g = 0; g<topjet.subjets().size()-1; ++g){
 		Particle subjetg = topjet.subjets().at(g);
 		for (unsigned int k = g+1; k<topjet.subjets().size(); ++k){
 			double dr = subjetg.deltaR(topjet.subjets().at(k));
-			if (g>10) exit(0);
 			if (dr<min_dr) min_dr = dr;
-			}}
+		}
+	}
 
 	if (min_dr>0.4){
 	  	if (subJetBTag(topjet, e_CSVL)>=1){	
