@@ -82,6 +82,9 @@ class EventCalc
   /// scalar sum of the pt of all jets, leptons and missing transverse energy
   double GetHT();
 
+  /// sum of SubBTags + AK5BTags
+  double GetNSumBTags();
+
   /// scalar sum of missing transverse energy and the pt of all leptons in the actual BaseCycleContainer
   double GetHTlep();
 
