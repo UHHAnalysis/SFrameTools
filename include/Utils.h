@@ -51,6 +51,7 @@ enum E_SysUnc {
   e_JEC,     /**< jet energy scale uncertainty */
   e_subJEC,     /**< jet energy scale uncertainty subjets */
   e_JER,     /**< jet resolution uncertainty */
+  e_subJER,     /**< jet resolution uncertainty */
   e_MuonSF,  /**< muon scale factor uncertainty */
   e_EleSF,   /**< electron scale factor uncertainty */
   e_TauSF,   /**< tau scale factor uncertainty */
