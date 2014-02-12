@@ -137,8 +137,6 @@ class EventCalc
    */
   std::vector<LorentzVector> NeutrinoReconstruction(const LorentzVector lepton, const LorentzVector met);
 
-  void FillHighMassTTbarHypotheses();
-
   /// print a list of all objects in the actual BaseCycleContainer
   void PrintEventContent();
   
