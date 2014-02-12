@@ -194,7 +194,6 @@ class EventCalc
   LuminosityHandler* m_lumi;
 
   // booleans to tell weather quantities have already been derived in an event
-  bool b_Reconstruction;
 
   bool b_jetparticles;
   bool b_isoparticles;

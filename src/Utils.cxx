@@ -2382,6 +2382,14 @@ double deltaR(LorentzVector v1, LorentzVector v2)
     return p1.deltaR(p2);
 }
 
+double deltaPhiAbs(double x1, double x2)
+{
+  // x1 & x2 are two Phi expected in the range [-PI,PI]
+  double deltaphi = fabs(x1 - x2);
+  if(deltaphi > M_PI) deltaphi = 2*M_PI - deltaphi;
+  return deltaphi;
+}
+
 double double_infinity()
 {
     return std::numeric_limits<double>::infinity() ;

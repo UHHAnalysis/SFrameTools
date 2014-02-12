@@ -210,7 +210,11 @@ LorentzVectorXYZE toXYZ(LorentzVector v4);
 /// converts LorentzVector into LorentzVector
 LorentzVector toPtEtaPhi(LorentzVectorXYZE v4);
 
+/// distance in eta-phi space
 double deltaR(LorentzVector v1, LorentzVector v2);
+
+/// absolute value of Delta_phi, xi should be in [-pi,pi]
+double deltaPhiAbs(double x1, double x2);
 
 double double_infinity();
 int int_infinity();
