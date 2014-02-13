@@ -63,6 +63,9 @@ void LeptonScaleFactors::FillWeights()
     m_ele_trig.clear();
     m_weights.clear();
     
+    // initialize pointer to SF 2D-histogram
+    m_ele_mva = NULL;
+
     // initialise scale factors to 1.0
     m_ele_trig.push_back(1.0);	
     m_ele_trig.push_back(0.0);	
@@ -87,6 +90,14 @@ void LeptonScaleFactors::FillWeights()
       std::cerr << "Could not find file with muon scale factors. Filename = muon_effs_2012_53x.root" << std::endl;
       std::cerr << "I looked in directory $SFRAME_DIR/SFrameTools/efficiencies/ and ./" << std::endl;
       std::cerr << "Please make sure the file is available." << std::endl;
+      exit(EXIT_FAILURE);
+    }
+
+    TFile* egm_file = new TFile("$SFRAME_DIR/SFrameTools/efficiencies/EgammaPOG_TrigMVA_SF_2013.root", "READ");
+    if (!egm_file->IsOpen()){
+      std::cerr << "Could not find file with electron scale factors ";
+      std::cerr << "in directory $SFRAME_DIR/SFrameTools/efficiencies/." << std::endl;
+      std::cerr << " Please make sure the file is available." << std::endl;
       exit(EXIT_FAILURE);
     }
 
@@ -134,7 +145,14 @@ void LeptonScaleFactors::FillWeights()
 	  m_ele_trig[2] = weight;
 	  isok = true;
 	}	  
-	
+
+	// Scale Factor for Electron-ID based on Triggering MVA (Egamma-POG)
+	if (m_correctionlist[i].first == "EGMTrigMVA") {
+
+          m_ele_mva = (TH2F*) egm_file->Get("electronsDATAMCratio_FO_ID");
+	  isok = true;
+	}
+
 	if (!isok){
 	  std::cerr<< "No information found for lepton correction named " << m_correctionlist[i].first <<std::endl;
         }
@@ -526,8 +544,9 @@ double LeptonScaleFactors::GetElectronWeight()
   if (!IsUpToDate()){
     FillWeights();
   }
-  double trig = GetElectronTrigWeight();
-  return trig;
+  //double trig = GetElectronTrigWeight();
+  double mva = GetElectronMVAIDWeight();
+  return mva;
 }
 
 double LeptonScaleFactors::GetElectronTrigWeight()
@@ -559,6 +578,40 @@ double LeptonScaleFactors::GetElectronTrigWeight()
   if (w>1. || w<0.){ // sanity check
     w = 1.;
   }
+  return w;
+}
+
+double LeptonScaleFactors::GetElectronMVAIDWeight()
+{
+  /* Data/MC scale factor for Electron-ID based on Triggering-MVA
+   * provided by Egamma-POG for 22Jan2013-ReReco
+   */
+
+  if(!m_apply) return 1.;
+  if(!IsUpToDate()) FillWeights();
+
+  if(!m_ele_mva) return 1.;
+
+  static EventCalc* calc = EventCalc::Instance();
+
+  if(calc->GetElectrons()->size()==0) return 1.;
+
+  double aScEta = std::abs(calc->GetElectrons()->at(0).supercluster_eta());
+  double pt = calc->GetElectrons()->at(0).pt();
+  if(pt>=m_ele_mva->GetYaxis()->GetXmax()) pt = m_ele_mva->GetYaxis()->GetXmax()-0.01;
+
+  double w = m_ele_mva->GetBinContent(m_ele_mva->FindBin(aScEta,pt));
+
+  // uncertainty	
+  if (m_ele_unc){
+
+    double unc = m_ele_mva->GetBinError(m_ele_mva->FindBin(aScEta,pt));
+    if(m_syst_shift==e_Down) w -= unc;
+    if(m_syst_shift==e_Up) w += unc;
+  }
+
+  if(w<=0.) w = 1.;// sanity check
+
   return w;
 }
 

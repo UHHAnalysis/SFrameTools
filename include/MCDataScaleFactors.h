@@ -1,8 +1,9 @@
 #ifndef MCDataScaleFactors_H
 #define MCDataScaleFactors_H
 
-#include "TF1.h"
 #include <TGraphAsymmErrors.h>
+#include <TH2F.h>
+#include <TF1.h>
 
 #include "SFrameTools/include/Utils.h"
 #include "SFrameTools/include/EventCalc.h"
@@ -48,6 +49,9 @@ public:
 
     ///return the weighted correction factor for electron trigger
     double GetElectronTrigWeight();
+
+    ///return the weighted correction factor for electron MVA ID
+    double GetElectronMVAIDWeight();
 
     ///return the weighted correction factor for Ele30_OR_PFJet320 trigger
     double GetElectronORJetTrigWeight(const std::string& sys="none");
@@ -106,7 +110,7 @@ private:
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_iso;   // two arrays: first index stands for eta bin, second for run period
     std::vector<double> m_weights;  // weights for different runs
     std::vector<double> m_ele_trig; // two-parameter function of relative isolation times additional weight
-
+    TH2F* m_ele_mva; //2D histog for Egamma-POG SF for Electron-ID with TrigMVA
 };
 
 
