@@ -130,6 +130,12 @@ def makedatablocks(xmlfile):
     return datablocklist
 
 def resolveentities(input):
+    begincomment = input.find("<!--")
+    endcomment = input.find("-->")
+    while begincomment!=-1 and endcomment!=-1:
+        input = input[:begincomment]+input[endcomment+3:]
+        begincomment = input.find("<!--")
+        endcomment = input.find("-->")
     inputlist = input.split("\n")
     entitydict = {}
     for line in inputlist:
@@ -234,7 +240,7 @@ def checklog(jobname, jobnumber):
     return errorline
 
 def checkstdout(jobname, jobnumber):
-    errorinfo = os.popen('egrep -i "exit|break|exceed|error|traceback|aborted|E R R O R|find tree AnalysisTree" '+jobname+"/logs/"+jobname+"_"+str(jobnumber)+".stdout | tr '\n' ', '").readline().strip("\n")
+    errorinfo = os.popen('egrep -i "exit|break|exceed|error|traceback|aborted|E R R O R|find tree AnalysisTree|fatal" '+jobname+"/logs/"+jobname+"_"+str(jobnumber)+".stdout | tr '\n' ', '").readline().strip("\n")
     if errorinfo.find(":") != -1: errorline = errorinfo.split(":")[1]
     else: errorline=errorinfo
     return errorline
@@ -309,7 +315,7 @@ if (options.create):
     tarball=options.jobname+".tgz"
     target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
     print "Creating tarball of "+target+" area."
-    os.system("tar -czf "+tarball+" "+target)
+    os.system("tar -czf "+tarball+" "+target+" --exclude='*.root' --exclude='*.tgz'")
     os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
     os.chdir(workingdir)
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 class datablock():
     def __init__(self, blocklumi="1", filelist=[], lumilist=[], namelist=[], type="DATA", version="DATA", neventsmax="-1", cacheable="False"):
         self.blocklumi = blocklumi
