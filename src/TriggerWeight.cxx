@@ -33,7 +33,7 @@ double TriggerWeight::produceWeight(BaseCycleContainer* bcc){
   else{
     int bin=h_mc->GetXaxis()->FindBin(HTSubJets);
     double weight=h_mc->GetBinContent(bin);
-    double addweihgt=fabs(1.-weight)*0.5;
+    double addweight=fabs(1.-weight)*0.5;
     if(m_mode=="up"){
       weight=weight+addweight;
     }
