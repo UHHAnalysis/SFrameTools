@@ -107,64 +107,64 @@ double EventCalc::GetHT()
     return m_HT;
 }
 
-double EventCalc::GetNSumBTags()
-{
-int NAntiktBTags =0;
-int NSubBTags = 0;
-int NSumBTags = 0;
-int nsubjetbtag=0; 
-double mmin=0;
-double mjet=0;
-int nsubjets=0;
-int nsumbtags=0;
+double EventCalc::GetNSumBTags(){
 
-for(unsigned int m = 0; m< m_bcc->topjets->size();++m){
- 	TopJet topjet =  m_bcc->topjets->at(m); 
-	TopTag(topjet,mjet,nsubjets,mmin);
-	if (topjet.pt() < 250.) continue;
-	if (nsubjets>1){
-        // loop over subjets, find minimum DeltaR between them
-	double min_dr = 5.;
-	for(unsigned int g = 0; g<topjet.subjets().size()-1; ++g){
-		Particle subjetg = topjet.subjets().at(g);
-		for (unsigned int k = g+1; k<topjet.subjets().size(); ++k){
-			double dr = subjetg.deltaR(topjet.subjets().at(k));
-			if (dr<min_dr) min_dr = dr;
-		}
-	}
+  int NAntiktBTags =0;
+  int NSubBTags = 0;
+  int NSumBTags = 0;
+  int nsubjetbtag=0; 
+  double mmin=0;
+  double mjet=0;
+  int nsubjets=0;
+  int nsumbtags=0;
 
-	if (min_dr>0.4){
-	  	if (subJetBTag(topjet, e_CSVL)>=1){	
-				NSubBTags++;
-				}
-			}
-	else {
-		if (topjet.btag_combinedSecondaryVertex()>0.244){
-			NSubBTags++;
-			}
-		}}
- 	else {
-		if (topjet.btag_combinedSecondaryVertex()>0.244)
-		NSubBTags++;
-		}
-	}
+  for(unsigned int m = 0; m< m_bcc->topjets->size();++m){
+    TopJet topjet =  m_bcc->topjets->at(m); 
+    TopTag(topjet,mjet,nsubjets,mmin);
+    if(topjet.pt() < 250.) continue;
+    if(nsubjets > 1){
+      // loop over subjets, find minimum DeltaR between them
+      double min_dr = 5.;
+      for(unsigned int g = 0; g<topjet.subjets().size()-1; ++g){
+        Particle subjetg = topjet.subjets().at(g);
+        for(unsigned int k = g+1; k<topjet.subjets().size(); ++k){
+          double dr = subjetg.deltaR(topjet.subjets().at(k));
+          if(dr < min_dr) min_dr = dr;
+        }
+      }
+
+      if(min_dr > 0.4){
+        if(subJetBTag(topjet, e_CSVL)>=1){
+          NSubBTags++;
+        }
+      }
+      else{
+        if(topjet.btag_combinedSecondaryVertex()>0.244){
+          NSubBTags++;
+        }
+      }}
+    else{
+      if(topjet.btag_combinedSecondaryVertex()>0.244)
+        NSubBTags++;
+    }
+  }
 
 
-for(unsigned int i=0; i<m_bcc->jets->size(); ++i){
-	bool overlap_with_topjet = false;
-	for(unsigned int m = 0; m< m_bcc->topjets->size();++m){
-	 	TopJet topjet =  m_bcc->topjets->at(m);
-	 	if (topjet.pt()>250. && topjet.deltaR(m_bcc->jets->at(i))>1.3) overlap_with_topjet = true;
-	}
-	if (!overlap_with_topjet){
-		if (m_bcc->jets->at(i).btag_combinedSecondaryVertex()>0.244){
-		NAntiktBTags++;
-		}
-	}	
-}
+  for(unsigned int i=0; i<m_bcc->jets->size(); ++i){
+    bool overlap_with_topjet = false;
+    for(unsigned int m = 0; m< m_bcc->topjets->size();++m){
+      TopJet topjet =  m_bcc->topjets->at(m);
+      if(topjet.pt()>250. && topjet.deltaR(m_bcc->jets->at(i))<1.3) overlap_with_topjet = true;
+    }
+    if(!overlap_with_topjet){
+      if(m_bcc->jets->at(i).btag_combinedSecondaryVertex()>0.244){
+        NAntiktBTags++;
+      }
+    }
+  }
 
-NSumBTags = NAntiktBTags + NSubBTags;
-return NSumBTags;
+  NSumBTags = NAntiktBTags + NSubBTags;
+  return NSumBTags;
 }
 
 double EventCalc::GetHTlep()
