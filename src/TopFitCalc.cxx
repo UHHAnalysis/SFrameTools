@@ -370,7 +370,7 @@ void TopFitCalc::CalculateTopTag()
   m_bcc->recoHyps->clear();
 
   //find primary charged lepton
-  Particle* lepton = &m_bcc->muons->at(0);
+  Particle* lepton = calc->GetPrimaryLepton();
 
   std::vector<Jet>* antikjets = m_bcc->jets; 
   std::vector<TopJet>* cajets = m_bcc->topjets; 
