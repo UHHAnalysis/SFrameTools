@@ -1,4 +1,5 @@
 #include "include/MCDataScaleFactors.h"
+#include "include/Utils.h"
 #include <TMath.h>
 
 LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist)
@@ -709,10 +710,15 @@ double BTaggingScaleFactors::GetWeight()
         bool result = IsTagged(jet, m_btagtype);
         double scale_jet = 1.0;
         float jet_pt = jet.pt();
+        float jet_eta = fabs(jet.eta());
+	//do not consider jets outside b-tagging range
+	if(jet_eta>=2.4){
+	  continue;
+	}
 
         switch(abs(jet.flavor())) {
         case 5: // b-quark
-            scale_jet = scale(result, jet_pt,
+	    scale_jet = scale(result, jet_pt, jet_eta,
                               _scale_btag, _eff_btag,
                               m_sys_bjets);
             /*std::cout << "b jet pt: " << jet_pt << " is tagged: " << result << " scale: ";
@@ -726,7 +732,7 @@ double BTaggingScaleFactors::GetWeight()
             break;
 
         case 4: // c-quark
-            scale_jet = scale(result, jet_pt,
+            scale_jet = scale(result, jet_pt, jet_eta,
                               _scale_ctag, _eff_ctag,
                               m_sys_bjets);
             /*std::cout << "b jet pt: " << jet_pt << " is tagged: " << result << " scale: ";
@@ -743,7 +749,7 @@ double BTaggingScaleFactors::GetWeight()
         case 2: // d-quark
         case 1: // u-quark
         case 21: // gluon
-            scale_jet = scale(result, jet_pt,
+            scale_jet = scale(result, jet_pt, jet_eta,
                               _scale_light, _eff_light,
                               m_sys_ljets);
             /*std::cout << "l jet pt: " << jet_pt << " is tagged: " << result << " scale: ";
@@ -770,6 +776,7 @@ double BTaggingScaleFactors::GetWeight()
 //
 float BTaggingScaleFactors::scale(const bool &is_tagged,
                                   const float &jet_pt,
+                                  const float &jet_eta,
                                   const BtagFunction* sf,
                                   const BtagFunction* eff,
                                   const E_SystShift &systematic)
@@ -777,23 +784,23 @@ float BTaggingScaleFactors::scale(const bool &is_tagged,
     switch(systematic) {
     case e_Default:
         return is_tagged ?
-               sf->value(jet_pt) :
-               (1 - sf->value(jet_pt) * eff->value(jet_pt)) /
-               (1 - eff->value(jet_pt));
+	  sf->value(jet_pt,jet_eta) :
+	  (1 - sf->value(jet_pt,jet_eta) * eff->value(jet_pt,jet_eta)) /
+	  (1 - eff->value(jet_pt,jet_eta));
         break;
 
     case e_Up:
         return is_tagged ?
-               sf->value_plus(jet_pt) :
-               (1 - sf->value_plus(jet_pt) * eff->value_plus(jet_pt)) /
-               (1 - eff->value_plus(jet_pt));
+               sf->value_plus(jet_pt,jet_eta) :
+               (1 - sf->value_plus(jet_pt,jet_eta) * eff->value_plus(jet_pt,jet_eta)) /
+               (1 - eff->value_plus(jet_pt,jet_eta));
         break;
 
     case e_Down:
         return is_tagged ?
-               sf->value_minus(jet_pt) :
-               (1 - sf->value_minus(jet_pt) * eff->value_minus(jet_pt)) /
-               (1 - eff->value_minus(jet_pt));
+               sf->value_minus(jet_pt,jet_eta) :
+               (1 - sf->value_minus(jet_pt,jet_eta) * eff->value_minus(jet_pt,jet_eta)) /
+               (1 - eff->value_minus(jet_pt,jet_eta));
         break;
 
     default:
@@ -831,12 +838,34 @@ BtagScale::BtagScale(E_BtagType btagtype) : BtagFunction(btagtype)
       0.0942053,
       0.102403 
     };
-
+    const float CSVLErrors[] = {
+      0.033299,
+      0.0146768,
+      0.013803,
+      0.0170145,
+      0.0166976,
+      0.0137879,
+      0.0149072,
+      0.0153068,
+      0.0133077,
+      0.0123737,
+      0.0157152,
+      0.0175161,
+      0.0209241,
+      0.0278605,
+      0.0346928,
+      0.0350099 
+    };
     switch(btagtype) {
     case e_CSVT: // EPS13 prescription
         _scale = new TF1("csvtb", "(0.927563+(1.55479e-05*x))+(-1.90666e-07*(x*x))", 20.0, 800.0);
         _bins.assign(bins, bins + 17);
         _errors.assign(CSVTErrors, CSVTErrors + 16);
+        break;
+    case e_CSVL:
+        _scale = new TF1("csvlb", "0.997942*((1.+(0.00923753*x))/(1.+(0.0096119*x)))", 20.0, 800.0);
+        _bins.assign(bins, bins + 17);
+        _errors.assign(CSVLErrors, CSVLErrors + 16);
         break;
     default:
         std::cerr <<  "unsupported b-tagging operating point" <<std::endl;
@@ -845,7 +874,7 @@ BtagScale::BtagScale(E_BtagType btagtype) : BtagFunction(btagtype)
 }
 
 
-const unsigned int BtagScale::find_bin(const float &jet_pt) const
+const unsigned int BtagScale::find_bin(const float &jet_pt, const float &jet_eta) const
 {
     if (jet_pt < _bins.front())
         return 0;
@@ -862,35 +891,35 @@ const unsigned int BtagScale::find_bin(const float &jet_pt) const
 }
 
 
-float BtagScale::value(const float &jet_pt) const
+float BtagScale::value(const float &jet_pt, const float &jet_eta) const
 {
     if (_scale->GetXmin() > jet_pt)
-        return value(_scale->GetXmin());
+      return value(_scale->GetXmin(), jet_eta);
 
     if (_scale->GetXmax() < jet_pt)
-        return value(_scale->GetXmax());
+        return value(_scale->GetXmax(), jet_eta);
 
-    return _scale->Eval(jet_pt);
+    return _scale->Eval(jet_pt, jet_eta);
 }
 
 
-float BtagScale::error(const float &jet_pt) const
+float BtagScale::error(const float &jet_pt, const float &jet_eta) const
 {
     if (_scale->GetXmin() > jet_pt)
-        return 2.0 * error(_scale->GetXmin());
+        return 2.0 * error(_scale->GetXmin(), jet_eta);
 
     if (_scale->GetXmax() < jet_pt)
-        return 2.0 * error(_scale->GetXmax());
+        return 2.0 * error(_scale->GetXmax(), jet_eta);
 
-    return _errors.at(find_bin(jet_pt));
+    return _errors.at(find_bin(jet_pt, jet_eta));
 }
 
 
 // Ctag scale
 //
-float CtagScale::error(const float &jet_pt) const
+float CtagScale::error(const float &jet_pt, const float &jet_eta) const
 {
-    return 2 * BtagScale::error(jet_pt);
+  return 2 * BtagScale::error(jet_pt, jet_eta);
 }
 
 // Light-tag scale
@@ -899,9 +928,14 @@ LtagScale::LtagScale(E_BtagType btagtype) : BtagFunction(btagtype)
 {
     switch(btagtype) {
     case e_CSVT: // EPS13 prescription
-        _scale = new TF1("csvtl","((1.00462+(0.00325971*x))+(-7.79184e-06*(x*x)))+(5.22506e-09*(x*(x*x)))",20.,800.0);
-        _scale_plus = new TF1("cvstl_plus","((1.16361+(0.00464695*x))+(-1.09467e-05*(x*x)))+(7.21896e-09*(x*(x*x)))",20.,800.0);
-        _scale_minus = new TF1("cvstl_minus","((0.845757+(0.00186422*x))+(-4.6133e-06*(x*x)))+(3.21723e-09*(x*(x*x)))",20.,800.0);
+         _scale = new TF2("csvtl","((1.00462+(0.00325971*x))+(-7.79184e-06*(x*x)))+(5.22506e-09*(x*(x*x)))",20.,800.0,0,2.4);
+        _scale_plus = new TF2("cvstl_plus","((1.16361+(0.00464695*x))+(-1.09467e-05*(x*x)))+(7.21896e-09*(x*(x*x)))",20.,800.0,0,2.4);
+        _scale_minus = new TF2("cvstl_minus","((0.845757+(0.00186422*x))+(-4.6133e-06*(x*x)))+(3.21723e-09*(x*(x*x)))",20.,800.0,0,2.4);
+        break;
+    case e_CSVL:
+        _scale = new TF2("csvll","(((1.01177+(0.0023066*x))+(-4.56052e-06*(x*x)))+(2.57917e-09*(x*(x*x))))*(0.5>y)+(((0.975966+(0.00196354*x))+(-3.83768e-06*(x*x)))+(2.17466e-09*(x*(x*x))))*(y>=0.5)*(1.0>y)+(((0.93821+(0.00180935*x))+(-3.86937e-06*(x*x)))+(2.43222e-09*(x*(x*x))))*(y>=1.0)*(1.5>y)+(((1.00022+(0.0010998*x))+(-3.10672e-06*(x*x)))+(2.35006e-09*(x*(x*x))))*(y>=1.5)" ,20.,800.0,0,2.4);
+        _scale_plus = new TF2("cvsll_plus","(((1.04582+(0.00290226*x))+(-5.89124e-06*(x*x)))+(3.37128e-09*(x*(x*x))))*(0.5>y)+(((1.00683+(0.00246404*x))+(-4.96729e-06*(x*x)))+(2.85697e-09*(x*(x*x))))*(y>=0.5)*(1.0>y)+(((0.964787+(0.00219574*x))+(-4.85552e-06*(x*x)))+(3.09457e-09*(x*(x*x))))*(y>=1.0)*(1.5>y)+(((1.03039+(0.0013358*x))+(-3.89284e-06*(x*x)))+(3.01155e-09*(x*(x*x))))*(y>=1.5)",20.,800.0,0,2.4);
+        _scale_minus = new TF2("cvsll_minus","(((0.977761+(0.00170704*x))+(-3.2197e-06*(x*x)))+(1.78139e-09*(x*(x*x))))*(0.5>y)+(((0.945135+(0.00146006*x))+(-2.70048e-06*(x*x)))+(1.4883e-09*(x*(x*x))))*(y>=0.5)*(1.0>y)+(((0.911657+(0.00142008*x))+(-2.87569e-06*(x*x)))+(1.76619e-09*(x*(x*x))))*(y>=1.0)*(1.5>y)+(((0.970045+(0.000862284*x))+(-2.31714e-06*(x*x)))+(1.68866e-09*(x*(x*x))))*(y>=1.5)",20.,800.0,0,2.4);
         break;
     default:
         std::cerr <<  "unsupported b-tagging operating point" <<std::endl;
@@ -910,55 +944,57 @@ LtagScale::LtagScale(E_BtagType btagtype) : BtagFunction(btagtype)
 }
 
 
-float LtagScale::value(const float &jet_pt) const
+
+
+float LtagScale::value(const float &jet_pt, const float &jet_eta) const
 {
     if (_scale->GetXmin() > jet_pt)
-        return value(_scale->GetXmin());
+        return value(_scale->GetXmin(), jet_eta);
 
     if (_scale->GetXmax() < jet_pt)
-        return value(_scale->GetXmax());
+        return value(_scale->GetXmax(), jet_eta);
 
-    return _scale->Eval(jet_pt);
+    return _scale->Eval(jet_pt, jet_eta);
 }
 
 
-float LtagScale::value_plus(const float &jet_pt) const
+float LtagScale::value_plus(const float &jet_pt, const float &jet_eta) const
 {
     if (_scale_plus->GetXmin() > jet_pt)
     {
-        double error = 2.0*(value_plus(_scale_plus->GetXmin()) - value(_scale_plus->GetXmin()));
-        return value(_scale_plus->GetXmin()) + error;
+      double error = 2.0*(value_plus(_scale_plus->GetXmin(), jet_eta) - value(_scale_plus->GetXmin(), jet_eta));
+        return value(_scale_plus->GetXmin(), jet_eta) + error;
     }
 
     if (_scale_plus->GetXmax() < jet_pt)
     {
-        double error = 2.0*(value_plus(_scale_plus->GetXmax()) - value(_scale_plus->GetXmax()));
-        return value(_scale_plus->GetXmax()) + error;
+      double error = 2.0*(value_plus(_scale_plus->GetXmax(), jet_eta) - value(_scale_plus->GetXmax(), jet_eta));
+        return value(_scale_plus->GetXmax(), jet_eta) + error;
     }
 
-    return _scale_plus->Eval(jet_pt);
+    return _scale_plus->Eval(jet_pt, jet_eta);
 }
 
 
-float LtagScale::value_minus(const float &jet_pt) const
+float LtagScale::value_minus(const float &jet_pt, const float &jet_eta) const
 {
     if (_scale_minus->GetXmin() > jet_pt)
     {
-        double error = 2.0*(value(_scale->GetXmin()) - value_minus(_scale_minus->GetXmin()));
-        double scale = value(_scale_minus->GetXmin()) - error;
+        double error = 2.0*(value(_scale->GetXmin(), jet_eta) - value_minus(_scale_minus->GetXmin(), jet_eta));
+        double scale = value(_scale_minus->GetXmin(), jet_eta) - error;
         if ( scale >= 0.0 ) return scale;
         return 0.0;
     }
 
     if (_scale_minus->GetXmax() < jet_pt)
     {
-        double error = 2.0*(value(_scale->GetXmax()) - value_minus(_scale_minus->GetXmax()));
-        double scale = value(_scale_minus->GetXmax()) - error;
+        double error = 2.0*(value(_scale->GetXmax(), jet_eta) - value_minus(_scale_minus->GetXmax(), jet_eta));
+        double scale = value(_scale_minus->GetXmax(), jet_eta) - error;
         if ( scale >= 0.0 ) return scale;
         return 0.0;
     }
 
-    return _scale_minus->Eval(jet_pt);
+    return _scale_minus->Eval(jet_pt, jet_eta);
 }
 
 
@@ -980,7 +1016,10 @@ BtagEfficiency::BtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel)
     };
 
     const float CSVTEfficiencies_mu[] = {
-      0, 0, 0, 0.524599 , 0.539481 , 0.553608 , 0.541148 , 0.529663 , 0.501904 , 0.415795 , 0.369383 , 0.313766 , 0.263525 , 0.213036 , 0.203613 , 0.15653 , 0.139353
+      0, 0, 0, 0.527496 , 0.538724 , 0.555376 , 0.540102 , 0.528351 , 0.50122 , 0.41426 , 0.371213 , 0.311879 , 0.264041 , 0.215617 , 0.208605 , 0.150797 , 0.130312
+    };
+    const float CSVLEfficiencies_mu[] = {
+      0, 0, 0, 0.843019 , 0.836389 , 0.847278 , 0.839844 , 0.833074 , 0.835171 , 0.820583 , 0.804997 , 0.762067 , 0.730621 , 0.707983 , 0.655583 , 0.607146 , 0.495463
     };
 
     if (btagtype == e_CSVT && leptonsel == e_Electron) { 
@@ -991,13 +1030,17 @@ BtagEfficiency::BtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel)
       _bins.assign(bins, bins + 18);
       _values.assign(CSVTEfficiencies_mu, CSVTEfficiencies_mu + 17);
     }
+    else if (btagtype == e_CSVL && leptonsel == e_Muon) { 
+      _bins.assign(bins, bins + 18);
+      _values.assign(CSVLEfficiencies_mu, CSVLEfficiencies_mu + 17);
+    }
     else {
         std::cerr <<  "unsupported b-tagging operating point and lepton selection" <<std::endl;
     }
 }
 
 
-const unsigned int BtagEfficiency::find_bin(const float &jet_pt) const
+const unsigned int BtagEfficiency::find_bin(const float &jet_pt, const float &jet_eta ) const
 {
     if (jet_pt < _bins.front())
         return 0;
@@ -1014,9 +1057,9 @@ const unsigned int BtagEfficiency::find_bin(const float &jet_pt) const
 }
 
 
-float BtagEfficiency::value(const float &jet_pt) const
+float BtagEfficiency::value(const float &jet_pt, const float &jet_eta) const
 {
-    return _values.at(find_bin(jet_pt));
+  return _values.at(find_bin(jet_pt, jet_eta));
 }
 
 
@@ -1034,7 +1077,10 @@ CtagEfficiency::CtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel)
     };
 
     const float CSVTEfficiencies_mu[] = {
-      0, 0, 0 , 0.0720083 , 0.0631919 , 0.0645277 , 0.0561305 , 0.0461869 , 0.0437162 , 0.028492 , 0.0285741 , 0.0265564 , 0.0200509 , 0.0146239
+      0, 0, 0 , 0.0746531 , 0.0648892 , 0.0661782 , 0.0593803 , 0.0483994 , 0.0424287 , 0.0284464 , 0.0307131 , 0.0275881 , 0.0173931 , 0.0147546
+    };
+    const float CSVLEfficiencies_mu[] = {
+      0, 0, 0 , 0.438554 , 0.409188 , 0.417346 , 0.417047 , 0.385195 , 0.376154 , 0.372287 , 0.342093 , 0.324201 , 0.312492 , 0.252123
     };
 
     if (btagtype == e_CSVT && leptonsel == e_Electron) {
@@ -1044,6 +1090,10 @@ CtagEfficiency::CtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel)
     else if (btagtype == e_CSVT && leptonsel == e_Muon) { 
       _bins.assign(bins, bins + 15);
       _values.assign(CSVTEfficiencies_mu, CSVTEfficiencies_mu + 14);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Muon) { 
+      _bins.assign(bins, bins + 15);
+      _values.assign(CSVLEfficiencies_mu, CSVLEfficiencies_mu + 14);
     }
     else {
         std::cerr <<  "unsupported b-tagging operating point and lepton selection" <<std::endl;
@@ -1069,7 +1119,11 @@ LtagEfficiency::LtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel)
     };
 
     const float CSVTEfficiencies_mu[] = {
-      0, 0, 0, 0.00530932 , 0.00515522 , 0.00538001 , 0.0069691 , 0.00650805 , 0.00617744 , 0.00422173 , 0.00410988 , 0.0042869 , 0.00521951 , 0.00420047 , 0.00703486 , 0.0035228
+      0, 0, 0, 0.00569484 , 0.00548976 , 0.00547509 , 0.00712279 , 0.00675918 , 0.00670482 , 0.00444024 , 0.0045339 , 0.00446893 , 0.00537538 , 0.00461259 , 0.00792868 , 0.00387412
+    };
+
+    const float CSVLEfficiencies_mu[] = {
+      0, 0, 0, 0.13864 , 0.112884 , 0.110701 , 0.109742 , 0.0995396 , 0.099064 , 0.104746 , 0.101926 , 0.100509 , 0.104804 , 0.108763 , 0.104505 , 0.101038
     };
 
     if (btagtype == e_CSVT && leptonsel == e_Electron) {
@@ -1079,6 +1133,10 @@ LtagEfficiency::LtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel)
     else if (btagtype == e_CSVT && leptonsel == e_Muon) { 
       _bins.assign(bins, bins + 17);
       _values.assign(CSVTEfficiencies_mu, CSVTEfficiencies_mu + 16);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Muon) { 
+      _bins.assign(bins, bins + 17);
+      _values.assign(CSVLEfficiencies_mu, CSVLEfficiencies_mu + 16);
     }
     else {
         std::cerr <<  "unsupported b-tagging operating point and lepton selection" <<std::endl;

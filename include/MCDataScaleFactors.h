@@ -4,6 +4,7 @@
 #include <TGraphAsymmErrors.h>
 #include <TH2F.h>
 #include <TF1.h>
+#include <TF2.h>
 
 #include "SFrameTools/include/Utils.h"
 #include "SFrameTools/include/EventCalc.h"
@@ -130,9 +131,9 @@ public:
     virtual ~BtagFunction() {
     };
 
-    virtual float value(const float &x) const = 0;
-    virtual float value_plus(const float &x) const = 0;
-    virtual float value_minus(const float &x) const = 0;
+    virtual float value(const float &x, const float &y) const = 0;
+    virtual float value_plus(const float &x, const float &y) const = 0;
+    virtual float value_minus(const float &x, const float &y) const = 0;
 
 protected:
     E_BtagType m_btagtype;
@@ -144,26 +145,26 @@ public:
 
     BtagScale(E_BtagType);
 
-    virtual float value(const float &jet_pt) const;
-    virtual float value_plus(const float &jet_pt) const {
-        return value(jet_pt) + error(jet_pt);
+    virtual float value(const float &jet_pt, const float &jet_eta) const;
+    virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt, jet_eta) + error(jet_pt, jet_eta);
     }
 
-    virtual float value_minus(const float &jet_pt) const {
-        const float value_ = value(jet_pt) - error(jet_pt);
+    virtual float value_minus(const float &jet_pt, const float &jet_eta) const {
+      const float value_ = value(jet_pt,jet_eta) - error(jet_pt,jet_eta);
         return value_ > 0 ? value_ : 0;
     }
 
 protected:
 
-    virtual float error(const float &jet_pt) const;
+    virtual float error(const float &jet_pt, const float &jet_eta) const;
 
 private:
 
     TF1 * _scale;
     std::vector<float> _errors;
     std::vector<float> _bins;
-    const unsigned int find_bin(const float &jet_pt) const;
+    const unsigned int find_bin(const float &jet_pt, const float &jet_eta) const;
 };
 
 
@@ -174,7 +175,7 @@ public:
 
 protected:
 
-    virtual float error(const float &jet_pt) const;
+    virtual float error(const float &jet_pt, const float &jet_eta) const;
 
 };
 
@@ -184,15 +185,15 @@ public:
 
     LtagScale(E_BtagType btagtype);
 
-    virtual float value(const float &jet_pt) const;
-    virtual float value_plus(const float &jet_pt) const;
-    virtual float value_minus(const float &jet_pt) const;
+    virtual float value(const float &jet_pt, const float &jet_eta ) const;
+    virtual float value_plus(const float &jet_pt, const float &jet_eta) const;
+    virtual float value_minus(const float &jet_pt, const float &jet_eta) const;
 
 private:
 
-    TF1 * _scale;
-    TF1 * _scale_plus;
-    TF1 * _scale_minus;
+    TF2 * _scale;
+    TF2 * _scale_plus;
+    TF2 * _scale_minus;
 
 };
 
@@ -202,18 +203,18 @@ public:
 
     BtagEfficiency(E_BtagType, E_LeptonSelection);
 
-    virtual float value(const float &jet_pt) const;
-    virtual float value_plus(const float &jet_pt) const {
-        return value(jet_pt);
+    virtual float value(const float &jet_p, const float &jet_etat) const;
+    virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt,jet_eta);
     }
 
-    virtual float value_minus(const float &jet_pt) const {
-        return value(jet_pt);
+    virtual float value_minus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt,jet_eta);
     }
 
 protected:
 
-    const unsigned int find_bin(const float &jet_pt) const;
+    const unsigned int find_bin(const float &jet_pt, const float &jet_eta) const;
     std::vector<float> _values;
     std::vector<float> _bins;
 
@@ -267,12 +268,14 @@ private:
 
     float scale(const bool &is_tagged,
                 const float &jet_pt,
+                const float &jet_eta,
                 const BtagFunction* sf,
                 const BtagFunction* eff,
                 const E_SystShift &sytematic);
 
     float scale_data(const bool &is_tagged,
                      const float &jet_pt,
+		     const float &jet_eta,
                      const BtagFunction* sf,
                      const BtagFunction* eff,
                      const E_SystShift &sytematic);
