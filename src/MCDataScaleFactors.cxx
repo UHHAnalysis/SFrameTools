@@ -674,7 +674,7 @@ double LeptonScaleFactors::GetWeight()
 
 
 BTaggingScaleFactors::BTaggingScaleFactors(
-    E_BtagType btagtype, E_LeptonSelection lepton_selection, E_SystShift sys_bjets, E_SystShift sys_ljets
+   E_BtagType btagtype, E_LeptonSelection lepton_selection, E_SystShift sys_bjets, E_SystShift sys_ljets, bool use_subjet_btags
 )
 {
     m_sys_bjets = sys_bjets;
@@ -685,12 +685,20 @@ BTaggingScaleFactors::BTaggingScaleFactors(
 
     _scale_btag=new BtagScale(btagtype);
     _eff_btag=new BtagEfficiency(btagtype, lepton_selection);
+    _eff_btag_subj=new BtagEfficiency(btagtype, lepton_selection, true, false);
+    _eff_btag_topj=new BtagEfficiency(btagtype, lepton_selection, false, true);
 
     _scale_ctag=new CtagScale(btagtype);
     _eff_ctag=new CtagEfficiency(btagtype, lepton_selection);
+    _eff_ctag_subj=new CtagEfficiency(btagtype, lepton_selection, true, false);
+    _eff_ctag_topj=new CtagEfficiency(btagtype, lepton_selection, false, true);
 
     _scale_light=new LtagScale(btagtype);
     _eff_light=new LtagEfficiency(btagtype, lepton_selection);
+    _eff_light_subj=new LtagEfficiency(btagtype, lepton_selection, true, false);
+    _eff_light_topj=new LtagEfficiency(btagtype, lepton_selection, false, true);
+
+    m_use_subjet_btags =use_subjet_btags;
 }
 
 
@@ -702,10 +710,18 @@ double BTaggingScaleFactors::GetWeight()
     if(!jets) return 1.0;
 
     double scale_factor = 1.;
-
+  
     for(unsigned int i=0; i<jets->size(); ++i) {
 
         Jet jet = jets->at(i);
+
+	//skip jets that overlap with top-jets
+	bool overlap_with_topjet = false;
+	for(unsigned int m = 0; m< calc->GetCAJets()->size();++m){
+	  TopJet topjet = calc->GetCAJets()->at(m);
+	  if(topjet.pt()>250. && topjet.deltaR(jets->at(i))<1.3) overlap_with_topjet = true;
+	}
+	if(m_use_subjet_btags && overlap_with_topjet) continue;
 
         bool result = IsTagged(jet, m_btagtype);
         double scale_jet = 1.0;
@@ -767,6 +783,126 @@ double BTaggingScaleFactors::GetWeight()
         }
         scale_factor *= scale_jet;
     }
+
+    if(m_use_subjet_btags){
+
+      for(unsigned int m = 0; m< calc->GetCAJets()->size();++m){
+
+	TopJet topjet = calc->GetCAJets()->at(m);
+	if(topjet.pt() < 250.) continue;
+
+	unsigned int nsubjets = topjet.subjets().size();
+	double min_dr = 5.;
+	if(nsubjets > 1){
+	  // loop over subjets, find minimum DeltaR between them
+	  for(unsigned int g = 0; g<nsubjets-1; ++g){
+	    
+	    Particle subjetg = topjet.subjets().at(g);
+	    for(unsigned int k = g+1; k<nsubjets; ++k){
+	      
+	      double dr = subjetg.deltaR(topjet.subjets().at(k));
+	      if(dr < min_dr) min_dr = dr;
+	    }
+	  }
+	}	
+
+
+	//apply scale factor for individual subjets if min_dr>0.4
+	if(min_dr>0.4){
+	  double discriminator_cut= 0.0;
+	  if(m_btagtype==e_CSVL) discriminator_cut = 0.244;
+	  if(m_btagtype==e_CSVM) discriminator_cut = 0.679;
+	  if(m_btagtype==e_CSVT) discriminator_cut = 0.898;
+	  
+	  std::vector<float> btagsub_combinedSecondaryVertex_top;
+	  std::vector<int> flavorsub_top;
+	  
+	  btagsub_combinedSecondaryVertex_top=topjet.btagsub_combinedSecondaryVertex();
+	  flavorsub_top=topjet.flavorsub();
+
+	  for(unsigned int j = 0; j<nsubjets; ++j){
+	    bool result = btagsub_combinedSecondaryVertex_top[j]>discriminator_cut;
+	    double scale_jet = 1.0;
+	    float jet_pt = topjet.subjets().at(j).pt();
+	    float jet_eta = fabs(topjet.subjets().at(j).eta());
+
+	    //do not consider jets outside b-tagging range
+	    if(jet_eta>=2.4){
+	      continue;
+	    }
+	    switch(abs(flavorsub_top[j])) {
+	    case 5: // b-quark
+	      scale_jet = scale(result, jet_pt, jet_eta,
+				_scale_btag, _eff_btag_subj,
+				m_sys_bjets);
+            break;
+
+	    case 4: // c-quark
+	      scale_jet = scale(result, jet_pt, jet_eta,
+				_scale_ctag, _eff_ctag_subj,
+				m_sys_bjets);
+	    break;
+
+	    case 3: // s-quark
+	    case 2: // d-quark
+	    case 1: // u-quark
+	    case 21: // gluon
+	      scale_jet = scale(result, jet_pt, jet_eta,
+				_scale_light, _eff_light_subj,
+				m_sys_ljets);
+            break;
+
+	    default:
+	      break;
+	      
+	    }
+	      
+	    scale_factor *= scale_jet;
+	  }
+	}
+	//apply scale factor for entire topjet if min_dr<0.4
+	else{
+	  bool result = IsTagged(topjet, m_btagtype);
+	  double scale_jet = 1.0;
+	  float jet_pt = topjet.pt();
+	  float jet_eta = fabs(topjet.eta());
+	 
+	  //b-tagging for fat jets with eta>2.4 possible? -> use scale factors for eta=2.4
+	  if(jet_eta>=2.4){
+	    jet_eta=2.4;
+	  }
+	  switch(abs(topjet.flavor())) {
+	  case 5: // b-quark
+	    scale_jet = scale(result, jet_pt, jet_eta,
+			      _scale_btag, _eff_btag_topj,
+			      m_sys_bjets);
+            break;
+	    
+	  case 4: // c-quark
+	    scale_jet = scale(result, jet_pt, jet_eta,
+				_scale_ctag, _eff_ctag_topj,
+			      m_sys_bjets);
+	    break;
+	    
+	  case 3: // s-quark
+	  case 2: // d-quark
+	  case 1: // u-quark
+	  case 21: // gluon
+	    scale_jet = scale(result, jet_pt, jet_eta,
+			      _scale_light, _eff_light_topj,
+			      m_sys_ljets);
+            break;
+	    
+	  default:
+	    break;
+	    
+	  }
+
+	  scale_factor *= scale_jet;
+	}
+      }
+    }
+
 
     return scale_factor;
 }
@@ -1000,42 +1136,88 @@ float LtagScale::value_minus(const float &jet_pt, const float &jet_eta) const
 
 // Btag Efficiency
 //
-BtagEfficiency::BtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel) : BtagFunction(btagtype)
+BtagEfficiency::BtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel, bool dosubjets, bool dotopjets) : BtagFunction(btagtype)
 {
     const float bins[] = {
         20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 100.0, 120.0, 160.0, 210.0, 260.0, 320.0, 400.0, 500.0, 600.0, 800.0, 1600.0
     };
 
-
-
     const float CSVTEfficiencies[] = {
-        0.45995393113468314, 0.46970557780785482, 0.47945722448102651, 0.4892088711541982, 
-        0.49896051782736989, 0.52736480487115456, 0.51718656298800869, 0.51778381299772003, 
-        0.49273414735703341, 0.40596266795544039, 0.34807215987045181, 0.31600602509673009,
-        0.27177222600495071, 0.17082550051964149, 0.10729452077597022, 0.088296058189995086, 0.11093069992211117
+      0, 0, 0, 0.516861 , 0.530606 , 0.555624 , 0.541633 , 0.539517 , 0.507292 , 0.424228 , 0.381748 , 0.333086 , 0.26585 , 0.207664 , 0.158442 , 0.135173 , 0.103829
     };
-
+    const float CSVLEfficiencies[] = {
+      0, 0, 0, 0.836914 , 0.831639 , 0.84178 , 0.84026 , 0.835832 , 0.8334 , 0.826531 , 0.808195 , 0.777609 , 0.746216 , 0.678185 , 0.666574 , 0.564218 , 0.521006
+    };
+    const float CSVTEfficiencies_SubJet[] = {
+      0.283184 , 0.440065 , 0.528707 , 0.46884 , 0.485505 , 0.563361 , 0.52208 , 0.532883 , 0.509963 , 0.425465 , 0.390519 , 0.350492 , 0.283081 , 0.233869 , 0.104842 , 0.105325 , 0
+    };
+    const float CSVLEfficiencies_SubJet[] = {
+      0.786544 , 0.827889 , 0.834176 , 0.791612 , 0.803744 , 0.833457 , 0.841063 , 0.833662 , 0.844785 , 0.830733 , 0.818157 , 0.785523 , 0.761376 , 0.707712 , 0.55595 , 0.469558 , 0.54417
+    };
+    const float CSVTEfficiencies_TopJet[] = {
+      0,0,0,0,0,0,0,0,0,0, 0.269034 , 0.268951 , 0.245795 , 0.219509 , 0.158286 , 0.158518 , 0.100975
+    };
+    const float CSVLEfficiencies_TopJet[] = {
+      0,0,0,0,0,0,0,0,0,0, 0.7533 , 0.749066 , 0.732398 , 0.710423 , 0.662259 , 0.600003 , 0.542833
+    };
     const float CSVTEfficiencies_mu[] = {
       0, 0, 0, 0.527496 , 0.538724 , 0.555376 , 0.540102 , 0.528351 , 0.50122 , 0.41426 , 0.371213 , 0.311879 , 0.264041 , 0.215617 , 0.208605 , 0.150797 , 0.130312
     };
     const float CSVLEfficiencies_mu[] = {
       0, 0, 0, 0.843019 , 0.836389 , 0.847278 , 0.839844 , 0.833074 , 0.835171 , 0.820583 , 0.804997 , 0.762067 , 0.730621 , 0.707983 , 0.655583 , 0.607146 , 0.495463
     };
+    const float CSVTEfficiencies_SubJet_mu[] = {
+      0.23722 , 0.348922 , 0.433808 , 0.502618 , 0.533373 , 0.517228 , 0.477777 , 0.518199 , 0.505178 , 0.407392 , 0.370565 , 0.327397 , 0.277921 , 0.241946 , 0.166871 , 0.148731 , 0.000610035
+    };
+    const float CSVLEfficiencies_SubJet_mu[] = {
+      0.801842 , 0.762325 , 0.820935 , 0.788438 , 0.813816 , 0.808677 , 0.842798 , 0.821366 , 0.839112 , 0.826879 , 0.810295 , 0.779161 , 0.732937 , 0.693156 , 0.699269 , 0.540767 , 0.194262
+    };
+    const float CSVTEfficiencies_TopJet_mu[] = {
+      0,0,0,0,0,0,0,0,0,0, 0.321782 , 0.290763 , 0.252109 , 0.23444 , 0.192822 , 0.154837 , 0.114785
+    };
+    const float CSVLEfficiencies_TopJet_mu[] = {
+      0,0,0,0,0,0,0,0,0,0, 0.790861 , 0.761854 , 0.73796 , 0.745972 , 0.653736 , 0.617015 , 0.537142
+    };
 
-    if (btagtype == e_CSVT && leptonsel == e_Electron) { 
-        _bins.assign(bins, bins + 18);
+    _bins.assign(bins, bins + 18);
+    if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && !dotopjets) { 
         _values.assign(CSVTEfficiencies, CSVTEfficiencies + 17);
     } 
-    else if (btagtype == e_CSVT && leptonsel == e_Muon) { 
-      _bins.assign(bins, bins + 18);
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && !dotopjets) { 
       _values.assign(CSVTEfficiencies_mu, CSVTEfficiencies_mu + 17);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Muon) { 
-      _bins.assign(bins, bins + 18);
+    else if (btagtype == e_CSVT && leptonsel == e_Electron && dosubjets && !dotopjets) { 
+      _values.assign(CSVTEfficiencies_SubJet, CSVTEfficiencies_SubJet + 17);
+    }
+    else if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && dotopjets) { 
+      _values.assign(CSVTEfficiencies_TopJet, CSVTEfficiencies_TopJet + 17);
+    }
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && dosubjets && !dotopjets) { 
+      _values.assign(CSVTEfficiencies_SubJet_mu, CSVTEfficiencies_SubJet_mu + 17);
+    }
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && dotopjets) { 
+      _values.assign(CSVTEfficiencies_TopJet_mu, CSVTEfficiencies_TopJet_mu + 17);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && !dotopjets) { 
+      _values.assign(CSVLEfficiencies, CSVLEfficiencies + 17);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && !dotopjets) { 
       _values.assign(CSVLEfficiencies_mu, CSVLEfficiencies_mu + 17);
     }
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && dosubjets && !dotopjets) { 
+      _values.assign(CSVLEfficiencies_SubJet, CSVLEfficiencies_SubJet + 17);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && dotopjets) { 
+      _values.assign(CSVLEfficiencies_TopJet, CSVLEfficiencies_TopJet + 17);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && dosubjets && !dotopjets) { 
+      _values.assign(CSVLEfficiencies_SubJet_mu, CSVLEfficiencies_SubJet_mu + 17);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && dotopjets) { 
+      _values.assign(CSVLEfficiencies_TopJet_mu, CSVLEfficiencies_TopJet_mu + 17);
+    }
     else {
-        std::cerr <<  "unsupported b-tagging operating point and lepton selection" <<std::endl;
+        std::cerr <<  "unsupported b-tagging operating point and lepton selection in BtagEfficiency" <<std::endl;
     }
 }
 
@@ -1063,47 +1245,95 @@ float BtagEfficiency::value(const float &jet_pt, const float &jet_eta) const
 }
 
 
-CtagEfficiency::CtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel) : BtagEfficiency(btagtype, leptonsel)
+CtagEfficiency::CtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel, bool dosubjets, bool dotopjets) : BtagEfficiency(btagtype, leptonsel, dosubjets, dotopjets)
 {
     const float bins[] = {
         20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 100.0, 120.0, 160.0, 210.0, 260.0, 320.0, 400.0, 1600.0
     };
 
     const float CSVTEfficiencies[] = {
-        0.078277168566833921, 0.074915742421118273, 0.071554316275402624, 0.068192890129686975,
-        0.064831463983971327, 0.056055860000873536, 0.053423145350989264, 0.049437287248529672, 
-        0.051175126071014654, 0.031147321304156712, 0.028672334664972543, 0.017483901927108567, 
-        0.012445728161565342, 0.013059366026755743
+      0, 0, 0, 0.0652631 , 0.0585445 , 0.0588226 , 0.0536955 , 0.0517468 , 0.0475731 , 0.0290347 , 0.0262906 , 0.0157309 , 0.0166553 , 0.0124923
     };
-
+    const float CSVLEfficiencies[] = {
+      0, 0, 0, 0.423634 , 0.394799 , 0.402879 , 0.390526 , 0.374143 , 0.379752 , 0.360757 , 0.347033 , 0.328483 , 0.300221 , 0.279772
+    };
+    const float CSVTEfficiencies_SubJet[] = {
+      0.0631994 , 0.071359 , 0.0799394 , 0.0400092 , 0.0735092 , 0.0679709 , 0.0619224 , 0.0608981 , 0.0440748 , 0.0259931 , 0.0194072 , 0.0260485 , 0.0254116 , 0.0228735
+    };
+    const float CSVLEfficiencies_SubJet[] = {
+      0.489766 , 0.552803 , 0.355127 , 0.449075 , 0.373065 , 0.411385 , 0.380089 , 0.36281 , 0.361701 , 0.361116 , 0.324198 , 0.362666 , 0.299875 , 0.354893 
+    };
+    const float CSVTEfficiencies_TopJet[] = {
+      0,0,0,0,0,0,0,0,0,0, 0.0315203 , 0.00788948 , 0.0169692 , 0.00868753
+    };
+    const float CSVLEfficiencies_TopJet[] = {
+      0,0,0,0,0,0,0,0,0,0, 0.217208 , 0.30472 , 0.282458 , 0.269931
+    };
     const float CSVTEfficiencies_mu[] = {
       0, 0, 0 , 0.0746531 , 0.0648892 , 0.0661782 , 0.0593803 , 0.0483994 , 0.0424287 , 0.0284464 , 0.0307131 , 0.0275881 , 0.0173931 , 0.0147546
     };
     const float CSVLEfficiencies_mu[] = {
       0, 0, 0 , 0.438554 , 0.409188 , 0.417346 , 0.417047 , 0.385195 , 0.376154 , 0.372287 , 0.342093 , 0.324201 , 0.312492 , 0.252123
     };
+    const float CSVTEfficiencies_SubJet_mu[] = {
+      0.0471672 , 0.0550835 , 0.0545521 , 0.0750428 , 0.0816817 , 0.0661709 , 0.0699742 , 0.0703206 , 0.0520946 , 0.039097 , 0.0267112 , 0.0331859 , 0.0151289 , 0.0262327
+    };
+    const float CSVLEfficiencies_SubJet_mu[] = {
+      0.404398 , 0.513329 , 0.425533 , 0.403072 , 0.404578 , 0.457312 , 0.409479 , 0.406841 , 0.370388 , 0.361228 , 0.363352 , 0.375948 , 0.268852 , 0.27939
+    };
+    const float CSVTEfficiencies_TopJet_mu[] = {
+      0,0,0,0,0,0,0,0,0,0, 0.0157415 , 0.0172926 , 0.0167701 , 0.0142135
+    };
+    const float CSVLEfficiencies_TopJet_mu[] = {
+      0,0,0,0,0,0,0,0,0,0, 0.282709 , 0.320317 , 0.313382 , 0.241947
+    };
 
-    if (btagtype == e_CSVT && leptonsel == e_Electron) {
-        _bins.assign(bins, bins + 15);
-        _values.assign(CSVTEfficiencies, CSVTEfficiencies + 14);
+    _bins.assign(bins, bins + 15);
+    if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && !dotopjets) {
+      _values.assign(CSVTEfficiencies, CSVTEfficiencies + 14);
     }
-    else if (btagtype == e_CSVT && leptonsel == e_Muon) { 
-      _bins.assign(bins, bins + 15);
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && !dotopjets) { 
       _values.assign(CSVTEfficiencies_mu, CSVTEfficiencies_mu + 14);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Muon) { 
-      _bins.assign(bins, bins + 15);
+    else if (btagtype == e_CSVT && leptonsel == e_Electron && dosubjets && !dotopjets) { 
+      _values.assign(CSVTEfficiencies_SubJet, CSVTEfficiencies_SubJet + 14);
+    }
+    else if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && dotopjets) { 
+      _values.assign(CSVTEfficiencies_TopJet, CSVTEfficiencies_TopJet + 14);
+    }
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && dosubjets && !dotopjets) { 
+      _values.assign(CSVTEfficiencies_SubJet_mu, CSVTEfficiencies_SubJet_mu + 14);
+    }
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && dotopjets) { 
+      _values.assign(CSVTEfficiencies_TopJet_mu, CSVTEfficiencies_TopJet_mu + 14);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && !dotopjets) { 
+      _values.assign(CSVLEfficiencies, CSVLEfficiencies + 14);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && !dotopjets) { 
       _values.assign(CSVLEfficiencies_mu, CSVLEfficiencies_mu + 14);
     }
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && dosubjets && !dotopjets) { 
+      _values.assign(CSVLEfficiencies_SubJet, CSVLEfficiencies_SubJet + 14);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && dotopjets) { 
+      _values.assign(CSVLEfficiencies_TopJet, CSVLEfficiencies_TopJet + 14);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && dosubjets && !dotopjets) { 
+      _values.assign(CSVLEfficiencies_SubJet_mu, CSVLEfficiencies_SubJet_mu + 14);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && dotopjets) { 
+      _values.assign(CSVLEfficiencies_TopJet_mu, CSVLEfficiencies_TopJet_mu + 14);
+    }
     else {
-        std::cerr <<  "unsupported b-tagging operating point and lepton selection" <<std::endl;
+        std::cerr <<  "unsupported b-tagging operating point and lepton selection in CtagEfficiency" <<std::endl;
     }
 }
 
 
 // Light Efficiency
 //
-LtagEfficiency::LtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel) : BtagEfficiency(btagtype, leptonsel)
+LtagEfficiency::LtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel, bool dosubjets, bool dotopjets) : BtagEfficiency(btagtype, leptonsel, dosubjets, dotopjets)
 {
     // BtagFunction::BtagFunction(btagtype);
 
@@ -1112,34 +1342,81 @@ LtagEfficiency::LtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel)
     };
 
     const float CSVTEfficiencies[] = {
-        0.0041961524551977604, 0.0044655765042000087, 0.0047350005532022571, 0.0050044246022045054,
-        0.0052738486512067537, 0.0045889898119126932, 0.0050790777581588833, 0.0059039415342432922,
-        0.0060358742501952448, 0.0058222771697384801, 0.0060753523061352734, 0.0042071929862444917, 
-        0.0061857466264373896, 0.0046817449333456688, 0.016176856044657056, 0.0065362936670525645
+      0, 0, 0, 0.00175576 , 0.0013093 , 0.00122353 , 0.00100534 , 0.00119473 , 0.00120241 , 0.00078995 , 0.000833238 , 0.00128178 , 0.000682748 , 0.00160506 , 0.00251959 , 0.00057882
     };
-
+    const float CSVLEfficiencies[] = {
+      0, 0, 0, 0.126082 , 0.104035 , 0.105668 , 0.0991957 , 0.0958602 , 0.0892866 , 0.0963189 , 0.0936501 , 0.0909674 , 0.0896909 , 0.0896152 , 0.115579 , 0.102088
+    };
+    const float CSVTEfficiencies_SubJet[] = {
+      0.00259388 , 0.000530493 , 0.00134186 , 0.00305683 , 0.00119375 , 0.00209844 , 0.00132584 , 0.000501977 , 0.0010974 , 0.00112209 , 0.0007239 , 0.001115 , 0.00137592 , 0.00218108 , 0.00162565 , 0
+    };
+    const float CSVLEfficiencies_SubJet[] = {
+      0.215991 , 0.234865 , 0.129691 , 0.105705 , 0.0713213 , 0.0865309 , 0.0650489 , 0.0771265 , 0.0749646 , 0.0839248 , 0.0865248 , 0.0891748 , 0.0995316 , 0.0986173 , 0.137609 , 0.146648
+    };
+    const float CSVTEfficiencies_TopJet[] = {
+      0,0,0,0,0,0,0,0,0,0, 0.000859636 , 0.000757145 , 0.00111742 , 0.000997218 , 0.0040979 , 0.000275211
+    };
+    const float CSVLEfficiencies_TopJet[] = {
+      0,0,0,0,0,0,0,0,0,0, 0.0714881 , 0.0956987 , 0.0887327 , 0.0859661 , 0.0899636 , 0.0965541
+    };
     const float CSVTEfficiencies_mu[] = {
       0, 0, 0, 0.00569484 , 0.00548976 , 0.00547509 , 0.00712279 , 0.00675918 , 0.00670482 , 0.00444024 , 0.0045339 , 0.00446893 , 0.00537538 , 0.00461259 , 0.00792868 , 0.00387412
     };
-
     const float CSVLEfficiencies_mu[] = {
       0, 0, 0, 0.13864 , 0.112884 , 0.110701 , 0.109742 , 0.0995396 , 0.099064 , 0.104746 , 0.101926 , 0.100509 , 0.104804 , 0.108763 , 0.104505 , 0.101038
     };
+    const float CSVTEfficiencies_SubJet_mu[] = {
+      0.00491591 , 0.00641215 , 0.00440554 , 0.00461913 , 0.00402397 , 0.00373321 , 0.0050391 , 0.00427545 , 0.00440775 , 0.00342722 , 0.00433205 , 0.00420399 , 0.00451348 , 0.00307578 , 0.00939786 , 0.00307568
+    };
+    const float CSVLEfficiencies_SubJet_mu[] = {
+      0.215857 , 0.207552 , 0.128542 , 0.125484 , 0.0958364 , 0.0855152 , 0.0816815 , 0.0764793 , 0.0757557 , 0.0953726 , 0.098633 , 0.0983716 , 0.12283 , 0.114422 , 0.117415 , 0.14174
+    };
+    const float CSVTEfficiencies_TopJet_mu[] = {
+      0,0,0,0,0,0,0,0,0,0, 0.00491419 , 0.00624411 , 0.00641003 , 0.00271659 , 0.00705914 , 0.00264482
+    };
+    const float CSVLEfficiencies_TopJet_mu[] = {
+      0,0,0,0,0,0,0,0,0,0, 0.0924585 , 0.0921337 , 0.103826 , 0.090195 , 0.0914187 , 0.075329
+    };
 
-    if (btagtype == e_CSVT && leptonsel == e_Electron) {
-        _bins.assign(bins, bins + 17);
+    _bins.assign(bins, bins + 17);
+    if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && !dotopjets) {
         _values.assign(CSVTEfficiencies, CSVTEfficiencies + 16);
     } 
-    else if (btagtype == e_CSVT && leptonsel == e_Muon) { 
-      _bins.assign(bins, bins + 17);
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && !dotopjets) { 
       _values.assign(CSVTEfficiencies_mu, CSVTEfficiencies_mu + 16);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Muon) { 
-      _bins.assign(bins, bins + 17);
+    else if (btagtype == e_CSVT && leptonsel == e_Electron && dosubjets && !dotopjets) { 
+      _values.assign(CSVTEfficiencies_SubJet, CSVTEfficiencies_SubJet + 16);
+    }
+    else if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && dotopjets) { 
+      _values.assign(CSVTEfficiencies_TopJet, CSVTEfficiencies_TopJet + 16);
+    }
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && dosubjets && !dotopjets) { 
+      _values.assign(CSVTEfficiencies_SubJet_mu, CSVTEfficiencies_SubJet_mu + 16);
+    }
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && dotopjets) { 
+      _values.assign(CSVTEfficiencies_TopJet_mu, CSVTEfficiencies_TopJet_mu + 16);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && !dotopjets) { 
+      _values.assign(CSVLEfficiencies, CSVLEfficiencies + 16);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && !dotopjets) { 
       _values.assign(CSVLEfficiencies_mu, CSVLEfficiencies_mu + 16);
     }
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && dosubjets && !dotopjets) { 
+      _values.assign(CSVLEfficiencies_SubJet, CSVLEfficiencies_SubJet + 16);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && dotopjets) { 
+      _values.assign(CSVLEfficiencies_TopJet, CSVLEfficiencies_TopJet + 16);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && dosubjets && !dotopjets) { 
+      _values.assign(CSVLEfficiencies_SubJet_mu, CSVLEfficiencies_SubJet_mu + 16);
+    }
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && dotopjets) { 
+      _values.assign(CSVLEfficiencies_TopJet_mu, CSVLEfficiencies_TopJet_mu + 16);
+    }
     else {
-        std::cerr <<  "unsupported b-tagging operating point and lepton selection" <<std::endl;
+        std::cerr <<  "unsupported b-tagging operating point and lepton selection in LtagEfficiency" <<std::endl;
     }
 }
 

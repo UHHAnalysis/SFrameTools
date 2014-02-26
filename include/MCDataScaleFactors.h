@@ -201,7 +201,7 @@ private:
 class BtagEfficiency: public BtagFunction {
 public:
 
-    BtagEfficiency(E_BtagType, E_LeptonSelection);
+  BtagEfficiency(E_BtagType, E_LeptonSelection, bool dosubjets=false, bool dotopjets=false);
 
     virtual float value(const float &jet_p, const float &jet_etat) const;
     virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
@@ -224,7 +224,7 @@ protected:
 class CtagEfficiency: public BtagEfficiency {
 public:
 
-    CtagEfficiency(E_BtagType, E_LeptonSelection);
+    CtagEfficiency(E_BtagType, E_LeptonSelection, bool dosubjets=false, bool dotopjets=false);
 
 };
 
@@ -232,7 +232,7 @@ public:
 class LtagEfficiency: public BtagEfficiency {
 public:
 
-    LtagEfficiency(E_BtagType, E_LeptonSelection);
+    LtagEfficiency(E_BtagType, E_LeptonSelection, bool dosubjets=false, bool dotopjets=false);
 
 };
 
@@ -251,7 +251,7 @@ public:
      * @see E_SystShift
      */
     BTaggingScaleFactors(
-        E_BtagType, E_LeptonSelection, E_SystShift sys_bjets=e_Default, E_SystShift sys_ljets=e_Default
+	 E_BtagType, E_LeptonSelection, E_SystShift sys_bjets=e_Default, E_SystShift sys_ljets=e_Default, bool use_subjet_btags=true
     );
     ///Default destructor
     ~BTaggingScaleFactors() {};
@@ -282,12 +282,20 @@ private:
 
     BtagFunction* _scale_btag;
     BtagFunction* _eff_btag;
+    BtagFunction* _eff_btag_subj;
+    BtagFunction* _eff_btag_topj;
 
     BtagFunction* _scale_ctag;
     BtagFunction* _eff_ctag;
+    BtagFunction* _eff_ctag_subj;
+    BtagFunction* _eff_ctag_topj;
 
     BtagFunction* _scale_light;
     BtagFunction* _eff_light;
+    BtagFunction* _eff_light_subj;
+    BtagFunction* _eff_light_topj;
+
+    bool m_use_subjet_btags;
 };
 
 class JetpTReweightingInWJets {
