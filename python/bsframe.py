@@ -5,7 +5,6 @@ import math
 from optparse import OptionParser
 import os
 import re
-import ROOT
 import shutil
 import sys
 import time
@@ -141,7 +140,7 @@ def resolveentities(input):
             entitytemp = {entityname: entityfiles}
             entitydict.update(entitytemp)
     for entity in entitydict: input=input.replace("&"+entity+";", entitydict[entity])
-    xmldump=open("dump.xml",'w');xmldump.write(input);xmldump.close()
+    #xmldump=open("BSFrame_config_dump.xml",'w');xmldump.write(input);xmldump.close()
     return input
 
 def createxmlfiles(configfile, jobname, numjobs):
@@ -231,18 +230,21 @@ def getcondornode(jobid):
                     nodeindex = len(statuslist)-1
                     return statuslist[nodeindex].strip("\n")
     print "Error: Condor node with jobid: "+jobid+" not found!"
-    exit(3)
+    return -1
 
 def checklog(jobname, jobnumber):
-    errorinfo = os.popen("egrep -i 'exit|break|exceed|error|traceback|aborted' "+jobname+"/logs/"+jobname+"_"+str(jobnumber)+".log | tr '\n' ', '").readline().strip("\n")
+    errorinfo = os.popen("egrep -i 'exit|break|exceed|error|traceback|aborted' "+jobname+"/logs/"+jobname+"_"+str(jobnumber)+".log").readline().strip("\n")
     errorline = errorinfo[errorinfo.find(")")+2:]
     return errorline
 
 def checkstdout(jobname, jobnumber):
-    errorinfo = os.popen('egrep -i "exit|break|exceed|error|traceback|aborted|E R R O R|find tree AnalysisTree|fatal" '+jobname+"/logs/"+jobname+"_"+str(jobnumber)+".stdout | tr '\n' ', '").readline().strip("\n")
-    if errorinfo.find(":") != -1: errorline = errorinfo.split(":")[1]
-    else: errorline=errorinfo
-    return errorline
+    errors = os.popen('egrep -i "exit|break|exceed|error|traceback|aborted|E R R O R|find tree AnalysisTree|fatal" '+jobname+"/logs/"+jobname+"_"+str(jobnumber)+".stdout").readlines()
+    returnerror = ""
+    if len(errors)>0:
+        error = errors[0].strip("\n")
+        if error.find(":") != -1: returnerror = error.split(":")[-1:][0]
+        else: returnerror=error
+    return returnerror
 
 def getjobinfo(jobname,jobnumber,resubmitjobs):
     outputfiles = os.popen("grep Transfer_Output_Files "+jobname+"/configs/"+jobname+"_"+str(jobnumber)+".txt").readline().strip("\n")
@@ -254,30 +256,33 @@ def getjobinfo(jobname,jobnumber,resubmitjobs):
         jobstatus = open(options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status").read().strip("\n")
         if os.path.isfile(filepath):
             if os.path.getsize(filepath)==0:
-                if jobstatus=="Done": jobinfo += " Root File "+file+" Empty!"
+                if jobstatus=="Done":
+                    jobinfo += " Root File "+file+" Empty!"
+                    if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
             else:
                 rootfile = ROOT.TFile.Open(filepath)
-                if rootfile==None:
-                    resubmitjobs.append(jobnumber)
-                    jobinfo += " Root File "+file+" is a Null Pointer!"
-                elif rootfile.IsZombie():
-                    resubmitjobs.append(jobnumber)
+                try: iszombie=rootfile.IsZombie()
+                except: iszombie=True
+                if iszombie:
                     jobinfo += " Root File "+file+" is Zombie!"
-                elif not rootfile.IsZombie():
+                    if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
+                elif rootfile.Get("AnalysisTree"):
                     analysistree = rootfile.Get("AnalysisTree")
                     jobinfo += " Root File "+file+" is Valid: "+str(int(analysistree.GetEntries()))+" Events."
                 else:
                     hist = rootfile.Get("nprocessed")
                     jobinfo += " Root File "+file+" is Valid: "+str(int(hist.GetEntries()))+" Events."
                     if file.find("PostSelection") == -1: jobinfo += " Warning No AnalysisTree Found in "+file
+                if not iszombie: rootfile.Close()
         else:
             jobinfo += " Output file "+file+" is not found!"
+            if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
         if jobstatus=="Done":
-            logerror = checklog(jobname, jobnumber)
             stdouterror = checkstdout(jobname, jobnumber)
-            if (logerror != "" or stdouterror != "") and resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
-            if logerror != "": jobinfo += " "+logerror
+            logerror = checklog(jobname, jobnumber)
+            if (stdouterror != "" or logerror != "") and resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
             if stdouterror != "": jobinfo += " "+stdouterror
+            if logerror != "": jobinfo += " "+logerror
     return jobinfo
 
 if not options.create and options.submit=="none" and options.kill=="none" and not options.status:
@@ -287,13 +292,13 @@ workingdir=os.getcwd()
 cmsswbase=os.getenv("CMSSW_BASE")
 username=os.getenv("USER")
 currentnode=os.getenv("HOST")
-eosstatusdir="/eos/uscms/store/user/"+username+"/BSFrameStatus/"+options.jobname+"/"
+eosstatusdir="/eos/uscms/store/user/"+username+"/BSFrameStatus/"+options.jobname
 
 if options.create:
     if not os.path.isdir(options.jobname) and not options.clobber: os.mkdir(options.jobname)
     elif os.path.isdir(options.jobname) and not options.clobber:
         print "ERROR: Job directory "+options.jobname+" exists!\nPlease remove job directory or enable --clobber option.."
-        exit(4)
+        exit(3)
     elif options.clobber:
         if os.path.isdir(options.jobname): shutil.rmtree(options.jobname)
         os.mkdir(options.jobname)
@@ -303,12 +308,13 @@ if options.create:
     os.mkdir(options.jobname+"/status")
     os.mkdir(options.jobname+"/xml")
 
-    if not os.path.isdir("/eos/uscms/store/user/"+username+"/BSFrameStatus/"): os.mkdir("/eos/uscms/store/user/"+username+"/BSFrameStatus/")
+    if not os.path.isdir("/eos/uscms/store/user/"+username+"/BSFrameStatus"): os.mkdir("/eos/uscms/store/user/"+username+"/BSFrameStatus")
     if not os.path.isdir(eosstatusdir): os.mkdir(eosstatusdir)
     else:
         shutil.rmtree(eosstatusdir)
         os.mkdir(eosstatusdir)
 
+    print "Creating configuration files for task: "+options.jobname
     createxmlfiles(options.configxml,options.jobname,options.numjobs)
     for jobnumber in range(1,options.numjobs+1):
         createcondortxt(options.jobname,jobnumber)
@@ -319,13 +325,13 @@ if options.create:
     tarball = options.jobname+".tgz"
     target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
     print "Creating tarball of "+target+" area."
-    os.system("tar -czf "+tarball+" "+target+" --exclude='*.root' --exclude='*.tgz'")
+    os.system("tar -czf "+tarball+" "+target+" --exclude='*.[0-9]*.root' --exclude='*.tgz'")
     os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
     os.chdir(workingdir)
 
 if not os.path.isdir(options.jobname):
     print "ERROR: Job directory "+options.jobname+" does not exist!\nPlease create job with bsframe.py -c myconfig.xml --create."
-    exit(5)
+    exit(4)
 
 if options.retar:
     if options.create: print "There is no point in creating a task and then recreating the tarball."
@@ -348,8 +354,11 @@ if options.kill!="none":
         print "Killing job number: %d" %(jobnumber)
         logfile = os.popen("/bin/ls -rt "+options.jobname+"/logs/"+options.jobname+"_"+str(jobnumber)+".log | tail -1").readline().strip('\n')
         jobid = os.popen("grep submitted "+logfile+" | tail -1 | awk '{print $2}'").readline().strip("\n()").split(".")[0]
+        if condorstatus.find(jobid) == -1:
+            print "Error! Job "+jobid+" not found."
+            continue
         subnode = getcondornode(jobid)
-        if condorstatus.find(jobid) == -1: print "Error! Job "+jobid+" not found."
+        if subnode == -1: print "Error! Job condor submission node not found."
         else:
             if subnode==currentnode: os.system("condor_rm "+jobid)
             else: os.system("rsh "+subnode+" condor_rm "+jobid)
@@ -375,12 +384,14 @@ if options.submit!="none":
 jobstatuslist=[]
 resubmitjobs=[]
 if (options.status):
+    print "Loading Root"
+    import ROOT
     for statuslog in os.popen("/bin/ls "+eosstatusdir).readlines():
-        statuslog=statuslog.strip("\n")
-        filesize = int(os.popen("ls -l "+eosstatusdir+"/"+statuslog+" | awk '{print $5}'").readline().strip("\n"))
-        eostimestamp = os.path.getmtime(eosstatusdir+"/"+statuslog)
-        localtimestamp = os.path.getmtime(options.jobname+"/status/"+statuslog)
-        if filesize>0 and eostimestamp>localtimestamp: os.system("/bin/cp "+eosstatusdir+"/"+statuslog+" "+options.jobname+"/status/")
+        statuslog = statuslog.strip("\n")
+        if os.path.isfile(eosstatusdir+"/"+statuslog):
+            eostimestamp = os.path.getmtime(eosstatusdir+"/"+statuslog)
+            localtimestamp = os.path.getmtime(options.jobname+"/status/"+statuslog)
+            if eostimestamp>localtimestamp: os.system("/bin/cp "+eosstatusdir+"/"+statuslog+" "+options.jobname+"/status/")
     print "\nJob Status Summary for Task: ",options.jobname
     print "================================================================================"
     print "Job Number         Status             Additional Information"
