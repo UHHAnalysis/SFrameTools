@@ -7,5 +7,7 @@ DEPDIR  = $(OBJDIR)/dep
 SRCDIR  = src
 INCDIR  = include
 
+USERLDFLAGS += $(shell root-config --libs) -lGenVector
+
 # Include definitions
 include Makefile.defs
