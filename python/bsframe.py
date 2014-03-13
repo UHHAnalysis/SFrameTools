@@ -15,6 +15,7 @@ parser.add_option("-c", "--cfg", dest="configxml", help="Input XML Config File")
 parser.add_option("-j", "--jobname", dest="jobname", default="", help="Job Name")
 parser.add_option("-k", "--kill", dest="kill",  default="none", help="Kill Jobs: all, 1-5, or 1,3,5,9")
 parser.add_option("-n", "--numjobs", dest="numjobs", type="int", default=0, help="Number of Jobs")
+parser.add_option("-o", "--output", dest="output", default="", help="Output directory: The default is jobname/results")
 parser.add_option("-s", "--submit", dest="submit",  default="none", help="Submit Jobs: all, 1-5, or 1,3,5,9")
 
 parser.add_option("--clobber", action="store_true", dest="clobber", default=False, help="Overwrite Job Directory")
@@ -48,31 +49,42 @@ def getoutputfilenames(configfile):
     typelist = xmlparser.parse(rawxmlfile,"Type")
     versionlist = xmlparser.parse(rawxmlfile,"Version")
     namelist = xmlparser.parse(rawxmlfile,"Name")
+    postfix = xmlparser.parse(rawxmlfile,"PostFix")
     rootfilenamelist = ""
     for name in namelist:
         if name.find("Cycle") != -1: cyclename=name
     for type,version in zip(typelist,versionlist):
-        rootfilenamelist += cyclename+"."+type+"."+version+".root, "
+        rootfilenamelist += cyclename+"."+type+"."+version+postfix[0]+".root, "
     return rootfilenamelist[:-2]
 
-def createcondortxt(jobname, jobnumber):
+def getinputfilenames(configfile):
+    rawxmlfile = open(configfile).read()
+    filename = xmlparser.parse(rawxmlfile,"FileName")
+    rootfilenamelist = ", "
+    for file in filename: rootfilenamelist += file+", "
+    return rootfilenamelist[:-2]
+
+def createcondortxt(jobname, jobnumber,jobdir):
     rootfiles = getoutputfilenames(jobname+"/xml/"+jobname+"_"+str(jobnumber)+".xml")
+    additionalfiles = getinputfilenames(jobname+"/xml/"+jobname+"_"+str(jobnumber)+".xml")
     os.chdir(jobname+"/configs")
     condorfile = open(jobname+"_"+str(jobnumber)+".txt", 'w')
+    outputdir = options.output
+    if outputdir == "" : outputdir = jobdir+"/results"
     print >> condorfile, """universe = vanilla
 Executable = %s/configs/%s_%d.sh
 Requirements = Memory >= 199 &&OpSys == "LINUX"&& (Arch != "DUMMY" )&& Disk > 1000000
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
-InitialDir = %s/results
-Transfer_Input_Files = ../configs/%s.tgz
+InitialDir = %s
+Transfer_Input_Files = %s/configs/%s.tgz%s
 Transfer_Output_Files = %s
-Output = ../logs/%s_%d.stdout
-Error = ../logs/%s_%d.stderr
-Log = ../logs/%s_%d.log
+Output = %s/logs/%s_%d.stdout
+Error = %s/logs/%s_%d.stderr
+Log = %s/logs/%s_%d.log
 notify_user = ${LOGNAME}@FNAL.GOV
 Arguments = %s 0
-Queue 1""" %(jobname, jobname, jobnumber, jobname, jobname, rootfiles.replace(".root","."+str(jobnumber)+".root"), jobname, jobnumber, jobname, jobnumber, jobname, jobnumber, os.getcwd())
+Queue 1""" %(jobname, jobname, jobnumber, outputdir, jobdir, jobname, additionalfiles, rootfiles.replace(".root","."+str(jobnumber)+".root"), jobdir, jobname, jobnumber, jobdir, jobname, jobnumber, jobdir, jobname, jobnumber, os.getcwd())
     condorfile.close()
     os.chdir("../..")
 
@@ -93,7 +105,10 @@ source fullsetup.sh
 cd $WORKINGDIR
 ANALYSISDIR=CMSSW`echo ${1##*CMSSW}`/../../
 cd $ANALYSISDIR
-cp %s/xml/%s_%d.xml .
+FILENAME=%s_%d.xml
+cp %s/xml/${FILENAME} .
+sed -i 's|FileName=".*/\(.*.root\)"|FileName="./\\1"|' $FILENAME
+cp ${WORKINGDIR}/*.root .
 echo 'Running' >& $STATUSFILE
 sframe_main %s_%d.xml
 for filename in `/bin/ls *.root`; do
@@ -101,7 +116,7 @@ for filename in `/bin/ls *.root`; do
     mv $filename $newfilename
 done
 mv *.root $WORKINGDIR
-echo 'Done' >& $STATUSFILE""" %(eosstatusdir,jobname, jobnumber, jobname, jobname, jobnumber, jobname, jobnumber, jobnumber)
+echo 'Done' >& $STATUSFILE""" %(eosstatusdir, jobname, jobnumber, jobname, jobnumber, jobname, jobname, jobnumber, jobnumber)
     os.chmod(scriptname, 493) #493==755 in python chmod
     os.chdir("../..")
 
@@ -249,10 +264,11 @@ def checkstdout(jobname, jobnumber):
 def getjobinfo(jobname,jobnumber,resubmitjobs):
     outputfiles = os.popen("grep Transfer_Output_Files "+jobname+"/configs/"+jobname+"_"+str(jobnumber)+".txt").readline().strip("\n")
     outputfiles = outputfiles.split(" ")[2:]
+    outputdirectory = os.popen("grep InitialDir "+jobname+"/configs/"+jobname+"_"+str(jobnumber)+".txt | awk '{print $3}'").readline().strip("\n")
     jobinfo=""
     for file in outputfiles:
         file=file.strip(",")
-        filepath = jobname+"/results/"+file
+        filepath = outputdirectory+"/"+file
         jobstatus = open(options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status").read().strip("\n")
         if os.path.isfile(filepath):
             if os.path.getsize(filepath)==0:
@@ -279,7 +295,8 @@ def getjobinfo(jobname,jobnumber,resubmitjobs):
             if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
         if jobstatus=="Done":
             stdouterror = checkstdout(jobname, jobnumber)
-            logerror = checklog(jobname, jobnumber)
+            logerror = ""
+            #logerror = checklog(jobname, jobnumber)
             if (stdouterror != "" or logerror != "") and resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
             if stdouterror != "": jobinfo += " "+stdouterror
             if logerror != "": jobinfo += " "+logerror
@@ -308,6 +325,7 @@ if options.create:
     os.mkdir(options.jobname+"/status")
     os.mkdir(options.jobname+"/xml")
 
+    if not os.path.isdir(options.output) and options.output!="": os.makedirs(options.output)
     if not os.path.isdir("/eos/uscms/store/user/"+username+"/BSFrameStatus"): os.mkdir("/eos/uscms/store/user/"+username+"/BSFrameStatus")
     if not os.path.isdir(eosstatusdir): os.mkdir(eosstatusdir)
     else:
@@ -317,7 +335,7 @@ if options.create:
     print "Creating configuration files for task: "+options.jobname
     createxmlfiles(options.configxml,options.jobname,options.numjobs)
     for jobnumber in range(1,options.numjobs+1):
-        createcondortxt(options.jobname,jobnumber)
+        createcondortxt(options.jobname,jobnumber,workingdir+"/"+options.jobname)
         createcondorscript(options.jobname,jobnumber,eosstatusdir)
         os.system("echo 'Created' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
 
@@ -325,7 +343,7 @@ if options.create:
     tarball = options.jobname+".tgz"
     target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
     print "Creating tarball of "+target+" area."
-    os.system("tar -czf "+tarball+" "+target+" --exclude='*.[0-9]*.root' --exclude='*.tgz'")
+    os.system("tar -czf "+tarball+" "+target+" --exclude='*.[0-9]*.root' --exclude='*.tgz' --exclude='*.log' --exclude='*.stdout' --exclude='*.stderr'")
     os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
     os.chdir(workingdir)
 
