@@ -67,7 +67,7 @@ void TopFitCalc::FillHighMassTTbarHypotheses(){
   Particle* lepton = calc->GetPrimaryLepton();
 
   //reconstruct neutrino
-  //std::vector<LorentzVector> neutrinos = NeutrinoReconstruction( lepton->v4(), m_bcc->met->v4());
+  //std::vector<LorentzVector> neutrinos = calc->NeutrinoReconstruction( lepton->v4(), m_bcc->met->v4());
   std::vector<LorentzVector> neutrinos = NeutrinoFitPolar( lepton->v4(), m_bcc->met->v4() );
   
   ReconstructionHypothesis hyp;
@@ -421,7 +421,7 @@ void TopFitCalc::CalculateTopTag()
 	    LorentzVector top_lep(0,0,0,0);  
 	    LorentzVector b_lep(0,0,0,0);  
 	    int num = j;
-    
+	    hyp.clear_jetindices();
 	    for(unsigned int p=0; p<antikjets->size(); ++p){
 	      if(deltaR(top_had,antikjets->at(p).v4())> deltaR_Jet_Tophad && num%3==0){
 		b_lep = b_lep + antikjets->at(p).v4();
