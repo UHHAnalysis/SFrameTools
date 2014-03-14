@@ -109,6 +109,9 @@ double EventCalc::GetHT()
 
 double EventCalc::GetNSumBTags(){
 
+  if(!m_bcc->topjets) return 0;
+  if(!m_bcc->jets) return 0;
+
   int NAntiktBTags =0;
   int NSubBTags = 0;
   int NSumBTags = 0;
