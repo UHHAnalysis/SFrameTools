@@ -61,7 +61,8 @@ def getinputfilenames(configfile):
     rawxmlfile = open(configfile).read()
     filename = xmlparser.parse(rawxmlfile,"FileName")
     rootfilenamelist = ", "
-    for file in filename: rootfilenamelist += file+", "
+    for file in filename:
+        if not file[:5]=="/eos/": rootfilenamelist += file+", "
     return rootfilenamelist[:-2]
 
 def createcondortxt(jobname, jobnumber,jobdir):
@@ -107,8 +108,8 @@ ANALYSISDIR=CMSSW`echo ${1##*CMSSW}`/../../
 cd $ANALYSISDIR
 FILENAME=%s_%d.xml
 cp %s/xml/${FILENAME} .
-sed -i 's|FileName=".*/\(.*.root\)"|FileName="./\\1"|' $FILENAME
-cp ${WORKINGDIR}/*.root .
+sed -i 's|FileName="/[^e][^o][^s].*/\(.*.root\)"|FileName="./\1"|' $FILENAME
+mv ${WORKINGDIR}/*.root .
 echo 'Running' >& $STATUSFILE
 sframe_main %s_%d.xml
 for filename in `/bin/ls *.root`; do
@@ -343,7 +344,7 @@ if options.create:
     tarball = options.jobname+".tgz"
     target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
     print "Creating tarball of "+target+" area."
-    os.system("tar -czf "+tarball+" "+target+" --exclude='*.[0-9]*.root' --exclude='*.tgz' --exclude='*.log' --exclude='*.stdout' --exclude='*.stderr'")
+    os.system("tar -czf "+tarball+" "+target+" --exclude='*Cycle*.root' --exclude='*.tgz' --exclude='*.log' --exclude='*.stdout' --exclude='*.stderr'")
     os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
     os.chdir(workingdir)
 
