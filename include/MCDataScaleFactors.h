@@ -63,13 +63,13 @@ public:
     ///check if the scale factors are up-to-date, fill them only once per run
     ///implemented for run-dependent scale factors
     bool IsUpToDate();
-    
+
     /// return the bin number of the muon eta bin
     int GetMuonEtaBin(double eta);
 
     /// return the bin number of a graph corresponding to a certain value of the x coordinate
     int GetBin(double x, TGraphAsymmErrors* graph);
-    
+
     void DoUpVarMuonSF(bool f=true){m_muon_unc=true; m_syst_shift=e_Up;}
     void DoDownVarMuonSF(bool f=true){m_muon_unc=true; m_syst_shift=e_Down;}
 
@@ -78,7 +78,7 @@ public:
 
     void DoUpVarTauSF(bool f=true){m_tau_unc=true; m_syst_shift=e_Up;}
     void DoDownVarTauSF(bool f=true){m_tau_unc=true; m_syst_shift=e_Down;}
-    
+
     void DoUpVarTauEleSF(bool f=true){m_tauele_unc=true; m_syst_shift=e_Up;}
     void DoDownVarTauEleSF(bool f=true){m_tauele_unc=true; m_syst_shift=e_Down;}
 
@@ -89,7 +89,7 @@ public:
 
    double GetDecayModeFindingWeight();
 
-   
+
     /// return the scale factor for the tau efficiency
     double GetTauEffUnc();
 
@@ -98,14 +98,14 @@ private:
     E_SystShift m_syst_shift;
     std::vector<std::pair<std::string, double> > m_correctionlist;
     bool m_apply;                   // should any scale factors be applied?
-    bool m_muon_unc;                // do shift of muon scale factors 
-    bool m_ele_unc;                 // do shift of electron scale factors 
-    bool m_tau_unc;                 // do shift of tau scale factors 
+    bool m_muon_unc;                // do shift of muon scale factors
+    bool m_ele_unc;                 // do shift of electron scale factors
+    bool m_tau_unc;                 // do shift of tau scale factors
     bool m_tauele_unc;               // do shift of e -> tau fake rate
     int m_current_run;              // run for which the scale factors are vali
-    bool m_tau_eff_unc;             // do shift of tau efficiency scale factors 
-   
-    
+    bool m_tau_eff_unc;             // do shift of tau efficiency scale factors
+
+
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_id;    // two arrays: first index stands for eta bin, second for run period
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_trig;  // two arrays: first index stands for eta bin, second for run period
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_iso;   // two arrays: first index stands for eta bin, second for run period
@@ -137,6 +137,48 @@ public:
 
 protected:
     E_BtagType m_btagtype;
+};
+
+class ToptagScale: public BtagFunction {
+public:
+
+    ToptagScale(E_BtagType);
+
+    virtual float value(const float &jet_pt, const float &jet_eta) const;
+    virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt, jet_eta) + error(jet_pt, jet_eta);
+    }
+
+    virtual float value_minus(const float &jet_pt, const float &jet_eta) const {
+      const float value_ = value(jet_pt,jet_eta) - error(jet_pt,jet_eta);
+        return value_ > 0 ? value_ : 0;
+    }
+
+protected:
+
+    virtual float error(const float &jet_pt, const float &jet_eta) const;
+
+};
+
+class TopMistagScale: public BtagFunction {
+public:
+
+    TopMistagScale(E_BtagType);
+
+    virtual float value(const float &jet_pt, const float &jet_eta) const;
+    virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt, jet_eta) + error(jet_pt, jet_eta);
+    }
+
+    virtual float value_minus(const float &jet_pt, const float &jet_eta) const {
+      const float value_ = value(jet_pt,jet_eta) - error(jet_pt,jet_eta);
+        return value_ > 0 ? value_ : 0;
+    }
+
+protected:
+
+    virtual float error(const float &jet_pt, const float &jet_eta) const;
+
 };
 
 
@@ -197,6 +239,46 @@ private:
 
 };
 
+class ToptagEfficiency: public BtagFunction {
+public:
+
+  ToptagEfficiency(E_BtagType);
+
+    virtual float value(const float &jet_p, const float &jet_etat) const;
+    virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt,jet_eta);
+    }
+
+    virtual float value_minus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt,jet_eta);
+    }
+
+private:
+
+    TF1 * _scale;
+
+};
+
+
+class TopMistagEfficiency: public BtagFunction {
+public:
+
+  TopMistagEfficiency(E_BtagType);
+
+    virtual float value(const float &jet_p, const float &jet_etat) const;
+    virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt,jet_eta);
+    }
+
+    virtual float value_minus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt,jet_eta);
+    }
+
+private:
+
+    TF1 * _scale;
+
+};
 
 class BtagEfficiency: public BtagFunction {
 public:
@@ -236,6 +318,46 @@ public:
 
 };
 
+/**
+ *  @short module to apply data-MC scale factors for top tagging
+ *
+ *
+ */
+class TopTaggingScaleFactors {
+public:
+    /**
+     * constructor
+     *
+     * argument: systematic shift
+     * @see E_SystShift
+     */
+    TopTaggingScaleFactors(
+	 E_SystShift sys_toptag=e_Default, E_SystShift sys_mistag=e_Default
+    );
+    ///Default destructor
+    ~TopTaggingScaleFactors() {};
+
+    ///return the weighted correction factor
+    double GetWeight();
+
+private:
+
+    E_SystShift m_sys_toptag;
+    E_SystShift m_sys_mistag;
+
+    float scale(const bool &is_tagged,
+                const float &jet_pt,
+                const float &jet_eta,
+                const BtagFunction* sf,
+                const BtagFunction* eff,
+                const E_SystShift &sytematic);
+
+    BtagFunction* _scale_toptag;
+    BtagFunction* _eff_toptag;
+    BtagFunction* _scale_topmistag;
+    BtagFunction* _eff_topmistag;
+
+};
 
 /**
  *  @short module to apply data-MC scale factors for b tagging
@@ -300,18 +422,18 @@ private:
 
 class JetpTReweightingInWJets {
 public:
-   
+
    JetpTReweightingInWJets();
    ///Default destructor
    ~JetpTReweightingInWJets() {};
-   
+
    ///return the weighted correction factor
    double GetWeight();
-   
+
    void DoUpVarJetSF(bool f=true){m_jetpTreweigting_unc=true; m_syst_shift=e_Up;}
    void DoDownVarJetSF(bool f=true){m_jetpTreweigting_unc=true; m_syst_shift=e_Down;}
-   
-   
+
+
 private:
    E_SystShift m_syst_shift;
    bool m_jetpTreweigting_unc; // do shift of jet pT reweighting in W+jets
