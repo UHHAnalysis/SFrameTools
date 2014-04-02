@@ -121,7 +121,6 @@ private:
  *
  */
 
-
 class BtagFunction {
 public:
     BtagFunction(E_BtagType btagtype) {
@@ -139,10 +138,29 @@ protected:
     E_BtagType m_btagtype;
 };
 
-class ToptagScale: public BtagFunction {
+/**
+ *  @short modules to apply data-MC toptagging corrections
+ *
+ *
+ */
+
+class ToptagFunction {
+public:
+    ToptagFunction() {
+    };
+
+    virtual ~ToptagFunction() {
+    };
+
+    virtual float value(const float&x, const float &y) const = 0;
+    virtual float value_plus(const float&x, const float &y) const = 0;
+    virtual float value_minus(const float&x, const float &y) const = 0;
+};
+
+class ToptagScale: public ToptagFunction {
 public:
 
-    ToptagScale(E_BtagType);
+    ToptagScale();
 
     virtual float value(const float &jet_pt, const float &jet_eta) const;
     virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
@@ -160,10 +178,10 @@ protected:
 
 };
 
-class TopMistagScale: public BtagFunction {
+class TopMistagScale: public ToptagFunction {
 public:
 
-    TopMistagScale(E_BtagType);
+    TopMistagScale();
 
     virtual float value(const float &jet_pt, const float &jet_eta) const;
     virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
@@ -239,10 +257,10 @@ private:
 
 };
 
-class ToptagEfficiency: public BtagFunction {
+class ToptagEfficiency: public ToptagFunction {
 public:
 
-  ToptagEfficiency(E_BtagType);
+  ToptagEfficiency();
 
     virtual float value(const float &jet_p, const float &jet_etat) const;
     virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
@@ -260,10 +278,10 @@ private:
 };
 
 
-class TopMistagEfficiency: public BtagFunction {
+class TopMistagEfficiency: public ToptagFunction {
 public:
 
-  TopMistagEfficiency(E_BtagType);
+  TopMistagEfficiency();
 
     virtual float value(const float &jet_p, const float &jet_etat) const;
     virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
@@ -348,14 +366,14 @@ private:
     float scale(const bool &is_tagged,
                 const float &jet_pt,
                 const float &jet_eta,
-                const BtagFunction* sf,
-                const BtagFunction* eff,
+                const ToptagFunction* sf,
+                const ToptagFunction* eff,
                 const E_SystShift &sytematic);
 
-    BtagFunction* _scale_toptag;
-    BtagFunction* _eff_toptag;
-    BtagFunction* _scale_topmistag;
-    BtagFunction* _eff_topmistag;
+    ToptagFunction* _scale_toptag;
+    ToptagFunction* _eff_toptag;
+    ToptagFunction* _scale_topmistag;
+    ToptagFunction* _eff_topmistag;
 
 };
 

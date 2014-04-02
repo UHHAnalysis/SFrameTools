@@ -678,10 +678,10 @@ TopTaggingScaleFactors::TopTaggingScaleFactors(E_SystShift sys_toptag, E_SystShi
     m_sys_mistag = sys_mistag;
 
 
-    _scale_toptag = new ToptagScale(e_CSVL);
-    _eff_toptag = new ToptagEfficiency(e_CSVL);
-    _scale_topmistag = new TopMistagScale(e_CSVL);
-    _eff_topmistag = new TopMistagEfficiency(e_CSVL);
+    _scale_toptag = new ToptagScale();
+    _eff_toptag = new ToptagEfficiency();
+    _scale_topmistag = new TopMistagScale();
+    _eff_topmistag = new TopMistagEfficiency();
 
 }
 
@@ -744,8 +744,8 @@ double TopTaggingScaleFactors::GetWeight()
 float TopTaggingScaleFactors::scale(const bool &is_tagged,
                                   const float &jet_pt,
                                   const float &jet_eta,
-                                  const BtagFunction* sf,
-                                  const BtagFunction* eff,
+                                  const ToptagFunction* sf,
+                                  const ToptagFunction* eff,
                                   const E_SystShift &systematic)
 {
     switch(systematic) {
@@ -1053,7 +1053,7 @@ float BTaggingScaleFactors::scale(const bool &is_tagged,
 
 // Toptag Scale
 //
-ToptagScale::ToptagScale(E_BtagType btagtype) : BtagFunction(btagtype) {;}
+ToptagScale::ToptagScale() : ToptagFunction() {}
 
 
 float ToptagScale::value(const float &jet_pt, const float &jet_eta) const
@@ -1062,7 +1062,7 @@ float ToptagScale::value(const float &jet_pt, const float &jet_eta) const
     // https://cds.cern.ch/record/1647419/files/JME-13-007-pas.pdf
     if(abs(jet_eta) < 1.0)
         return 0.985;
-    else if(abs(jet_eta) < 2.4)
+    else
         return 0.644;
 }
 
@@ -1073,7 +1073,7 @@ float ToptagScale::error(const float &jet_pt, const float &jet_eta) const
     // https://cds.cern.ch/record/1647419/files/JME-13-007-pas.pdf
     if(abs(jet_eta) < 1.0)
         return 0.073;
-    else if(abs(jet_eta) < 2.4)
+    else
         return 0.100;
 }
 
@@ -1081,7 +1081,7 @@ float ToptagScale::error(const float &jet_pt, const float &jet_eta) const
 
 // TopMistag Scale
 //
-TopMistagScale::TopMistagScale(E_BtagType btagtype) : BtagFunction(btagtype) {;}
+TopMistagScale::TopMistagScale() : ToptagFunction() {;}
 
 
 float TopMistagScale::value(const float &jet_pt, const float &jet_eta) const
@@ -1295,7 +1295,7 @@ float LtagScale::value_minus(const float &jet_pt, const float &jet_eta) const
 
 // Toptag Efficiency
 //
-ToptagEfficiency::ToptagEfficiency(E_BtagType btagtype) : BtagFunction(btagtype) {
+ToptagEfficiency::ToptagEfficiency() : ToptagFunction() {
     //_scale = new TF1("mistag","-0.0134373+3.18639e-5*x+8.32377e-8*x*x",200,5000);
 }
 
@@ -1306,13 +1306,13 @@ float ToptagEfficiency::value(const float &jet_pt, const float &jet_eta) const
     // https://cds.cern.ch/record/1647419/files/JME-13-007-pas.pdf
     if(abs(jet_eta) < 1.0)
         return 0.256;
-    else if(abs(jet_eta) < 2.4)
+    else
         return 0.200;
 }
 
 // TopMistag Efficiency
 //
-TopMistagEfficiency::TopMistagEfficiency(E_BtagType btagtype) : BtagFunction(btagtype) {
+TopMistagEfficiency::TopMistagEfficiency() : ToptagFunction() {
     //_scale = new TF1("mistag","-0.0134373+3.18639e-5*x+8.32377e-8*x*x",200,5000);
 }
 
