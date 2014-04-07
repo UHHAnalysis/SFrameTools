@@ -432,7 +432,11 @@ void TopFitCalc::CalculateTopTag()
 		hyp.add_tophad_jet_index(caposi);
 		  
 		hyp.set_neutrino_v4(neutrinos[i]);
+
+		double egroomed = sqrt(cajet.v4().P2()+mjet*mjet);
+		top_had.SetPxPyPzE(cajet.v4().Px(),cajet.v4().Py(),cajet.v4().Pz(),egroomed);
 		hyp.set_tophad_v4(top_had);
+
 		hyp.set_toplep_v4(top_lep);
 		  
 		m_bcc->recoHyps->push_back(hyp);
