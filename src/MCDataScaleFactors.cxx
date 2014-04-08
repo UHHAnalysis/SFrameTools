@@ -10,7 +10,7 @@ LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist)
     m_tau_unc = false;
     m_tauele_unc = false;
     m_tau_eff_unc = false;
-    
+
     if(correctionlist.size()%2!=0) {
         std::cerr<< "not a valid list of correction factors given to LeptonScaleFactors" <<std::endl;
         std::cerr<< "usage: \"<name> <weight> <name> <weight> <name> <weight> ...\" " <<std::endl;
@@ -45,7 +45,7 @@ bool LeptonScaleFactors::IsUpToDate()
     }
   }
   // check run number in data
-  if (m_current_run == calc->GetRunNum()){ 
+  if (m_current_run == calc->GetRunNum()){
     return true;
   } else {
     m_current_run = calc->GetRunNum();
@@ -63,14 +63,14 @@ void LeptonScaleFactors::FillWeights()
     m_mu_iso.clear();
     m_ele_trig.clear();
     m_weights.clear();
-    
+
     // initialize pointer to SF 2D-histogram
     m_ele_mva = NULL;
 
     // initialise scale factors to 1.0
-    m_ele_trig.push_back(1.0);	
-    m_ele_trig.push_back(0.0);	
-    m_ele_trig.push_back(1.0);	
+    m_ele_trig.push_back(1.0);
+    m_ele_trig.push_back(0.0);
+    m_ele_trig.push_back(1.0);
 
     // initialise arrays for eta bins
     for (int i=0; i<3; ++i){
@@ -78,11 +78,11 @@ void LeptonScaleFactors::FillWeights()
       m_mu_trig.push_back(std::vector<TGraphAsymmErrors*>());
       m_mu_iso.push_back(std::vector<TGraphAsymmErrors*>());
     }
-    
+
     // parameters of 1-d correction function for Ele30 trigger
     double Ele30_Trig_RelIso_Par[2] = { 0.9791, -0.5403 };
 
-    // open file with scale factors 
+    // open file with scale factors
     TFile* file = new TFile("$SFRAME_DIR/SFrameTools/efficiencies/muon_effs_2012_53x.root", "READ");
     if (!file->IsOpen()){
       file = new TFile("muon_effs_2012_53x.root", "READ");
@@ -102,13 +102,13 @@ void LeptonScaleFactors::FillWeights()
       exit(EXIT_FAILURE);
     }
 
-    double sum_mu_weights = 0;    
+    double sum_mu_weights = 0;
     // parse arguments of configuration
     for(unsigned int i=0; i<m_correctionlist.size(); ++i) {
 
         double weight = m_correctionlist[i].second;
 	bool isok = false;
-	
+
 	TString name = m_correctionlist[i].first;
 	if (name.Contains("Muon")){
 	  sum_mu_weights += weight;
@@ -118,16 +118,16 @@ void LeptonScaleFactors::FillWeights()
 	// ----------------- muons ------------------
 	// muons: loop over eta bins
 	for (int etabin=0; etabin<3; ++etabin){
-	  
+
 	  TString eta_name = TString::Format("eta%d", etabin);
-	  
+
  	  //non isolated muons
  	  if(m_correctionlist[i].first == "MuonRunABCD") {
  	    m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012ABCD/SF_" + eta_name + "_TRIG_Mu40"));
  	    m_mu_id[etabin].push_back((TGraphAsymmErrors*) file->Get("2012ABCD/SF_" + eta_name + "_ID_tight"));
  	    isok = true;
  	  }
-	  
+
 	   //isolated muons
 	  else if(m_correctionlist[i].first == "IsoMuonRunABCD") {
 	    m_mu_trig[etabin].push_back((TGraphAsymmErrors*) file->Get("2012ABCD/SF_" + eta_name + "_TRIG_IsoMu24"));
@@ -136,16 +136,16 @@ void LeptonScaleFactors::FillWeights()
 	    isok = true;
  	  }
 	}
-	
+
 	// ----------------- electrons ------------------
-	
+
 	//trigger efficiency for electron trigger HLT_Ele30_CaloIdVT_TrkIdT_PFNoPUJet100_PFNoPUJet25_v*
 	if (m_correctionlist[i].first == "HLT_Ele30") {
 	  m_ele_trig[0] = Ele30_Trig_RelIso_Par[0];
 	  m_ele_trig[1] = Ele30_Trig_RelIso_Par[1];
 	  m_ele_trig[2] = weight;
 	  isok = true;
-	}	  
+	}
 
 	// Scale Factor for Electron-ID based on Triggering MVA (Egamma-POG)
 	if (m_correctionlist[i].first == "EGMTrigMVA") {
@@ -159,7 +159,7 @@ void LeptonScaleFactors::FillWeights()
         }
 
     }
-					       
+
     if (sum_mu_weights > 0.){
       for (unsigned int ii=0; ii<m_weights.size(); ++ii){
 	m_weights[ii] = m_weights[ii]/sum_mu_weights;
@@ -168,7 +168,7 @@ void LeptonScaleFactors::FillWeights()
     return;
 }
 
-int LeptonScaleFactors::GetMuonEtaBin(double eta) 
+int LeptonScaleFactors::GetMuonEtaBin(double eta)
 {
   int etabin=0;
   if(fabs(eta)<0.9) etabin=0;
@@ -178,7 +178,7 @@ int LeptonScaleFactors::GetMuonEtaBin(double eta)
 
 }
 
-int LeptonScaleFactors::GetBin(double xval, TGraphAsymmErrors* graph) 
+int LeptonScaleFactors::GetBin(double xval, TGraphAsymmErrors* graph)
 {
   int bin = -1;
   double currx = -100;
@@ -222,7 +222,7 @@ double LeptonScaleFactors::GetMuonIDWeight()
       continue;
     }
     double w = m_mu_id[etabin][i]->GetY()[ptbin];
-    
+
     if (m_muon_unc){
       double sys = 0.005 * w; // systematic error on muon ID: 0.5%
       if (m_syst_shift==e_Down){
@@ -312,7 +312,7 @@ double LeptonScaleFactors::GetMuonIsoWeight()
       double sys = 0.002 * w; // systematic error on single muon isolation: 0.2%
       if (m_syst_shift==e_Down){
 	double stat = m_mu_iso[etabin][i]->GetEYlow()[ptbin];
-	double err = TMath::Sqrt(stat*stat + sys*sys);      
+	double err = TMath::Sqrt(stat*stat + sys*sys);
 	w -= err;
       }
       if (m_syst_shift==e_Up){
@@ -343,9 +343,9 @@ double LeptonScaleFactors::GetTauWeight()
 {
    static EventCalc* calc = EventCalc::Instance();
    BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
-   
+
    double weight = 1.;
-   
+
    std::vector<Tau> fake_taus;
    std::vector<Tau> ele_fake_taus;
    bool fake = true;
@@ -357,7 +357,7 @@ double LeptonScaleFactors::GetTauWeight()
             {
                GenParticle genp = bcc->genparticles->at(i);
                double deltaR = genp.deltaR(tau);
-               if (deltaR < 0.5 && abs(genp.pdgId())==15) fake =false; 
+               if (deltaR < 0.5 && abs(genp.pdgId())==15) fake =false;
             }
          if(!fake) continue;
          bool fakeEle = false;
@@ -365,7 +365,7 @@ double LeptonScaleFactors::GetTauWeight()
             {
                GenParticle genp = bcc->genparticles->at(i);
                double deltaR = genp.deltaR(tau);
-               if (deltaR < 0.5 && abs(genp.pdgId())==11 && genp.status()==3) fakeEle =true; 
+               if (deltaR < 0.5 && abs(genp.pdgId())==11 && genp.status()==3) fakeEle =true;
             }
          if (fakeEle) {
             ele_fake_taus.push_back(tau);
@@ -376,13 +376,13 @@ double LeptonScaleFactors::GetTauWeight()
             {
                GenParticle genp = bcc->genparticles->at(i);
                double deltaR = genp.deltaR(tau);
-               if (deltaR < 0.5 && abs(genp.pdgId())==13 && genp.status()==3) fakeMuon =true; 
+               if (deltaR < 0.5 && abs(genp.pdgId())==13 && genp.status()==3) fakeMuon =true;
             }
          if (fakeMuon) continue;
-         
-         if (fake) fake_taus.push_back(tau);    
+
+         if (fake) fake_taus.push_back(tau);
       }
-   
+
    for(unsigned int i=0; i<ele_fake_taus.size(); ++i)
       {
          Tau tau = ele_fake_taus[i];
@@ -390,33 +390,33 @@ double LeptonScaleFactors::GetTauWeight()
             {
                if (fabs(tau.eta()) <= 2.1) weight = weight*0.85;
                if (fabs(tau.eta()) > 2.1) weight = weight*0.65;
-            } else 
+            } else
             {
                if (m_syst_shift==e_Down)
                   {
                      if (fabs(tau.eta()) <= 2.1) weight = weight*0.85 - weight*0.85*0.2;
-                     if (fabs(tau.eta()) > 2.1) weight = weight*0.65 - weight*0.65*0.25;	 
+                     if (fabs(tau.eta()) > 2.1) weight = weight*0.65 - weight*0.65*0.25;
                   }
                if (m_syst_shift==e_Up)
                   {
                      if (fabs(tau.eta()) <= 2.1) weight = weight*0.85 + weight*0.85*0.2;
-                     if (fabs(tau.eta()) > 2.1) weight = weight*0.65 + weight*0.65*0.25;	 
+                     if (fabs(tau.eta()) > 2.1) weight = weight*0.65 + weight*0.65*0.25;
                   }
             }
       }
    for(unsigned int i=0; i<fake_taus.size(); ++i)
       {
-         Tau tau = fake_taus[i];	      
+         Tau tau = fake_taus[i];
          if (!m_tau_unc)
             {
                if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.0235;
                if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.7719;
                if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.4929;
                if (tau.pt() > 200) weight = weight*1.0813;
-               
-            } else 
+
+            } else
             {
-               
+
                if (m_syst_shift==e_Down)
                   {
                      if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*0.9567;
@@ -435,13 +435,13 @@ double LeptonScaleFactors::GetTauWeight()
       }
    return weight;
 }
-   
+
 
 double LeptonScaleFactors::GetDecayModeFindingWeight()
 {
   static EventCalc* calc = EventCalc::Instance();
   BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
-  
+
   double weight = 1.;
 
   std::vector<Tau> fake_taus;
@@ -454,7 +454,7 @@ double LeptonScaleFactors::GetDecayModeFindingWeight()
 	    {
 	      GenParticle genp = bcc->genparticles->at(i);
 	      double deltaR = genp.deltaR(tau);
-	      if (deltaR < 0.5 && abs(genp.pdgId())==15) fake =false; 
+	      if (deltaR < 0.5 && abs(genp.pdgId())==15) fake =false;
 	    }
 	  if(!fake) continue;
 	  bool fakeEle = false;
@@ -462,25 +462,25 @@ double LeptonScaleFactors::GetDecayModeFindingWeight()
 	    {
 	      GenParticle genp = bcc->genparticles->at(i);
 	      double deltaR = genp.deltaR(tau);
-	      if (deltaR < 0.5 && abs(genp.pdgId())==11 && genp.status()==3) fakeEle = true; 
+	      if (deltaR < 0.5 && abs(genp.pdgId())==11 && genp.status()==3) fakeEle = true;
 	    }
 	  if (fakeEle)continue;
-    
+
 	  bool fakeMuon = false;
 	  for(unsigned int i=0; i<bcc->genparticles->size(); ++i)
 	    {
 	      GenParticle genp = bcc->genparticles->at(i);
 	      double deltaR = genp.deltaR(tau);
-	      if (deltaR < 0.5 && abs(genp.pdgId())==13 && genp.status()==3) fakeMuon = true; 
+	      if (deltaR < 0.5 && abs(genp.pdgId())==13 && genp.status()==3) fakeMuon = true;
 	    }
 	  if (fakeMuon) continue;
 
-	  if (fake) fake_taus.push_back(tau);    
+	  if (fake) fake_taus.push_back(tau);
 	}
-   
+
    for(unsigned int i=0; i<fake_taus.size(); ++i)
      {
-       Tau tau = fake_taus[i];	      
+       Tau tau = fake_taus[i];
        weight = weight* 0.9354;
      }
    return weight;
@@ -496,8 +496,8 @@ double LeptonScaleFactors::GetTauEffUnc()
 {
   static EventCalc* calc = EventCalc::Instance();
   BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
-  
-  
+
+
   double weight = 1;
 
   std::vector<Tau> real_taus;
@@ -512,7 +512,7 @@ double LeptonScaleFactors::GetTauEffUnc()
 	      double deltaR = genp.deltaR(tau);
 	      if (deltaR < 0.5 && abs(genp.pdgId())==15) real = true;
 	    }
-	  if (real) real_taus.push_back(tau);    
+	  if (real) real_taus.push_back(tau);
 	}
     for(unsigned int i=0; i<real_taus.size(); ++i)
 	{
@@ -525,7 +525,7 @@ double LeptonScaleFactors::GetTauEffUnc()
 	    {
 	      if (m_syst_shift==e_Down)
 		{
-		  weight = weight*0.94;	      
+		  weight = weight*0.94;
 		}
 	      if (m_syst_shift==e_Up)
 		{
@@ -564,17 +564,17 @@ double LeptonScaleFactors::GetElectronTrigWeight()
   double iso = ele.relIso();
   double w = m_ele_trig[0] + m_ele_trig[1]*iso;
 
-  // uncertainty	
-  if (m_ele_unc){	
+  // uncertainty
+  if (m_ele_unc){
     double unc[] = {0.00829184, 0.187612};
     if (m_syst_shift==e_Down){
       w = (m_ele_trig[0]-unc[0]) + (m_ele_trig[1]-unc[1])*iso;
-    } 
+    }
     if (m_syst_shift==e_Up){
       w = (m_ele_trig[0]+unc[0]) + (m_ele_trig[1]+unc[1])*iso;
     }
   }
-  
+
   w *= m_ele_trig[2];
   if (w>1. || w<0.){ // sanity check
     w = 1.;
@@ -603,7 +603,7 @@ double LeptonScaleFactors::GetElectronMVAIDWeight()
 
   double w = m_ele_mva->GetBinContent(m_ele_mva->FindBin(aScEta,pt));
 
-  // uncertainty	
+  // uncertainty
   if (m_ele_unc){
 
     double unc = m_ele_mva->GetBinError(m_ele_mva->FindBin(aScEta,pt));
@@ -672,6 +672,111 @@ double LeptonScaleFactors::GetWeight()
     return mu_weight * ele_weight;
 }
 
+TopTaggingScaleFactors::TopTaggingScaleFactors(E_SystShift sys_toptag, E_SystShift sys_mistag)
+{
+    m_sys_toptag = sys_toptag;
+    m_sys_mistag = sys_mistag;
+
+
+    _scale_toptag = new ToptagScale();
+    _eff_toptag = new ToptagEfficiency();
+    _scale_topmistag = new TopMistagScale();
+    _eff_topmistag = new TopMistagEfficiency();
+
+}
+
+double TopTaggingScaleFactors::GetWeight()
+{
+    EventCalc* calc = EventCalc::Instance();
+
+    std::vector< TopJet > *jets =  calc->GetCAJets();
+    if(!jets) return 1.0;
+
+    double scale_factor = 1.;
+
+    for(unsigned int i=0; i<jets->size(); ++i) {
+
+        TopJet jet = jets->at(i);
+
+        double scale_jet = 1.0;
+        double mmin=0;
+        double mjet=0;
+        int nsubjets=0;
+        bool result = TopTag(jet,mjet,nsubjets,mmin);
+        float jet_pt = jet.pt();
+        float jet_eta = fabs(jet.eta());
+
+        //Only apply corrections to high pT TopJets
+        //Mistag measurement starts at 200, Efficiency starts at 400, but TopTag algorithm is rated for 350
+        if(jet_pt < 350.0)
+            continue;
+
+        switch(abs(jet.flavor())) {
+        case 6: // t-quark
+	    scale_jet = scale(result, jet_pt, jet_eta,
+                              _scale_toptag, _eff_toptag,
+                              m_sys_toptag);
+            break;
+
+        case 5: // b-quark
+        case 4: // c-quark
+        case 3: // s-quark
+        case 2: // d-quark
+        case 1: // u-quark
+        case 21: // gluon
+	    scale_jet = scale(result, jet_pt, jet_eta,
+                              _scale_topmistag, _eff_topmistag,
+                              m_sys_mistag);
+            break;
+
+        default:
+            break;
+        }
+
+        scale_factor *= scale_jet;
+    }
+
+
+    return scale_factor;
+}
+
+
+float TopTaggingScaleFactors::scale(const bool &is_tagged,
+                                  const float &jet_pt,
+                                  const float &jet_eta,
+                                  const ToptagFunction* sf,
+                                  const ToptagFunction* eff,
+                                  const E_SystShift &systematic)
+{
+    switch(systematic) {
+    case e_Default:
+        return is_tagged ?
+	  sf->value(jet_pt,jet_eta) :
+	  (1 - sf->value(jet_pt,jet_eta) * eff->value(jet_pt,jet_eta)) /
+	  (1 - eff->value(jet_pt,jet_eta));
+        break;
+
+    case e_Up:
+        return is_tagged ?
+               sf->value_plus(jet_pt,jet_eta) :
+               (1 - sf->value_plus(jet_pt,jet_eta) * eff->value_plus(jet_pt,jet_eta)) /
+               (1 - eff->value_plus(jet_pt,jet_eta));
+        break;
+
+    case e_Down:
+        return is_tagged ?
+               sf->value_minus(jet_pt,jet_eta) :
+               (1 - sf->value_minus(jet_pt,jet_eta) * eff->value_minus(jet_pt,jet_eta)) /
+               (1 - eff->value_minus(jet_pt,jet_eta));
+        break;
+
+    default:
+        std::cerr <<  "unsupported systematic" <<std::endl;
+        break;
+    }
+    return 1.;
+}
+
 
 BTaggingScaleFactors::BTaggingScaleFactors(
    E_BtagType btagtype, E_LeptonSelection lepton_selection, E_SystShift sys_bjets, E_SystShift sys_ljets, bool use_subjet_btags
@@ -679,7 +784,7 @@ BTaggingScaleFactors::BTaggingScaleFactors(
 {
     m_sys_bjets = sys_bjets;
     m_sys_ljets = sys_ljets;
-    
+
     m_btagtype = btagtype;
     m_lepton_selection = lepton_selection;
 
@@ -710,7 +815,7 @@ double BTaggingScaleFactors::GetWeight()
     if(!jets) return 1.0;
 
     double scale_factor = 1.;
-  
+
     for(unsigned int i=0; i<jets->size(); ++i) {
 
         Jet jet = jets->at(i);
@@ -771,7 +876,7 @@ double BTaggingScaleFactors::GetWeight()
             /*std::cout << "l jet pt: " << jet_pt << " is tagged: " << result << " scale: ";
             if (m_sys_ljets == e_Default)
                 std::cout << _scale_light->value(jet_pt) << " eff: " << _eff_light->value(jet_pt);
-            else if (m_sys_ljets == e_Up)  
+            else if (m_sys_ljets == e_Up)
                 std::cout << _scale_light->value_plus(jet_pt) << " eff: " << _eff_light->value_plus(jet_pt);
             else
                 std::cout << _scale_light->value_minus(jet_pt) << " eff: " << _eff_light->value_minus(jet_pt);
@@ -796,15 +901,15 @@ double BTaggingScaleFactors::GetWeight()
 	if(nsubjets > 1){
 	  // loop over subjets, find minimum DeltaR between them
 	  for(unsigned int g = 0; g<nsubjets-1; ++g){
-	    
+
 	    Particle subjetg = topjet.subjets().at(g);
 	    for(unsigned int k = g+1; k<nsubjets; ++k){
-	      
+
 	      double dr = subjetg.deltaR(topjet.subjets().at(k));
 	      if(dr < min_dr) min_dr = dr;
 	    }
 	  }
-	}	
+	}
 
 
 	//apply scale factor for individual subjets if min_dr>0.4
@@ -813,10 +918,10 @@ double BTaggingScaleFactors::GetWeight()
 	  if(m_btagtype==e_CSVL) discriminator_cut = 0.244;
 	  if(m_btagtype==e_CSVM) discriminator_cut = 0.679;
 	  if(m_btagtype==e_CSVT) discriminator_cut = 0.898;
-	  
+
 	  std::vector<float> btagsub_combinedSecondaryVertex_top;
 	  std::vector<int> flavorsub_top;
-	  
+
 	  btagsub_combinedSecondaryVertex_top=topjet.btagsub_combinedSecondaryVertex();
 	  flavorsub_top=topjet.flavorsub();
 
@@ -854,9 +959,9 @@ double BTaggingScaleFactors::GetWeight()
 
 	    default:
 	      break;
-	      
+
 	    }
-	      
+
 	    scale_factor *= scale_jet;
 	  }
 	}
@@ -866,7 +971,7 @@ double BTaggingScaleFactors::GetWeight()
 	  double scale_jet = 1.0;
 	  float jet_pt = topjet.pt();
 	  float jet_eta = fabs(topjet.eta());
-	 
+
 	  //b-tagging for fat jets with eta>2.4 possible? -> use scale factors for eta=2.4
 	  if(jet_eta>=2.4){
 	    jet_eta=2.4;
@@ -877,13 +982,13 @@ double BTaggingScaleFactors::GetWeight()
 			      _scale_btag, _eff_btag_topj,
 			      m_sys_bjets);
             break;
-	    
+
 	  case 4: // c-quark
 	    scale_jet = scale(result, jet_pt, jet_eta,
 				_scale_ctag, _eff_ctag_topj,
 			      m_sys_bjets);
 	    break;
-	    
+
 	  case 3: // s-quark
 	  case 2: // d-quark
 	  case 1: // u-quark
@@ -892,10 +997,10 @@ double BTaggingScaleFactors::GetWeight()
 			      _scale_light, _eff_light_topj,
 			      m_sys_ljets);
             break;
-	    
+
 	  default:
 	    break;
-	    
+
 	  }
 
 	  scale_factor *= scale_jet;
@@ -946,10 +1051,65 @@ float BTaggingScaleFactors::scale(const bool &is_tagged,
     return 1.;
 }
 
+// Toptag Scale
+//
+ToptagScale::ToptagScale() : ToptagFunction() {}
+
+
+float ToptagScale::value(const float &jet_pt, const float &jet_eta) const
+{
+    //From
+    // https://cds.cern.ch/record/1647419/files/JME-13-007-pas.pdf
+    if(abs(jet_eta) < 1.0)
+        return 0.985;
+    else
+        return 0.644;
+}
+
+
+float ToptagScale::error(const float &jet_pt, const float &jet_eta) const
+{
+    //From
+    // https://cds.cern.ch/record/1647419/files/JME-13-007-pas.pdf
+    if(abs(jet_eta) < 1.0)
+        return 0.073;
+    else
+        return 0.100;
+}
+
+
+
+// TopMistag Scale
+//
+TopMistagScale::TopMistagScale() : ToptagFunction() {;}
+
+
+float TopMistagScale::value(const float &jet_pt, const float &jet_eta) const
+{
+    if(jet_pt < 200)
+        return 1.0;
+    //2 bin result
+    if(jet_pt > 632.45)
+        return 1.0614;
+    else
+        return 0.9422;
+}
+
+
+float TopMistagScale::error(const float &jet_pt, const float &jet_eta) const
+{
+    //2 bin result
+    if(jet_pt > 632.45)
+        return 0.2502;
+    else
+        return 0.0803;
+}
+
+
 
 // Btag Scale
 //
-BtagScale::BtagScale(E_BtagType btagtype) : BtagFunction(btagtype) 
+BtagScale::BtagScale(E_BtagType btagtype) : BtagFunction(btagtype)
 {
     // EPS13 prescription
     const float bins[] = {
@@ -972,7 +1132,7 @@ BtagScale::BtagScale(E_BtagType btagtype) : BtagFunction(btagtype)
       0.0786307,
       0.0866832,
       0.0942053,
-      0.102403 
+      0.102403
     };
     const float CSVLErrors[] = {
       0.033299,
@@ -990,7 +1150,7 @@ BtagScale::BtagScale(E_BtagType btagtype) : BtagFunction(btagtype)
       0.0209241,
       0.0278605,
       0.0346928,
-      0.0350099 
+      0.0350099
     };
     switch(btagtype) {
     case e_CSVT: // EPS13 prescription
@@ -1133,6 +1293,39 @@ float LtagScale::value_minus(const float &jet_pt, const float &jet_eta) const
     return _scale_minus->Eval(jet_pt, jet_eta);
 }
 
+// Toptag Efficiency
+//
+ToptagEfficiency::ToptagEfficiency() : ToptagFunction() {
+    //_scale = new TF1("mistag","-0.0134373+3.18639e-5*x+8.32377e-8*x*x",200,5000);
+}
+
+
+float ToptagEfficiency::value(const float &jet_pt, const float &jet_eta) const
+{
+    //From
+    // https://cds.cern.ch/record/1647419/files/JME-13-007-pas.pdf
+    if(abs(jet_eta) < 1.0)
+        return 0.256;
+    else
+        return 0.200;
+}
+
+// TopMistag Efficiency
+//
+TopMistagEfficiency::TopMistagEfficiency() : ToptagFunction() {
+    //_scale = new TF1("mistag","-0.0134373+3.18639e-5*x+8.32377e-8*x*x",200,5000);
+}
+
+
+float TopMistagEfficiency::value(const float &jet_pt, const float &jet_eta) const
+{
+    //2-bin result
+  if(jet_pt > 632.45)
+    return 0.062145;
+  else
+    return 0.003398;
+}
+
 
 // Btag Efficiency
 //
@@ -1180,40 +1373,40 @@ BtagEfficiency::BtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel,
     };
 
     _bins.assign(bins, bins + 18);
-    if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && !dotopjets) { 
+    if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && !dotopjets) {
         _values.assign(CSVTEfficiencies, CSVTEfficiencies + 17);
-    } 
-    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && !dotopjets) { 
+    }
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && !dotopjets) {
       _values.assign(CSVTEfficiencies_mu, CSVTEfficiencies_mu + 17);
     }
-    else if (btagtype == e_CSVT && leptonsel == e_Electron && dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVT && leptonsel == e_Electron && dosubjets && !dotopjets) {
       _values.assign(CSVTEfficiencies_SubJet, CSVTEfficiencies_SubJet + 17);
     }
-    else if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && dotopjets) { 
+    else if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && dotopjets) {
       _values.assign(CSVTEfficiencies_TopJet, CSVTEfficiencies_TopJet + 17);
     }
-    else if (btagtype == e_CSVT && leptonsel == e_Muon && dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && dosubjets && !dotopjets) {
       _values.assign(CSVTEfficiencies_SubJet_mu, CSVTEfficiencies_SubJet_mu + 17);
     }
-    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && dotopjets) { 
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && dotopjets) {
       _values.assign(CSVTEfficiencies_TopJet_mu, CSVTEfficiencies_TopJet_mu + 17);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && !dotopjets) {
       _values.assign(CSVLEfficiencies, CSVLEfficiencies + 17);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && !dotopjets) {
       _values.assign(CSVLEfficiencies_mu, CSVLEfficiencies_mu + 17);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Electron && dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && dosubjets && !dotopjets) {
       _values.assign(CSVLEfficiencies_SubJet, CSVLEfficiencies_SubJet + 17);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && dotopjets) {
       _values.assign(CSVLEfficiencies_TopJet, CSVLEfficiencies_TopJet + 17);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Muon && dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && dosubjets && !dotopjets) {
       _values.assign(CSVLEfficiencies_SubJet_mu, CSVLEfficiencies_SubJet_mu + 17);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && dotopjets) {
       _values.assign(CSVLEfficiencies_TopJet_mu, CSVLEfficiencies_TopJet_mu + 17);
     }
     else {
@@ -1261,7 +1454,7 @@ CtagEfficiency::CtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel,
       0.0631994 , 0.071359 , 0.0799394 , 0.0400092 , 0.0735092 , 0.0679709 , 0.0619224 , 0.0608981 , 0.0440748 , 0.0259931 , 0.0194072 , 0.0260485 , 0.0254116 , 0.0228735
     };
     const float CSVLEfficiencies_SubJet[] = {
-      0.489766 , 0.552803 , 0.355127 , 0.449075 , 0.373065 , 0.411385 , 0.380089 , 0.36281 , 0.361701 , 0.361116 , 0.324198 , 0.362666 , 0.299875 , 0.354893 
+      0.489766 , 0.552803 , 0.355127 , 0.449075 , 0.373065 , 0.411385 , 0.380089 , 0.36281 , 0.361701 , 0.361116 , 0.324198 , 0.362666 , 0.299875 , 0.354893
     };
     const float CSVTEfficiencies_TopJet[] = {
       0,0,0,0,0,0,0,0,0,0, 0.0315203 , 0.00788948 , 0.0169692 , 0.00868753
@@ -1292,37 +1485,37 @@ CtagEfficiency::CtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel,
     if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && !dotopjets) {
       _values.assign(CSVTEfficiencies, CSVTEfficiencies + 14);
     }
-    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && !dotopjets) {
       _values.assign(CSVTEfficiencies_mu, CSVTEfficiencies_mu + 14);
     }
-    else if (btagtype == e_CSVT && leptonsel == e_Electron && dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVT && leptonsel == e_Electron && dosubjets && !dotopjets) {
       _values.assign(CSVTEfficiencies_SubJet, CSVTEfficiencies_SubJet + 14);
     }
-    else if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && dotopjets) { 
+    else if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && dotopjets) {
       _values.assign(CSVTEfficiencies_TopJet, CSVTEfficiencies_TopJet + 14);
     }
-    else if (btagtype == e_CSVT && leptonsel == e_Muon && dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && dosubjets && !dotopjets) {
       _values.assign(CSVTEfficiencies_SubJet_mu, CSVTEfficiencies_SubJet_mu + 14);
     }
-    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && dotopjets) { 
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && dotopjets) {
       _values.assign(CSVTEfficiencies_TopJet_mu, CSVTEfficiencies_TopJet_mu + 14);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && !dotopjets) {
       _values.assign(CSVLEfficiencies, CSVLEfficiencies + 14);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && !dotopjets) {
       _values.assign(CSVLEfficiencies_mu, CSVLEfficiencies_mu + 14);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Electron && dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && dosubjets && !dotopjets) {
       _values.assign(CSVLEfficiencies_SubJet, CSVLEfficiencies_SubJet + 14);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && dotopjets) {
       _values.assign(CSVLEfficiencies_TopJet, CSVLEfficiencies_TopJet + 14);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Muon && dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && dosubjets && !dotopjets) {
       _values.assign(CSVLEfficiencies_SubJet_mu, CSVLEfficiencies_SubJet_mu + 14);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && dotopjets) {
       _values.assign(CSVLEfficiencies_TopJet_mu, CSVLEfficiencies_TopJet_mu + 14);
     }
     else {
@@ -1381,38 +1574,38 @@ LtagEfficiency::LtagEfficiency(E_BtagType btagtype, E_LeptonSelection leptonsel,
     _bins.assign(bins, bins + 17);
     if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && !dotopjets) {
         _values.assign(CSVTEfficiencies, CSVTEfficiencies + 16);
-    } 
-    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && !dotopjets) { 
+    }
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && !dotopjets) {
       _values.assign(CSVTEfficiencies_mu, CSVTEfficiencies_mu + 16);
     }
-    else if (btagtype == e_CSVT && leptonsel == e_Electron && dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVT && leptonsel == e_Electron && dosubjets && !dotopjets) {
       _values.assign(CSVTEfficiencies_SubJet, CSVTEfficiencies_SubJet + 16);
     }
-    else if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && dotopjets) { 
+    else if (btagtype == e_CSVT && leptonsel == e_Electron && !dosubjets && dotopjets) {
       _values.assign(CSVTEfficiencies_TopJet, CSVTEfficiencies_TopJet + 16);
     }
-    else if (btagtype == e_CSVT && leptonsel == e_Muon && dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && dosubjets && !dotopjets) {
       _values.assign(CSVTEfficiencies_SubJet_mu, CSVTEfficiencies_SubJet_mu + 16);
     }
-    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && dotopjets) { 
+    else if (btagtype == e_CSVT && leptonsel == e_Muon && !dosubjets && dotopjets) {
       _values.assign(CSVTEfficiencies_TopJet_mu, CSVTEfficiencies_TopJet_mu + 16);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && !dotopjets) {
       _values.assign(CSVLEfficiencies, CSVLEfficiencies + 16);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && !dotopjets) {
       _values.assign(CSVLEfficiencies_mu, CSVLEfficiencies_mu + 16);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Electron && dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && dosubjets && !dotopjets) {
       _values.assign(CSVLEfficiencies_SubJet, CSVLEfficiencies_SubJet + 16);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Electron && !dosubjets && dotopjets) {
       _values.assign(CSVLEfficiencies_TopJet, CSVLEfficiencies_TopJet + 16);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Muon && dosubjets && !dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && dosubjets && !dotopjets) {
       _values.assign(CSVLEfficiencies_SubJet_mu, CSVLEfficiencies_SubJet_mu + 16);
     }
-    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && dotopjets) { 
+    else if (btagtype == e_CSVL && leptonsel == e_Muon && !dosubjets && dotopjets) {
       _values.assign(CSVLEfficiencies_TopJet_mu, CSVLEfficiencies_TopJet_mu + 16);
     }
     else {
@@ -1434,7 +1627,7 @@ double JetpTReweightingInWJets::GetWeight()
    EventCalc* calc = EventCalc::Instance();
    BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
    double weight = 1.;
-   
+
    if (!m_jetpTreweigting_unc)
       {
          if(bcc->genjets->size() > 0) {
@@ -1456,7 +1649,7 @@ double JetpTReweightingInWJets::GetWeight()
                }
             }
       }
-   
+
    return weight;
 }
 
