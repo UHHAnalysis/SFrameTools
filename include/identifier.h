@@ -43,7 +43,9 @@ public:
     }
         
 private:
-    int64_t id_;
+
+    int32_t id_;
+
 };
 
 

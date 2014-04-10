@@ -22,7 +22,7 @@ public:
      * second argument: systematic shift
      * @see E_SystShift
      */
-    LeptonScaleFactors(std::vector<std::string> correctionlist);
+   LeptonScaleFactors(std::vector<std::string> correctionlist, TString channel="inclusive_LQ");
     ///Default destructor
     ~LeptonScaleFactors() {};
 
@@ -96,6 +96,7 @@ private:
     bool m_tauele_unc;               // do shift of e -> tau fake rate
     int m_current_run;              // run for which the scale factors are vali
     bool m_tau_eff_unc;             // do shift of tau efficiency scale factors 
+   TString m_channel;
    
     
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_id;    // two arrays: first index stands for eta bin, second for run period
