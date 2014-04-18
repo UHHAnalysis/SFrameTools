@@ -426,8 +426,8 @@ if options.create:
     tarball = options.jobname+".tgz"
     target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
     print "Creating tarball of "+target+" area."
-    #os.system("tar -czf "+tarball+" "+target+" --exclude='*.[0-9]*.root' --exclude='*.tgz' --exclude='*.log' --exclude='*.stdout' --exclude='*.stderr'")
-    #os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
+    os.system("tar -czf "+tarball+" "+target+" --exclude='*.[0-9]*.root' --exclude='*.tgz' --exclude='*.log' --exclude='*.stdout' --exclude='*.stderr'")
+    os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
     os.chdir(workingdir)
 
 if not os.path.isdir(options.jobname):
