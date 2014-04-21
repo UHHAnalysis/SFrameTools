@@ -13,10 +13,11 @@ import xmlparser
 parser = OptionParser()
 parser.add_option("-c", "--cfg", dest="configxml", help="Input XML Config File")
 parser.add_option("-j", "--jobname", dest="jobname", default="", help="Job Name")
-parser.add_option("-k", "--kill", dest="kill",  default="none", help="Kill Jobs: all, 1-5, or 1,3,5,9")
+parser.add_option("-k", "--kill", dest="kill",  default="", help="Kill Jobs: all, 1-5, or 1,3,5,9")
 parser.add_option("-n", "--numjobs", dest="numjobs", type="int", default=0, help="Number of Jobs")
 parser.add_option("-o", "--output", dest="output", default="", help="Output directory: The default is jobname/results")
-parser.add_option("-s", "--submit", dest="submit",  default="none", help="Submit Jobs: all, 1-5, or 1,3,5,9")
+parser.add_option("-s", "--submit", dest="submit",  default="", help="Submit Jobs: all, 1-5, or 1,3,5,9")
+parser.add_option("-r", "--resubmit", dest="resubmit",  default="", help="Submit Jobs: all, 1-5, or 1,3,5,9")
 
 parser.add_option("--clobber", action="store_true", dest="clobber", default=False, help="Overwrite Job Directory")
 parser.add_option("--create", action="store_true", dest="create", default=False, help="Create job and configuration files.")
@@ -28,6 +29,7 @@ parser.add_option("--append", dest="append", default="", help="Append string to 
 parser.add_option("--flavor", dest="flavor", default="", help="Apply flavor selection: bflavor, cflavor, lflavor")
 parser.add_option("--pileupfile", dest="pileupfile", default="", help="Specify pileup file")
 parser.add_option("--bjets", dest="bjets", default="", help="Apply bjet Systematic: up-bjets, down-bjets, up-ljets, down-ljets")
+parser.add_option("--toptag", dest="tjets", default="", help="Apply toptag scale Systematic: up-mistag, down-mistag, up-toptag, down-toptag")
 parser.add_option("--JEC", dest="jec", default="", help="Apply JEC Systematic: up or down")
 parser.add_option("--JER", dest="jer", default="", help="Apply JER Systematic: up or down")
 parser.add_option("--PDF", dest="pdf", default="", help="Apply PDF Systematics: CT10 or cteq66")
@@ -38,6 +40,7 @@ parser.add_option("--veto", dest="veto", default="", help="Remove samples that p
 
 if options.jobname == "":
     options.jobname = options.configxml.strip(".xml")
+    if options.ttbargencut: options.jobname += "_TTBar"
     if options.flavor != "": options.jobname += "_"+options.flavor
     if options.bjets != "": options.jobname += "_"+options.bjets
     if options.jec != "": options.jobname += "_JEC"+options.jec
@@ -81,6 +84,11 @@ def additem(infile, name, value):
         infile = infile[:configpos]+'  <Item Name="'+name+'" Value="'+str(value)+'" />\n    '+infile[configpos:]
     return infile
 
+def applyttbargencut(infile):
+    infile=applypostfix(infile,"0to700")
+    infile=additem(infile,"ApplyMttbarGenCut","True")
+    return infile
+
 def applybjetsystematic(infile,bjets):
     infile=applypostfix(infile,bjets)
     infile=additem(infile,"BTaggingScaleFactors",bjets)
@@ -104,6 +112,11 @@ def applypdfsystematics(infile, options, pdfindex):
     infile=additem(infile,"PDFName",options.pdf)
     if options.pdfdir != "": infile=additem(infile,"PDFWeightFilesDirectory",options.pdfdir)
     infile=additem(infile,"PDFIndex",pdfindex)
+    return infile
+
+def applytjetsystematic(infile,tjets):
+    infile=applypostfix(infile,tjets)
+    infile=additem(infile,"TopTaggingScaleFactors",bjets)
     return infile
 
 def changepileupfile(infile,pileupfile):
@@ -271,11 +284,13 @@ def createxmlfile(infile, jobnumber, datablocklist, datablocknumber, blockindex,
     filename = options.jobname+"_"+str(jobnumber)+".xml"
     os.chdir(options.jobname+"/xml")
     if options.ttbargencut: infile = additem(infile, "ApplyMttbarGenCut", "True")
+    if options.ttbargencut: infile = applyttbargencut(infile)
     if options.flavor != "": infile = applyflavorselection(infile, options.flavor)
     if options.jec != "": infile = applyjesystematic(infile, "JEC", options.jec)
     if options.jer != "": infile = applyjesystematic(infile, "JER", options.jer)
     if options.pileupfile != "": infile = changepileupfile(infile, options.pileupfile)
     if options.bjets != "": infile = applybjetsystematic(infile, options.bjets)
+    if options.tjets != "": infile = applytetsystematic(infile, options.tjets)
     if options.pdf != "": infile = applypdfsystematics(infile, options, pdfindex)
     frontend = infile[:infile.find("<InputData ")]
     indent = frontend[frontend.rfind("\n")+1:]
@@ -384,7 +399,7 @@ def getjobinfo(jobname,jobnumber,resubmitjobs):
             if logerror != "": jobinfo += " "+logerror
     return jobinfo
 
-if not options.create and options.submit=="none" and options.kill=="none" and not options.status:
+if not options.create and options.submit=="" and options.kill=="" and not options.status:
     print "ERROR: Must either create, submit jobs, kill, or check the status of jobs"
 
 workingdir=os.getcwd()
@@ -445,7 +460,7 @@ if options.retar:
     os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
     os.chdir(workingdir)
 
-if options.kill!="none":
+if options.kill!="":
     joblist=[]
     if options.kill=="all":
         options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip('\n'))
@@ -467,7 +482,7 @@ if options.kill!="none":
             time.sleep(0.3)
             os.system("echo 'Killed' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
 
-if options.submit!="none":
+if options.submit!="":
     joblist=[]
     if options.submit=="all":
         options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip('\n'))
@@ -475,6 +490,29 @@ if options.submit!="none":
     else: joblist=makejoblist(options.submit)
     print "Submitting %d jobs" %(len(joblist))
     for jobnumber in joblist:
+        print "Submitting job number: %d" %(jobnumber)
+        subnum = int(os.popen("grep Arguments "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt | awk '{print $4}'").readline().strip('\n'))
+        os.system("sed -i 's|Transfer_Output_Files = \(.*\)_"+str(subnum)+".root$|Transfer_Output_Files = \\1_"+str(subnum+1)+".root|' "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
+        os.system("sed -i 's|/configs "+str(subnum)+"$|/configs "+str(subnum+1)+"|' "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
+        if os.path.isfile(options.jobname+"/logs/"+options.jobname+"_"+str(jobnumber)+".log"): os.system("/bin/rm "+options.jobname+"/logs/"+options.jobname+"_"+str(jobnumber)+".log")
+        os.system("condor_submit "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
+        os.system("echo 'Submitted' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
+
+if options.resubmit!="":
+    joblist=[]
+    if options.resubmit=="all":
+        options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip('\n'))
+        joblist=range(1,options.numjobs+1)
+    else: joblist=makejoblist(options.submit)
+    print "Resubmitting %d jobs" %(len(joblist))
+    for jobnumber in joblist:
+        if os.path.isfile(options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status") os.system("/bin/rm "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
+        if os.path.isfile(eosstatusdir+"/"+options.jobname+"_"+str(jobnumber)+".status")
+        rootfiles = getoutputfilenames(options.jobname+"/xml/"+options.jobname+"_"+str(jobnumber)+".xml")
+        for rootfile in rootfiles:
+            if options.output != "": rootfile=options.output+"/"+rootfile
+            else: rootfile = options.jobname+"/results/"+rootfile
+            if os.path.isfile(rootfile): os.system("/bin/rm "+rootfile)
         print "Submitting job number: %d" %(jobnumber)
         subnum = int(os.popen("grep Arguments "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt | awk '{print $4}'").readline().strip('\n'))
         os.system("sed -i 's|Transfer_Output_Files = \(.*\)_"+str(subnum)+".root$|Transfer_Output_Files = \\1_"+str(subnum+1)+".root|' "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
