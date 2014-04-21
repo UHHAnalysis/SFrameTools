@@ -674,6 +674,7 @@ double LeptonScaleFactors::GetWeight()
 
 TopTaggingScaleFactors::TopTaggingScaleFactors(E_SystShift sys_toptag, E_SystShift sys_mistag)
 {
+
     m_sys_toptag = sys_toptag;
     m_sys_mistag = sys_mistag;
 
@@ -687,13 +688,18 @@ TopTaggingScaleFactors::TopTaggingScaleFactors(E_SystShift sys_toptag, E_SystShi
 
 double TopTaggingScaleFactors::GetWeight()
 {
-    EventCalc* calc = EventCalc::Instance();
+    static EventCalc* calc = EventCalc::Instance();
+    BaseCycleContainer* bcc = calc->GetBaseCycleContainer();
 
     std::vector< TopJet > *jets =  calc->GetCAJets();
     if(!jets) return 1.0;
 
+    std::vector< GenParticle > *genparticles = calc->GetGenParticles();
+    if(!genparticles) return 1.0;
+
     double scale_factor = 1.;
 
+    bool toptagevent = false;
     for(unsigned int i=0; i<jets->size(); ++i) {
 
         TopJet jet = jets->at(i);
@@ -703,6 +709,8 @@ double TopTaggingScaleFactors::GetWeight()
         double mjet=0;
         int nsubjets=0;
         bool result = TopTag(jet,mjet,nsubjets,mmin);
+        if(result)
+            toptagevent = true;
         float jet_pt = jet.pt();
         float jet_eta = fabs(jet.eta());
 
@@ -711,31 +719,88 @@ double TopTaggingScaleFactors::GetWeight()
         if(jet_pt < 350.0)
             continue;
 
-        switch(abs(jet.flavor())) {
-        case 6: // t-quark
+        bool truetop = false;
+        for(unsigned int j=0; j<genparticles->size(); ++j) {
+            GenParticle p = genparticles->at(j);
+            double deltaR = jet.deltaR(p);
+            if (deltaR < 0.5 && abs(p.pdgId())==6) {
+                bool leptonic_decay = false;
+                const GenParticle* d1 = p.daughter(genparticles,1);
+                const GenParticle* d2 = p.daughter(genparticles,2);
+                const GenParticle* d11;
+                const GenParticle* d12;
+                if(abs(d1->pdgId())==24) {
+                    d11 = d1->daughter(genparticles,1);
+                    d12 = d1->daughter(genparticles,2);
+                } else if(abs(d2->pdgId())==24) {
+                    d11 = d2->daughter(genparticles,1);
+                    d12 = d2->daughter(genparticles,2);
+                }
+                if(d11 && d12) {
+                    if(abs(d11->pdgId())==11)
+                        leptonic_decay = true;
+                    else if(abs(d11->pdgId())==12)
+                        leptonic_decay = true;
+                    else if(abs(d11->pdgId())==13)
+                        leptonic_decay = true;
+                    else if(abs(d11->pdgId())==14)
+                        leptonic_decay = true;
+                    else if(abs(d11->pdgId())==15)
+                        leptonic_decay = true;
+                    else if(abs(d11->pdgId())==16)
+                        leptonic_decay = true;
+                    else if(abs(d12->pdgId())==11)
+                        leptonic_decay = true;
+                    else if(abs(d12->pdgId())==12)
+                        leptonic_decay = true;
+                    else if(abs(d12->pdgId())==13)
+                        leptonic_decay = true;
+                    else if(abs(d12->pdgId())==14)
+                        leptonic_decay = true;
+                    else if(abs(d12->pdgId())==15)
+                        leptonic_decay = true;
+                    else if(abs(d12->pdgId())==16)
+                        leptonic_decay = true;
+                }
+                if(!leptonic_decay) {
+                        truetop = true;
+                }
+            }
+        }
+
+        if(truetop) { // Found a top quark that could be parent of jet, so it is not possible to be mistagged. Apply toptag efficiency scale factor
+            /*
+            if(result) {
+                std::cout << "Top-Tag event!" << std::endl;
+            } else {
+                std::cout << "Top-NoTag event!" << std::endl;
+            }
+            */
 	    scale_jet = scale(result, jet_pt, jet_eta,
                               _scale_toptag, _eff_toptag,
                               m_sys_toptag);
-            break;
-
-        case 5: // b-quark
-        case 4: // c-quark
-        case 3: // s-quark
-        case 2: // d-quark
-        case 1: // u-quark
-        case 21: // gluon
+        } else { // No true top quarks found near this jet, apply mistag scale factor
+            /*
+            if(result) {
+                std::cout << "Mistag event!" << std::endl;
+            } else {
+                std::cout << "NoTop-NoTag event!" << std::endl;
+            }
+            */
 	    scale_jet = scale(result, jet_pt, jet_eta,
                               _scale_topmistag, _eff_topmistag,
                               m_sys_mistag);
-            break;
-
-        default:
-            break;
         }
 
         scale_factor *= scale_jet;
     }
+    /*
+    if(toptagevent)
+        std::cout << "TopTag weight: " << scale_factor << std::endl;
+    else
+        std::cout << "NoTTag weight: " << scale_factor << std::endl;
 
+    */
 
     return scale_factor;
 }
@@ -1086,23 +1151,25 @@ TopMistagScale::TopMistagScale() : ToptagFunction() {;}
 
 float TopMistagScale::value(const float &jet_pt, const float &jet_eta) const
 {
-    if(jet_pt < 200)
-        return 1.0;
-    //2 bin result
-    if(jet_pt > 632.45)
-        return 1.0614;
-    else
-        return 0.9422;
+    //Flat scale factor fit result from Mistag Studies
+    //****************************************
+    //Minimizer is Linear
+    //Chi2                      =      4.10966
+    //NDf                       =            4
+    //p0                        =      1.00263   +/-   0.0836751
+    return 1.00263;
 }
 
 
 float TopMistagScale::error(const float &jet_pt, const float &jet_eta) const
 {
-    //2 bin result
-    if(jet_pt > 632.45)
-        return 0.2502;
-    else
-        return 0.0803;
+    //Flat scale factor fit result from Mistag Studies
+    //****************************************
+    //Minimizer is Linear
+    //Chi2                      =      4.10966
+    //NDf                       =            4
+    //p0                        =      1.00263   +/-   0.0836751
+    return 0.0836751;
 }
 
 
@@ -1313,17 +1380,17 @@ float ToptagEfficiency::value(const float &jet_pt, const float &jet_eta) const
 // TopMistag Efficiency
 //
 TopMistagEfficiency::TopMistagEfficiency() : ToptagFunction() {
-    //_scale = new TF1("mistag","-0.0134373+3.18639e-5*x+8.32377e-8*x*x",200,5000);
+    _scale = new TF1("mistag_eff","[2]*0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(x)*[1])))",0,5000);
+    _scale->SetParameter(0,439.858);
+    _scale->SetParameter(1,8.11654);
+    _scale->SetParameter(2,0.0540203);
+
 }
 
 
 float TopMistagEfficiency::value(const float &jet_pt, const float &jet_eta) const
 {
-    //2-bin result
-  if(jet_pt > 632.45)
-    return 0.062145;
-  else
-    return 0.003398;
+    return _scale->Eval(jet_pt);
 }
 
 
