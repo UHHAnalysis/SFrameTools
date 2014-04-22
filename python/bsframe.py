@@ -24,6 +24,7 @@ parser.add_option("--create", action="store_true", dest="create", default=False,
 parser.add_option("--status", action="store_true", dest="status", default=False, help="Get job status")
 parser.add_option("--retar", action="store_true", dest="retar", default=False, help="Recreate the job tarball.")
 parser.add_option("--ttbargencut", action="store_true", dest="ttbargencut", default=False, help="Apply ttbar generator cut")
+parser.add_option("--notar", action="store_true", dest="notar", default=False, help="Do not create tarball. For debugging configs.")
 
 parser.add_option("--append", dest="append", default="", help="Append string to job name")
 parser.add_option("--flavor", dest="flavor", default="", help="Apply flavor selection: bflavor, cflavor, lflavor")
@@ -456,8 +457,9 @@ if options.create:
     tarball = options.jobname+".tgz"
     target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
     print "Creating tarball of "+target+" area."
-    os.system("tar -czf "+tarball+" "+target+" --exclude='*Cycle*.root' --exclude='*.tgz' --exclude='*.log' --exclude='*.stdout' --exclude='*.stderr'")
-    os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
+    if not options.notar:
+        os.system("tar -czf "+tarball+" "+target+" --exclude='*Cycle*.root' --exclude='*.tgz' --exclude='*.log' --exclude='*.stdout' --exclude='*.stderr'")
+        os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
     os.chdir(workingdir)
 
 if not os.path.isdir(options.jobname):
