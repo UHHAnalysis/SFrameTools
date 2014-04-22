@@ -470,7 +470,7 @@ if not os.path.isdir(options.jobname):
 
 if options.retar:
     if options.create: print "There is no point in creating a task and then recreating the tarball."
-    if options.notar: print "You are stupid!\n"+assert(0)
+    if options.notar: print "You are stupid!\n"
     os.chdir(workingdir+"/"+options.jobname)
     if os.path.isfile("CACHEDIR.TAG"): os.remove("CACHEDIR.TAG")
     os.chdir(cmsswbase+"/..")
