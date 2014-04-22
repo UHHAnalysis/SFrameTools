@@ -17,7 +17,7 @@ parser.add_option("-k", "--kill", dest="kill",  default="", help="Kill Jobs: all
 parser.add_option("-n", "--numjobs", dest="numjobs", type="int", default=0, help="Number of Jobs")
 parser.add_option("-o", "--output", dest="output", default="", help="Output directory: The default is jobname/results")
 parser.add_option("-s", "--submit", dest="submit",  default="", help="Submit Jobs: all, 1-5, or 1,3,5,9")
-parser.add_option("-r", "--resubmit", dest="resubmit",  default="", help="Submit Jobs: all, 1-5, or 1,3,5,9")
+parser.add_option("-l", "--clean", dest="clean",  default="", help="Clean status, log, and result files: all, 1-5, 1,3,5,9")
 
 parser.add_option("--clobber", action="store_true", dest="clobber", default=False, help="Overwrite Job Directory")
 parser.add_option("--create", action="store_true", dest="create", default=False, help="Create job and configuration files.")
@@ -50,6 +50,10 @@ if options.jobname == "":
 if options.jobname == "" and options.configxml == "":
     print "ERROR: Please provide either a configuration file or job directory"
     exit(1)
+if not os.path.isfile(options.configxml) and not os.path.isdir(options.jobname):
+    if options.configxml!="": print "ERROR: "+options.configxml+" is not a valid file!"
+    else: print "ERROR: "+options.jobname+" is not a valid directory!"
+    exit(2)
 
 def makejoblist(joblist):
     newjoblist=[]
@@ -215,11 +219,21 @@ def makedatablocks(xmlfile,options):
     while input.find("<InputData ") != -1:
         datablock = input[input.find("<InputData "):input.find("</InputData>")+12]
         version = xmlparser.parse(datablock,"Version")[0]
-        veto=0
-        filter=1
-        if options.veto != "": veto = re.search(options.veto,version)
-        if options.filter != "": filter = re.search(options.filter,version)
-        if filter and not veto: datablocklist.append(datablock)
+        vetoflag=0
+        if options.veto.find(",") != -1: vetolist=options.veto.split(",")
+        else: vetolist = [options.veto]
+        if options.veto != "":
+            for veto in vetolist:
+                vetoflag = re.search(veto,version)
+                if vetoflag: break
+        filterflag=1
+        if options.filter.find(",") != -1: filterlist=options.filter.split(",")
+        else: filterlist = [options.filter]
+        if options.filter != "":
+            for filter in filterlist:
+                filterflag = re.search(filter,version)
+                if filterflag: break
+        if filterflag and not vetoflag: datablocklist.append(datablock)
         input = input[input.find("</InputData>")+12:]
     return datablocklist
 
@@ -301,7 +315,7 @@ def createxmlfile(infile, jobnumber, datablocklist, datablocknumber, blockindex,
         lumilist=datablocklist[datablocknumber].lumilist
     else:
         print "Error: No DataBlocks Found!\n"
-        exit(2)
+        exit(3)
 
     while numfiles>0:
         if blockindex == len(filelist):
@@ -412,7 +426,7 @@ if options.create:
     if not os.path.isdir(options.jobname) and not options.clobber: os.mkdir(options.jobname)
     elif os.path.isdir(options.jobname) and not options.clobber:
         print "ERROR: Job directory "+options.jobname+" exists!\nPlease remove job directory or enable --clobber option.."
-        exit(3)
+        exit(4)
     elif options.clobber:
         if os.path.isdir(options.jobname): shutil.rmtree(options.jobname)
         os.mkdir(options.jobname)
@@ -448,7 +462,7 @@ if options.create:
 
 if not os.path.isdir(options.jobname):
     print "ERROR: Job directory "+options.jobname+" does not exist!\nPlease create job with bsframe.py -c myconfig.xml --create."
-    exit(4)
+    exit(5)
 
 if options.retar:
     if options.create: print "There is no point in creating a task and then recreating the tarball."
@@ -482,6 +496,24 @@ if options.kill!="":
             time.sleep(0.3)
             os.system("echo 'Killed' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
 
+if options.clean!="":
+    joblist=[]
+    if options.clean=="all":
+        options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip('\n'))
+        joblist=range(1,options.numjobs+1)
+    else: joblist=makejoblist(options.submit)
+    print "Cleaning %d jobs" %(len(joblist))
+    for jobnumber in joblist:
+        if os.path.isfile(options.jobname+"/log/"+options.jobname+"_"+str(jobnumber)+".log"): os.system("/bin/rm "+options.jobname+"/log/"+options.jobname+"_"+str(jobnumber)+".log")
+        if os.path.isfile(options.jobname+"/log/"+options.jobname+"_"+str(jobnumber)+".stderr"): os.system("/bin/rm "+options.jobname+"/log/"+options.jobname+"_"+str(jobnumber)+".stderr")
+        if os.path.isfile(options.jobname+"/log/"+options.jobname+"_"+str(jobnumber)+".stdout"): os.system("/bin/rm "+options.jobname+"/log/"+options.jobname+"_"+str(jobnumber)+".stdout")
+        if os.path.isfile(options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status"): os.system("/bin/rm "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
+        if os.path.isfile(eosstatusdir+"/"+options.jobname+"_"+str(jobnumber)+".status"): os.system("/bin/rm "+eosstatusdir+"/"+options.jobname+"_"+str(jobnumber)+".status")
+        resultsdir = os.popen("grep InitialDir "+options.jobname()+"/configs/"+options.jobname()+"_"+jobnumber+".txt | awk '{print $3}'").readline().strip('\n')
+        rootfiles = getoutputfilenames(options.jobname+"/xml/"+options.jobname+"_"+str(jobnumber)+".xml")
+        for rootfile in rootfiles:
+            if os.path.isfile(resultsdir+"/"+rootfile): os.system("/bin/rm "+resultsdir+"/"+rootfile)
+
 if options.submit!="":
     joblist=[]
     if options.submit=="all":
@@ -491,29 +523,9 @@ if options.submit!="":
     print "Submitting %d jobs" %(len(joblist))
     for jobnumber in joblist:
         print "Submitting job number: %d" %(jobnumber)
-        subnum = int(os.popen("grep Arguments "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt | awk '{print $4}'").readline().strip('\n'))
-        os.system("sed -i 's|Transfer_Output_Files = \(.*\)_"+str(subnum)+".root$|Transfer_Output_Files = \\1_"+str(subnum+1)+".root|' "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
-        os.system("sed -i 's|/configs "+str(subnum)+"$|/configs "+str(subnum+1)+"|' "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
-        if os.path.isfile(options.jobname+"/logs/"+options.jobname+"_"+str(jobnumber)+".log"): os.system("/bin/rm "+options.jobname+"/logs/"+options.jobname+"_"+str(jobnumber)+".log")
-        os.system("condor_submit "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
-        os.system("echo 'Submitted' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
-
-if options.resubmit!="":
-    joblist=[]
-    if options.resubmit=="all":
-        options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip('\n'))
-        joblist=range(1,options.numjobs+1)
-    else: joblist=makejoblist(options.submit)
-    print "Resubmitting %d jobs" %(len(joblist))
-    for jobnumber in joblist:
-        if os.path.isfile(options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status") os.system("/bin/rm "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
-        if os.path.isfile(eosstatusdir+"/"+options.jobname+"_"+str(jobnumber)+".status")
-        rootfiles = getoutputfilenames(options.jobname+"/xml/"+options.jobname+"_"+str(jobnumber)+".xml")
-        for rootfile in rootfiles:
-            if options.output != "": rootfile=options.output+"/"+rootfile
-            else: rootfile = options.jobname+"/results/"+rootfile
-            if os.path.isfile(rootfile): os.system("/bin/rm "+rootfile)
-        print "Submitting job number: %d" %(jobnumber)
+        if not os.path.isfile(options.jobname+"/xml/"+options.jobname()+"_"+jobnumber+".xml"):
+            print "Error: No configuration file for jobs number "+str(jobnumber)+"!"
+            exit(6)
         subnum = int(os.popen("grep Arguments "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt | awk '{print $4}'").readline().strip('\n'))
         os.system("sed -i 's|Transfer_Output_Files = \(.*\)_"+str(subnum)+".root$|Transfer_Output_Files = \\1_"+str(subnum+1)+".root|' "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
         os.system("sed -i 's|/configs "+str(subnum)+"$|/configs "+str(subnum+1)+"|' "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
