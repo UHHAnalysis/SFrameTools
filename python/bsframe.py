@@ -453,13 +453,15 @@ if options.create:
         createcondorscript(options.jobname,jobnumber,eosstatusdir)
         os.system("echo 'Created' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
 
-    os.chdir(cmsswbase+"/..")
-    tarball = options.jobname+".tgz"
-    target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
-    print "Creating tarball of "+target+" area."
     if not options.notar:
-        os.system("tar -czf "+tarball+" "+target+" --exclude='*Cycle*.root' --exclude='*.tgz' --exclude='*.log' --exclude='*.stdout' --exclude='*.stderr'")
+        os.chdir(cmsswbase+"/..")
+        tarball = options.jobname+".tgz"
+        target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
+        print "Creating tarball of "+target+" area."
+        os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
         os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
+        os.chdir(workingdir+"/"+options.jobname)
+        os.system('echo "Signature: 8a477f597d28d172789f06886806bc55" >& CACHEDIR.TAG')
     os.chdir(workingdir)
 
 if not os.path.isdir(options.jobname):
@@ -468,12 +470,17 @@ if not os.path.isdir(options.jobname):
 
 if options.retar:
     if options.create: print "There is no point in creating a task and then recreating the tarball."
+    if options.notar: print "You are stupid!\n"+assert(0)
+    os.chdir(workingdir+"/"+options.jobname)
+    if os.path.isfile("CACHEDIR.TAG"): os.remove("CACHEDIR.TAG")
     os.chdir(cmsswbase+"/..")
     tarball = options.jobname+".tgz"
     target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
     print "Creating tarball of "+target+" area."
-    os.system("tar -czf "+tarball+" "+target+" --exclude='*.root' --exclude='*.tgz'")
+    os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
     os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
+    os.chdir(workingdir+"/"+options.jobname)
+    os.system('echo "Signature: 8a477f597d28d172789f06886806bc55" >& CACHEDIR.TAG')
     os.chdir(workingdir)
 
 if options.kill!="":
