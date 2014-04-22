@@ -121,7 +121,7 @@ def applypdfsystematics(infile, options, pdfindex):
 
 def applytjetsystematic(infile,tjets):
     infile=applypostfix(infile,tjets)
-    infile=additem(infile,"TopTaggingScaleFactors",bjets)
+    infile=additem(infile,"TopTaggingScaleFactors",tjets)
     return infile
 
 def changepileupfile(infile,pileupfile):
@@ -305,7 +305,7 @@ def createxmlfile(infile, jobnumber, datablocklist, datablocknumber, blockindex,
     if options.jer != "": infile = applyjesystematic(infile, "JER", options.jer)
     if options.pileupfile != "": infile = changepileupfile(infile, options.pileupfile)
     if options.bjets != "": infile = applybjetsystematic(infile, options.bjets)
-    if options.tjets != "": infile = applytetsystematic(infile, options.tjets)
+    if options.tjets != "": infile = applytjetsystematic(infile, options.tjets)
     if options.pdf != "": infile = applypdfsystematics(infile, options, pdfindex)
     frontend = infile[:infile.find("<InputData ")]
     indent = frontend[frontend.rfind("\n")+1:]
