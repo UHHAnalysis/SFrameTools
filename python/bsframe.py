@@ -13,17 +13,40 @@ import xmlparser
 parser = OptionParser()
 parser.add_option("-c", "--cfg", dest="configxml", help="Input XML Config File")
 parser.add_option("-j", "--jobname", dest="jobname", default="", help="Job Name")
-parser.add_option("-k", "--kill", dest="kill",  default="none", help="Kill Jobs: all, 1-5, or 1,3,5,9")
+parser.add_option("-k", "--kill", dest="kill",  default="", help="Kill Jobs: all, 1-5, or 1,3,5,9")
 parser.add_option("-n", "--numjobs", dest="numjobs", type="int", default=0, help="Number of Jobs")
 parser.add_option("-o", "--output", dest="output", default="", help="Output directory: The default is jobname/results")
-parser.add_option("-s", "--submit", dest="submit",  default="none", help="Submit Jobs: all, 1-5, or 1,3,5,9")
+parser.add_option("-s", "--submit", dest="submit",  default="", help="Submit Jobs: all, 1-5, or 1,3,5,9")
+parser.add_option("-r", "--resubmit", dest="resubmit",  default="", help="Submit Jobs: all, 1-5, or 1,3,5,9")
 
 parser.add_option("--clobber", action="store_true", dest="clobber", default=False, help="Overwrite Job Directory")
 parser.add_option("--create", action="store_true", dest="create", default=False, help="Create job and configuration files.")
 parser.add_option("--status", action="store_true", dest="status", default=False, help="Get job status")
 parser.add_option("--retar", action="store_true", dest="retar", default=False, help="Recreate the job tarball.")
+parser.add_option("--ttbargencut", action="store_true", dest="ttbargencut", default=False, help="Apply ttbar generator cut")
+
+parser.add_option("--append", dest="append", default="", help="Append string to job name")
+parser.add_option("--flavor", dest="flavor", default="", help="Apply flavor selection: bflavor, cflavor, lflavor")
+parser.add_option("--pileupfile", dest="pileupfile", default="", help="Specify pileup file")
+parser.add_option("--bjets", dest="bjets", default="", help="Apply bjet Systematic: up-bjets, down-bjets, up-ljets, down-ljets")
+parser.add_option("--toptag", dest="tjets", default="", help="Apply toptag scale Systematic: up-mistag, down-mistag, up-toptag, down-toptag")
+parser.add_option("--JEC", dest="jec", default="", help="Apply JEC Systematic: up or down")
+parser.add_option("--JER", dest="jer", default="", help="Apply JER Systematic: up or down")
+parser.add_option("--PDF", dest="pdf", default="", help="Apply PDF Systematics: CT10 or cteq66")
+parser.add_option("--PDFDir", dest="pdfdir", default="", help="Location of PDF systematic files.")
+parser.add_option("--filter", dest="filter", default="", help="Run only samples that pass filter.")
+parser.add_option("--veto", dest="veto", default="", help="Remove samples that pass filter.")
 (options, args) = parser.parse_args()
-if options.jobname == "": options.jobname=options.configxml.strip(".xml")
+
+if options.jobname == "":
+    options.jobname = options.configxml.strip(".xml")
+    if options.ttbargencut: options.jobname += "_TTBar"
+    if options.flavor != "": options.jobname += "_"+options.flavor
+    if options.bjets != "": options.jobname += "_"+options.bjets
+    if options.jec != "": options.jobname += "_JEC"+options.jec
+    if options.jer != "": options.jobname += "_JER"+options.jer
+    if options.pdf != "": options.jobname += "_"+options.pdf
+    if options.append != "": options.jobname += "_"+options.append
 if options.jobname == "" and options.configxml == "":
     print "ERROR: Please provide either a configuration file or job directory"
     exit(1)
@@ -43,6 +66,62 @@ def makestringlist(joblist):
     for job in joblist: stringlist += str(job)+","
     stringlist=stringlist[:-1]
     return stringlist
+
+def applypostfix(infile, append):
+    postfix = re.search('PostFix="[^ ]+"',infile)
+    if postfix: infile = infile.replace(postfix.group(0),postfix.group(0)[:-1]+"_"+str(append)+'"')
+    elif infile.find('PostFix=""') != -1: infile = infile.replace('PostFix=""','PostFix="_'+str(append)+'"')
+    else:
+        cyclepos = infile[infile.find("<Cycle "):].find(">")+infile.find("<Cycle ")
+        infile = infile[:cyclepos]+'PostFix="_'+str(append)+'" '+infile[cyclepos:]
+    return infile
+
+def additem(infile, name, value):
+    location = re.search('Name="'+name+'" Value="[^ ]+"',infile)
+    if location: infile = infile.replace(location.group(0),'Name="'+name+'" Value="'+str(value)+'"')
+    else:
+        configpos = infile.find("</UserConfig>")
+        infile = infile[:configpos]+'  <Item Name="'+name+'" Value="'+str(value)+'" />\n    '+infile[configpos:]
+    return infile
+
+def applyttbargencut(infile):
+    infile=applypostfix(infile,"0to700")
+    infile=additem(infile,"ApplyMttbarGenCut","True")
+    return infile
+
+def applybjetsystematic(infile,bjets):
+    infile=applypostfix(infile,bjets)
+    infile=additem(infile,"BTaggingScaleFactors",bjets)
+    return infile
+
+def applyflavorselection(infile,flavor):
+    infile=applypostfix(infile,flavor)
+    infile=additem(infile,"ApplyFlavorSelection",flavor)
+    return infile
+
+def applyjesystematic(infile,jectype,jecdirection):
+    infile=applypostfix(infile,jectype+jecdirection)
+    infile=additem(infile,"SystematicUncertainty",jectype)
+    infile=additem(infile,"SystematicVariation",jecdirection)
+    return infile
+
+def applypdfsystematics(infile, options, pdfindex):
+    infile=applypostfix(infile, options.pdf+"_"+str(pdfindex))
+    infile=additem(infile,"SystematicUncertainty","PDF")
+    infile=additem(infile,"SystematicVariation","up")
+    infile=additem(infile,"PDFName",options.pdf)
+    if options.pdfdir != "": infile=additem(infile,"PDFWeightFilesDirectory",options.pdfdir)
+    infile=additem(infile,"PDFIndex",pdfindex)
+    return infile
+
+def applytjetsystematic(infile,tjets):
+    infile=applypostfix(infile,tjets)
+    infile=additem(infile,"TopTaggingScaleFactors",bjets)
+    return infile
+
+def changepileupfile(infile,pileupfile):
+    infile = additem(infile,"PU_Filename_Data",pileupfile)
+    return infile
 
 def getoutputfilenames(configfile):
     rawxmlfile = open(configfile).read()
@@ -65,7 +144,7 @@ def getinputfilenames(configfile):
         if not file[:5]=="/eos/": rootfilenamelist += file+", "
     return rootfilenamelist[:-2]
 
-def createcondortxt(jobname, jobnumber,jobdir):
+def createcondortxt(jobname, jobnumber, jobdir):
     rootfiles = getoutputfilenames(jobname+"/xml/"+jobname+"_"+str(jobnumber)+".xml")
     additionalfiles = getinputfilenames(jobname+"/xml/"+jobname+"_"+str(jobnumber)+".xml")
     os.chdir(jobname+"/configs")
@@ -130,12 +209,17 @@ def enddatablack(mydatablock,indent):
     returnstring += indent+"</InputData>\n"
     return returnstring
 
-def makedatablocks(xmlfile):
+def makedatablocks(xmlfile,options):
     input=xmlfile
     datablocklist=[]
     while input.find("<InputData ") != -1:
         datablock = input[input.find("<InputData "):input.find("</InputData>")+12]
-        datablocklist.append(datablock)
+        version = xmlparser.parse(datablock,"Version")[0]
+        veto=0
+        filter=1
+        if options.veto != "": veto = re.search(options.veto,version)
+        if options.filter != "": filter = re.search(options.filter,version)
+        if filter and not veto: datablocklist.append(datablock)
         input = input[input.find("</InputData>")+12:]
     return datablocklist
 
@@ -159,11 +243,14 @@ def resolveentities(input):
     #xmldump=open("BSFrame_config_dump.xml",'w');xmldump.write(input);xmldump.close()
     return input
 
-def createxmlfiles(configfile, jobname, numjobs):
-    rawxmlfile = open(configfile).read()
+def createxmlfiles(options):
+    pdfmax = 1
+    if options.pdf == "CT10": pdfmax = 52
+    elif options.pdf == "cteq66": pdfmax = 44
+    rawxmlfile = open(options.configxml).read()
     xmlfile = resolveentities(rawxmlfile)
-    xmldatablocks = makedatablocks(xmlfile)
-    totalfilelist = xmlparser.parse(xmlfile,"FileName")
+    xmldatablocks = makedatablocks(xmlfile,options)
+    totalfilelist = []
     datablocklist = []
     for xmldatablock in xmldatablocks:
         type = xmlparser.parse(xmldatablock,"Type")[0]
@@ -171,15 +258,14 @@ def createxmlfiles(configfile, jobname, numjobs):
         maxevents = xmlparser.parse(xmldatablock,"NEventsMax")[0]
         cacheable = xmlparser.parse(xmldatablock,"Cacheable")[0]
         filelist = xmlparser.parse(xmldatablock,"FileName")
+        totalfilelist.extend(filelist)
         lumi = xmlparser.parse(xmldatablock,"Lumi")
         blocklumi = lumi.pop(0)
         namelist = xmlparser.parse(xmldatablock,"Name")
         mydatablock=datablock.datablock(blocklumi, filelist, lumi, namelist, type, version, maxevents, cacheable)
         datablocklist.append(mydatablock)
-    if numjobs==0:
-        totalfilelist = xmlparser.parse(xmlfile,"FileName")
-        numjobs=len(totalfilelist)
-        options.numjobs=len(totalfilelist)
+    if options.numjobs==0 and options.pdf=="": options.numjobs=len(totalfilelist)
+    elif options.numjobs==0 and options.pdf!="": options.numjobs=1
     numjoblist=[]
     for i in range(options.numjobs): numjoblist.append(0)
     jobindex = 0
@@ -187,18 +273,28 @@ def createxmlfiles(configfile, jobname, numjobs):
         if jobindex>=options.numjobs: jobindex-=options.numjobs
         numjoblist[jobindex]+=1
         jobindex+=1
-    datablocknumber = 0
-    blockindex = 0
-    for jobnumber in range(options.numjobs):
-        blockindex,datablocknumber = createxmlfile(xmlfile, jobname, jobnumber+1, datablocklist, datablocknumber, blockindex, numjoblist[jobnumber])
+    for pdfindex in range(pdfmax):
+        datablocknumber = 0
+        blockindex = 0
+        for jobnumber in range(options.numjobs):
+            blockindex,datablocknumber = createxmlfile(xmlfile, jobnumber+1, datablocklist, datablocknumber, blockindex, numjoblist[jobnumber], options, pdfindex+1)
 
-def createxmlfile(infile, jobname, jobnumber, datablocklist, datablocknumber, blockindex, numfiles):
-    filename = jobname+"_"+str(jobnumber)+".xml"
-    os.chdir(jobname+"/xml")
+def createxmlfile(infile, jobnumber, datablocklist, datablocknumber, blockindex, numfiles, options, pdfindex):
+    jobnumber = jobnumber+options.numjobs*(pdfindex-1)
+    filename = options.jobname+"_"+str(jobnumber)+".xml"
+    os.chdir(options.jobname+"/xml")
+    if options.ttbargencut: infile = additem(infile, "ApplyMttbarGenCut", "True")
+    if options.ttbargencut: infile = applyttbargencut(infile)
+    if options.flavor != "": infile = applyflavorselection(infile, options.flavor)
+    if options.jec != "": infile = applyjesystematic(infile, "JEC", options.jec)
+    if options.jer != "": infile = applyjesystematic(infile, "JER", options.jer)
+    if options.pileupfile != "": infile = changepileupfile(infile, options.pileupfile)
+    if options.bjets != "": infile = applybjetsystematic(infile, options.bjets)
+    if options.tjets != "": infile = applytetsystematic(infile, options.tjets)
+    if options.pdf != "": infile = applypdfsystematics(infile, options, pdfindex)
     frontend = infile[:infile.find("<InputData ")]
     indent = frontend[frontend.rfind("\n")+1:]
     backend = infile[infile.rfind("</InputData>")+13:]
-
     if len(datablocklist)>0:
         inputfilestring = begindatablock(datablocklist[datablocknumber])
         filelist=datablocklist[datablocknumber].filelist
@@ -217,7 +313,7 @@ def createxmlfile(infile, jobname, jobnumber, datablocklist, datablocknumber, bl
                 lumilist=datablocklist[datablocknumber].lumilist
                 blockindex=0
         else:
-            inputfilestring += indent+"    "+'<In FileName="'+filelist[blockindex]+'" Lumi="'+lumilist[blockindex]+'"/>\n'
+            inputfilestring += indent+"  "+'<In FileName="'+filelist[blockindex]+'" Lumi="'+lumilist[blockindex]+'"/>\n'
             blockindex += 1
             numfiles -= 1
     inputfilestring += enddatablack(datablocklist[datablocknumber],indent)
@@ -303,7 +399,7 @@ def getjobinfo(jobname,jobnumber,resubmitjobs):
             if logerror != "": jobinfo += " "+logerror
     return jobinfo
 
-if not options.create and options.submit=="none" and options.kill=="none" and not options.status:
+if not options.create and options.submit=="" and options.kill=="" and not options.status:
     print "ERROR: Must either create, submit jobs, kill, or check the status of jobs"
 
 workingdir=os.getcwd()
@@ -334,8 +430,10 @@ if options.create:
         os.mkdir(eosstatusdir)
 
     print "Creating configuration files for task: "+options.jobname
-    createxmlfiles(options.configxml,options.jobname,options.numjobs)
-    for jobnumber in range(1,options.numjobs+1):
+    createxmlfiles(options)
+    for xmlfile in os.popen("/bin/ls "+options.jobname+"/xml/*.xml").readlines():
+        xmlfile = xmlfile.strip("\n")
+        jobnumber = int(xmlfile[xmlfile.rfind("_")+1:xmlfile.rfind(".")])
         createcondortxt(options.jobname,jobnumber,workingdir+"/"+options.jobname)
         createcondorscript(options.jobname,jobnumber,eosstatusdir)
         os.system("echo 'Created' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
@@ -362,10 +460,10 @@ if options.retar:
     os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
     os.chdir(workingdir)
 
-if options.kill!="none":
+if options.kill!="":
     joblist=[]
     if options.kill=="all":
-        if options.numjobs==0: options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip('\n'))
+        options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip('\n'))
         joblist=range(1,options.numjobs+1)
     else: joblist=makejoblist(options.kill)
     condorstatus=os.popen("condor_q -submitter $USER").read()
@@ -384,14 +482,37 @@ if options.kill!="none":
             time.sleep(0.3)
             os.system("echo 'Killed' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
 
-if options.submit!="none":
+if options.submit!="":
     joblist=[]
     if options.submit=="all":
-        if options.numjobs==0: options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip('\n'))
+        options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip('\n'))
         joblist=range(1,options.numjobs+1)
     else: joblist=makejoblist(options.submit)
     print "Submitting %d jobs" %(len(joblist))
     for jobnumber in joblist:
+        print "Submitting job number: %d" %(jobnumber)
+        subnum = int(os.popen("grep Arguments "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt | awk '{print $4}'").readline().strip('\n'))
+        os.system("sed -i 's|Transfer_Output_Files = \(.*\)_"+str(subnum)+".root$|Transfer_Output_Files = \\1_"+str(subnum+1)+".root|' "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
+        os.system("sed -i 's|/configs "+str(subnum)+"$|/configs "+str(subnum+1)+"|' "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
+        if os.path.isfile(options.jobname+"/logs/"+options.jobname+"_"+str(jobnumber)+".log"): os.system("/bin/rm "+options.jobname+"/logs/"+options.jobname+"_"+str(jobnumber)+".log")
+        os.system("condor_submit "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
+        os.system("echo 'Submitted' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
+
+if options.resubmit!="":
+    joblist=[]
+    if options.resubmit=="all":
+        options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip('\n'))
+        joblist=range(1,options.numjobs+1)
+    else: joblist=makejoblist(options.submit)
+    print "Resubmitting %d jobs" %(len(joblist))
+    for jobnumber in joblist:
+        if os.path.isfile(options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status") os.system("/bin/rm "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
+        if os.path.isfile(eosstatusdir+"/"+options.jobname+"_"+str(jobnumber)+".status")
+        rootfiles = getoutputfilenames(options.jobname+"/xml/"+options.jobname+"_"+str(jobnumber)+".xml")
+        for rootfile in rootfiles:
+            if options.output != "": rootfile=options.output+"/"+rootfile
+            else: rootfile = options.jobname+"/results/"+rootfile
+            if os.path.isfile(rootfile): os.system("/bin/rm "+rootfile)
         print "Submitting job number: %d" %(jobnumber)
         subnum = int(os.popen("grep Arguments "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt | awk '{print $4}'").readline().strip('\n'))
         os.system("sed -i 's|Transfer_Output_Files = \(.*\)_"+str(subnum)+".root$|Transfer_Output_Files = \\1_"+str(subnum+1)+".root|' "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
@@ -416,7 +537,7 @@ if (options.status):
     print "Job Number         Status             Additional Information"
     print "--------------------------------------------------------------------------------"
     whitespace="                                                                                "
-    if options.numjobs==0: options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip("\n"))
+    options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip("\n"))
     for jobnumber in range(1,options.numjobs+1):
         jobstatus=open(options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status").read().strip("\n")
         jobstatuslist.append(jobstatus)
