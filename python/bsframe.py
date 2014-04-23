@@ -11,7 +11,7 @@ import time
 import xmlparser
 
 parser = OptionParser()
-parser.add_option("-c", "--cfg", dest="configxml", help="Input XML Config File")
+parser.add_option("-c", "--cfg", dest="configxml", default="", help="Input XML Config File")
 parser.add_option("-j", "--jobname", dest="jobname", default="", help="Job Name")
 parser.add_option("-k", "--kill", dest="kill",  default="", help="Kill Jobs: all, 1-5, or 1,3,5,9")
 parser.add_option("-n", "--numjobs", dest="numjobs", type="int", default=0, help="Number of Jobs")
@@ -470,7 +470,7 @@ if not os.path.isdir(options.jobname):
 
 if options.retar:
     if options.create: print "There is no point in creating a task and then recreating the tarball."
-    if options.notar: print "You are stupid!\n"
+    if options.notar: print "You are stupid!"
     os.chdir(workingdir+"/"+options.jobname)
     if os.path.isfile("CACHEDIR.TAG"): os.remove("CACHEDIR.TAG")
     os.chdir(cmsswbase+"/..")
@@ -532,7 +532,7 @@ if options.submit!="":
     print "Submitting %d jobs" %(len(joblist))
     for jobnumber in joblist:
         print "Submitting job number: %d" %(jobnumber)
-        if not os.path.isfile(options.jobname+"/xml/"+options.jobname()+"_"+jobnumber+".xml"):
+        if not os.path.isfile(options.jobname+"/xml/"+options.jobname+"_"+str(jobnumber)+".xml"):
             print "Error: No configuration file for jobs number "+str(jobnumber)+"!"
             exit(6)
         subnum = int(os.popen("grep Arguments "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt | awk '{print $4}'").readline().strip('\n'))
