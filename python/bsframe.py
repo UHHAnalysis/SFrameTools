@@ -24,6 +24,7 @@ parser.add_option("--create", action="store_true", dest="create", default=False,
 parser.add_option("--status", action="store_true", dest="status", default=False, help="Get job status")
 parser.add_option("--retar", action="store_true", dest="retar", default=False, help="Recreate the job tarball.")
 parser.add_option("--ttbargencut", action="store_true", dest="ttbargencut", default=False, help="Apply ttbar generator cut")
+parser.add_option("--notar", action="store_true", dest="notar", default=False, help="Do not create tarball. For debugging configs.")
 
 parser.add_option("--append", dest="append", default="", help="Append string to job name")
 parser.add_option("--flavor", dest="flavor", default="", help="Apply flavor selection: bflavor, cflavor, lflavor")
@@ -120,7 +121,7 @@ def applypdfsystematics(infile, options, pdfindex):
 
 def applytjetsystematic(infile,tjets):
     infile=applypostfix(infile,tjets)
-    infile=additem(infile,"TopTaggingScaleFactors",bjets)
+    infile=additem(infile,"TopTaggingScaleFactors",tjets)
     return infile
 
 def changepileupfile(infile,pileupfile):
@@ -304,7 +305,7 @@ def createxmlfile(infile, jobnumber, datablocklist, datablocknumber, blockindex,
     if options.jer != "": infile = applyjesystematic(infile, "JER", options.jer)
     if options.pileupfile != "": infile = changepileupfile(infile, options.pileupfile)
     if options.bjets != "": infile = applybjetsystematic(infile, options.bjets)
-    if options.tjets != "": infile = applytetsystematic(infile, options.tjets)
+    if options.tjets != "": infile = applytjetsystematic(infile, options.tjets)
     if options.pdf != "": infile = applypdfsystematics(infile, options, pdfindex)
     frontend = infile[:infile.find("<InputData ")]
     indent = frontend[frontend.rfind("\n")+1:]
@@ -452,12 +453,15 @@ if options.create:
         createcondorscript(options.jobname,jobnumber,eosstatusdir)
         os.system("echo 'Created' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
 
-    os.chdir(cmsswbase+"/..")
-    tarball = options.jobname+".tgz"
-    target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
-    print "Creating tarball of "+target+" area."
-    os.system("tar -czf "+tarball+" "+target+" --exclude='*Cycle*.root' --exclude='*.tgz' --exclude='*.log' --exclude='*.stdout' --exclude='*.stderr'")
-    os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
+    if not options.notar:
+        os.chdir(cmsswbase+"/..")
+        tarball = options.jobname+".tgz"
+        target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
+        print "Creating tarball of "+target+" area."
+        os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
+        os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
+        os.chdir(workingdir+"/"+options.jobname)
+        os.system('echo "Signature: 8a477f597d28d172789f06886806bc55" >& CACHEDIR.TAG')
     os.chdir(workingdir)
 
 if not os.path.isdir(options.jobname):
@@ -466,12 +470,17 @@ if not os.path.isdir(options.jobname):
 
 if options.retar:
     if options.create: print "There is no point in creating a task and then recreating the tarball."
+    if options.notar: print "You are stupid!\n"
+    os.chdir(workingdir+"/"+options.jobname)
+    if os.path.isfile("CACHEDIR.TAG"): os.remove("CACHEDIR.TAG")
     os.chdir(cmsswbase+"/..")
     tarball = options.jobname+".tgz"
     target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
     print "Creating tarball of "+target+" area."
-    os.system("tar -czf "+tarball+" "+target+" --exclude='*.root' --exclude='*.tgz'")
+    os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
     os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
+    os.chdir(workingdir+"/"+options.jobname)
+    os.system('echo "Signature: 8a477f597d28d172789f06886806bc55" >& CACHEDIR.TAG')
     os.chdir(workingdir)
 
 if options.kill!="":
