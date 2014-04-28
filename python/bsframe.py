@@ -33,6 +33,7 @@ parser.add_option("--bjets", dest="bjets", default="", help="Apply bjet Systemat
 parser.add_option("--toptag", dest="tjets", default="", help="Apply toptag scale Systematic: up-mistag, down-mistag, up-toptag, down-toptag")
 parser.add_option("--JEC", dest="jec", default="", help="Apply JEC Systematic: up or down")
 parser.add_option("--JER", dest="jer", default="", help="Apply JER Systematic: up or down")
+parser.add_option("--EleSF", dest="elesf", default="", help="Apply EleSF Systematic: up or down")
 parser.add_option("--PDF", dest="pdf", default="", help="Apply PDF Systematics: CT10 or cteq66")
 parser.add_option("--PDFDir", dest="pdfdir", default="", help="Location of PDF systematic files.")
 parser.add_option("--filter", dest="filter", default="", help="Run only samples that pass filter.")
@@ -46,6 +47,7 @@ if options.jobname == "":
     if options.bjets != "": options.jobname += "_"+options.bjets
     if options.jec != "": options.jobname += "_JEC"+options.jec
     if options.jer != "": options.jobname += "_JER"+options.jer
+    if options.elesf != "": options.jobname += "_EleSF"+options.elesf
     if options.pdf != "": options.jobname += "_"+options.pdf
     if options.append != "": options.jobname += "_"+options.append
 if options.jobname == "" and options.configxml == "":
@@ -108,6 +110,12 @@ def applyjesystematic(infile,jectype,jecdirection):
     infile=applypostfix(infile,jectype+jecdirection)
     infile=additem(infile,"SystematicUncertainty",jectype)
     infile=additem(infile,"SystematicVariation",jecdirection)
+    return infile
+
+def applyelesfsystematic(infile,direction):
+    infile=applypostfix(infile,"EleSF"+direction)
+    infile=additem(infile,"SystematicUncertainty","EleSF")
+    infile=additem(infile,"SystematicVariation",direction)
     return infile
 
 def applypdfsystematics(infile, options, pdfindex):
@@ -303,6 +311,7 @@ def createxmlfile(infile, jobnumber, datablocklist, datablocknumber, blockindex,
     if options.flavor != "": infile = applyflavorselection(infile, options.flavor)
     if options.jec != "": infile = applyjesystematic(infile, "JEC", options.jec)
     if options.jer != "": infile = applyjesystematic(infile, "JER", options.jer)
+    if options.elesf != "": infile = applyelesfsystematic(infile, options.elesf)
     if options.pileupfile != "": infile = changepileupfile(infile, options.pileupfile)
     if options.bjets != "": infile = applybjetsystematic(infile, options.bjets)
     if options.tjets != "": infile = applytjetsystematic(infile, options.tjets)
