@@ -568,10 +568,15 @@ if (options.status):
     print "--------------------------------------------------------------------------------"
     whitespace="                                                                                "
     options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip("\n"))
+    condorstatus=os.popen("condor_q -submitter $USER").read()
     for jobnumber in range(1,options.numjobs+1):
+        logfile = os.popen("/bin/ls -rt "+options.jobname+"/logs/"+options.jobname+"_"+str(jobnumber)+".log | tail -1").readline().strip('\n')
+        jobid = os.popen("grep submitted "+logfile+" | tail -1 | awk '{print $2}'").readline().strip("\n()").split(".")[0]
         jobstatus=open(options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status").read().strip("\n")
         jobstatuslist.append(jobstatus)
         jobinfo=getjobinfo(options.jobname,jobnumber,resubmitjobs)
+        if condorstatus.find(jobid) == -1 and jobinfo == "":
+            resubmitjobs.append(jobnumber)
         print whitespace[:4]+str(jobnumber)+whitespace[:15-len(str(jobnumber))]+jobstatus+whitespace[:18-len(jobstatus)]+jobinfo
     print ""
     if jobstatuslist.count("Created")>0: print "There are "+str(jobstatuslist.count("Created"))+" Created Jobs"
