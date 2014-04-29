@@ -423,7 +423,7 @@ def getjobinfo(jobname,jobnumber,resubmitjobs):
             if logerror != "": jobinfo += " "+logerror
     return jobinfo
 
-if not options.create and options.submit=="" and options.kill=="" and not options.status:
+if not options.create and options.submit=="" and options.kill=="" and options.clean=="" and not options.status:
     print "ERROR: Must either create, submit jobs, kill, or check the status of jobs"
 
 workingdir=os.getcwd()
@@ -519,7 +519,7 @@ if options.clean!="":
     if options.clean=="all":
         options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip('\n'))
         joblist=range(1,options.numjobs+1)
-    else: joblist=makejoblist(options.submit)
+    else: joblist=makejoblist(options.clean)
     print "Cleaning %d jobs" %(len(joblist))
     for jobnumber in joblist:
         if os.path.isfile(options.jobname+"/log/"+options.jobname+"_"+str(jobnumber)+".log"): os.system("/bin/rm "+options.jobname+"/log/"+options.jobname+"_"+str(jobnumber)+".log")
@@ -527,7 +527,7 @@ if options.clean!="":
         if os.path.isfile(options.jobname+"/log/"+options.jobname+"_"+str(jobnumber)+".stdout"): os.system("/bin/rm "+options.jobname+"/log/"+options.jobname+"_"+str(jobnumber)+".stdout")
         if os.path.isfile(options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status"): os.system("/bin/rm "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
         if os.path.isfile(eosstatusdir+"/"+options.jobname+"_"+str(jobnumber)+".status"): os.system("/bin/rm "+eosstatusdir+"/"+options.jobname+"_"+str(jobnumber)+".status")
-        resultsdir = os.popen("grep InitialDir "+options.jobname()+"/configs/"+options.jobname()+"_"+jobnumber+".txt | awk '{print $3}'").readline().strip('\n')
+        resultsdir = os.popen("grep InitialDir "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt | awk '{print $3}'").readline().strip('\n')
         rootfiles = getoutputfilenames(options.jobname+"/xml/"+options.jobname+"_"+str(jobnumber)+".xml")
         for rootfile in rootfiles:
             if os.path.isfile(resultsdir+"/"+rootfile): os.system("/bin/rm "+resultsdir+"/"+rootfile)
