@@ -179,7 +179,7 @@ Error = %s/logs/%s_%d.stderr
 Log = %s/logs/%s_%d.log
 notify_user = ${LOGNAME}@FNAL.GOV
 Arguments = %s 0
-Queue 1""" %(jobname, jobname, jobnumber, outputdir, jobdir, jobname, additionalfiles, rootfiles.replace(".root","."+str(jobnumber)+".root"), 'md5sums.txt', jobdir, jobname, jobnumber, jobdir, jobname, jobnumber, jobdir, jobname, jobnumber, os.getcwd())
+Queue 1""" %(jobname, jobname, jobnumber, outputdir, jobdir, jobname, additionalfiles, rootfiles.replace(".root","."+str(jobnumber)+".root"), 'md5sums.'+jobnumber+'.txt', jobdir, jobname, jobnumber, jobdir, jobname, jobnumber, jobdir, jobname, jobnumber, os.getcwd())
     condorfile.close()
     os.chdir("../..")
 
@@ -209,11 +209,11 @@ sframe_main %s_%d.xml
 for filename in `/bin/ls *.root`; do
     newfilename=`echo $filename | sed 's|.root|.%d.root|'`
     mv $filename $newfilename
-    md5sum $newfilename >> md5sums.txt
+    md5sum $newfilename >> md5sums.%d.txt
 done
 mv *.root $WORKINGDIR
-mv md5sums.txt $WORKINGDIR
-echo 'Done' >& $STATUSFILE""" %(eosstatusdir, jobname, jobnumber, jobname, jobnumber, jobname, jobname, jobnumber, jobnumber)
+mv md5sums.%d.txt $WORKINGDIR
+echo 'Done' >& $STATUSFILE""" %(eosstatusdir, jobname, jobnumber, jobname, jobnumber, jobname, jobname, jobnumber, jobnumber, jobnumber, jobnumber)
     os.chmod(scriptname, 493) #493==755 in python chmod
     os.chdir("../..")
 
