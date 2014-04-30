@@ -40,6 +40,9 @@ parser.add_option("--filter", dest="filter", default="", help="Run only samples 
 parser.add_option("--veto", dest="veto", default="", help="Remove samples that pass filter.")
 (options, args) = parser.parse_args()
 
+if options.jobname == "" and options.configxml == "":
+    print "ERROR: Please provide either a configuration file or job directory"
+    exit(1)
 if options.jobname == "":
     options.jobname = options.configxml.strip(".xml")
     if options.ttbargencut: options.jobname += "_TTBar"
@@ -50,9 +53,8 @@ if options.jobname == "":
     if options.elesf != "": options.jobname += "_EleSF"+options.elesf
     if options.pdf != "": options.jobname += "_"+options.pdf
     if options.append != "": options.jobname += "_"+options.append
-if options.jobname == "" and options.configxml == "":
-    print "ERROR: Please provide either a configuration file or job directory"
-    exit(1)
+else:
+    if options.jobname.endswith('/'): options.jobname = options.jobname[:-1]
 if not os.path.isfile(options.configxml) and not os.path.isdir(options.jobname):
     if options.configxml!="": print "ERROR: "+options.configxml+" is not a valid file!"
     else: print "ERROR: "+options.jobname+" is not a valid directory!"
@@ -171,13 +173,13 @@ Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
 InitialDir = %s
 Transfer_Input_Files = %s/configs/%s.tgz%s
-Transfer_Output_Files = %s
+Transfer_Output_Files = %s,%s
 Output = %s/logs/%s_%d.stdout
 Error = %s/logs/%s_%d.stderr
 Log = %s/logs/%s_%d.log
 notify_user = ${LOGNAME}@FNAL.GOV
 Arguments = %s 0
-Queue 1""" %(jobname, jobname, jobnumber, outputdir, jobdir, jobname, additionalfiles, rootfiles.replace(".root","."+str(jobnumber)+".root"), jobdir, jobname, jobnumber, jobdir, jobname, jobnumber, jobdir, jobname, jobnumber, os.getcwd())
+Queue 1""" %(jobname, jobname, jobnumber, outputdir, jobdir, jobname, additionalfiles, rootfiles.replace(".root","."+str(jobnumber)+".root"), 'md5sums.txt', jobdir, jobname, jobnumber, jobdir, jobname, jobnumber, jobdir, jobname, jobnumber, os.getcwd())
     condorfile.close()
     os.chdir("../..")
 
@@ -207,8 +209,10 @@ sframe_main %s_%d.xml
 for filename in `/bin/ls *.root`; do
     newfilename=`echo $filename | sed 's|.root|.%d.root|'`
     mv $filename $newfilename
+    md5sum $newfilename >> md5sums.txt
 done
 mv *.root $WORKINGDIR
+mv md5sums.txt $WORKINGDIR
 echo 'Done' >& $STATUSFILE""" %(eosstatusdir, jobname, jobnumber, jobname, jobnumber, jobname, jobname, jobnumber, jobnumber)
     os.chmod(scriptname, 493) #493==755 in python chmod
     os.chdir("../..")
@@ -386,7 +390,7 @@ def checkstdout(jobname, jobnumber):
         else: returnerror=error
     return returnerror
 
-def getjobinfo(jobname,jobnumber,resubmitjobs):
+def getjobinfo(jobname,jobnumber,resubmitjobs,incondorq):
     outputfiles = os.popen("grep Transfer_Output_Files "+jobname+"/configs/"+jobname+"_"+str(jobnumber)+".txt").readline().strip("\n")
     outputfiles = outputfiles.split(" ")[2:]
     outputdirectory = os.popen("grep InitialDir "+jobname+"/configs/"+jobname+"_"+str(jobnumber)+".txt | awk '{print $3}'").readline().strip("\n")
@@ -398,25 +402,29 @@ def getjobinfo(jobname,jobnumber,resubmitjobs):
         if os.path.isfile(filepath):
             if os.path.getsize(filepath)==0:
                 if jobstatus=="Done":
-                    jobinfo += " Root File "+file+" Empty!"
+                    jobinfo += " Root File "+file+" Empty!\n"
                     if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
+                else:
+                    if not incondorq:
+                        jobinfo += " Root File "+file+" Empty and job not running!\n"
+                        if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
             else:
                 rootfile = ROOT.TFile.Open(filepath)
                 try: iszombie=rootfile.IsZombie()
                 except: iszombie=True
                 if iszombie:
-                    jobinfo += " Root File "+file+" is Zombie!"
+                    jobinfo += " Root File "+file+" is Zombie!\n"
                     if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
                 elif rootfile.Get("AnalysisTree"):
                     analysistree = rootfile.Get("AnalysisTree")
-                    jobinfo += " Root File "+file+" is Valid: "+str(int(analysistree.GetEntries()))+" Events."
+                    jobinfo += " Root File "+file+" is Valid: "+str(int(analysistree.GetEntries()))+" Events.\n"
                 else:
                     hist = rootfile.Get("nprocessed")
-                    jobinfo += " Root File "+file+" is Valid: "+str(int(hist.GetEntries()))+" Events."
-                    if file.find("PostSelection") == -1: jobinfo += " Warning No AnalysisTree Found in "+file
+                    jobinfo += " Root File "+file+" is Valid: "+str(int(hist.GetEntries()))+" Events.\n"
+                    if file.find("PostSelection") == -1: jobinfo += " Warning No AnalysisTree Found in "+file+"\n"
                 if not iszombie: rootfile.Close()
         else:
-            jobinfo += " Output file "+file+" is not found!"
+            jobinfo += " Output file "+file+" is not found!\n"
             if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
         if jobstatus=="Done":
             stdouterror = checkstdout(jobname, jobnumber)
@@ -572,10 +580,15 @@ if (options.status):
     print "--------------------------------------------------------------------------------"
     whitespace="                                                                                "
     options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip("\n"))
+    condorstatus=os.popen("condor_q -submitter $USER").read()
     for jobnumber in range(1,options.numjobs+1):
+        logfile = os.popen("/bin/ls -rt "+options.jobname+"/logs/"+options.jobname+"_"+str(jobnumber)+".log | tail -1").readline().strip('\n')
+        jobid = os.popen("grep submitted "+logfile+" | tail -1 | awk '{print $2}'").readline().strip("\n()").split(".")[0]
         jobstatus=open(options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status").read().strip("\n")
         jobstatuslist.append(jobstatus)
-        jobinfo=getjobinfo(options.jobname,jobnumber,resubmitjobs)
+        incondorq = True
+        if condorstatus.find(jobid) == -1: incondorq = False
+        jobinfo=getjobinfo(options.jobname,jobnumber,resubmitjobs,incondorq)
         print whitespace[:4]+str(jobnumber)+whitespace[:15-len(str(jobnumber))]+jobstatus+whitespace[:18-len(jobstatus)]+jobinfo
     print ""
     if jobstatuslist.count("Created")>0: print "There are "+str(jobstatuslist.count("Created"))+" Created Jobs"
