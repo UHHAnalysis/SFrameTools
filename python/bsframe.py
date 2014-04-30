@@ -40,6 +40,9 @@ parser.add_option("--filter", dest="filter", default="", help="Run only samples 
 parser.add_option("--veto", dest="veto", default="", help="Remove samples that pass filter.")
 (options, args) = parser.parse_args()
 
+if options.jobname == "" and options.configxml == "":
+    print "ERROR: Please provide either a configuration file or job directory"
+    exit(1)
 if options.jobname == "":
     options.jobname = options.configxml.strip(".xml")
     if options.ttbargencut: options.jobname += "_TTBar"
@@ -50,9 +53,8 @@ if options.jobname == "":
     if options.elesf != "": options.jobname += "_EleSF"+options.elesf
     if options.pdf != "": options.jobname += "_"+options.pdf
     if options.append != "": options.jobname += "_"+options.append
-if options.jobname == "" and options.configxml == "":
-    print "ERROR: Please provide either a configuration file or job directory"
-    exit(1)
+else:
+    if options.jobname.endswith('/'): options.jobname = options.jobname[:-1]
 if not os.path.isfile(options.configxml) and not os.path.isdir(options.jobname):
     if options.configxml!="": print "ERROR: "+options.configxml+" is not a valid file!"
     else: print "ERROR: "+options.jobname+" is not a valid directory!"
