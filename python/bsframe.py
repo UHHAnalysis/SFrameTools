@@ -169,6 +169,7 @@ def createcondortxt(jobname, jobnumber, jobdir):
     print >> condorfile, """universe = vanilla
 Executable = %s/configs/%s_%d.sh
 Requirements = Memory >= 199 &&OpSys == "LINUX"&& (Arch != "DUMMY" )&& Disk > 1000000
++BigMemoryJob = TRUE
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
 InitialDir = %s
