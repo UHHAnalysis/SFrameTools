@@ -49,7 +49,9 @@ enum E_SystShift {
 enum E_SysUnc {
   e_None=0,  /**< no systematic shift is applied */
   e_JEC,     /**< jet energy scale uncertainty */
+  e_subJEC,     /**< jet energy scale uncertainty subjets */
   e_JER,     /**< jet resolution uncertainty */
+  e_subJER,     /**< jet resolution uncertainty */
   e_MuonSF,  /**< muon scale factor uncertainty */
   e_EleSF,   /**< electron scale factor uncertainty */
   e_TauSF,   /**< tau scale factor uncertainty */
@@ -184,10 +186,10 @@ float relIsoMuon(const Muon & mu, float deltaR = 0.4); //DEPRECATED_MSG("use the
 /// re-calculate the PF relative isolation of a muon in a cone radius deltaR, using the PFCandidates in event
 float relIsoMuon(EventCalc & event, const Muon & mu, float deltaR = 0.4);
 
-float relIso(const Particle & particle, float deltaR = 0.4); //DEPRECATED_MSG("use the version with EventCalc argument");
+//float relIso(const Particle & particle, float deltaR = 0.4); //DEPRECATED_MSG("use the version with EventCalc argument");
 
 /// re-calculate the PF relative isolation of a muon in a cone radius deltaR, using the PFCandidates in event
-float relIso(EventCalc & event, const Particle & particle, float deltaR = 0.4);
+float relIso(EventCalc* event, const Particle & particle, float deltaR = 0.4);
 
 //double HTlep(const BaseCycleContainer *bcc); ->moved to EventCalc
 
@@ -210,7 +212,11 @@ LorentzVectorXYZE toXYZ(LorentzVector v4);
 /// converts LorentzVector into LorentzVector
 LorentzVector toPtEtaPhi(LorentzVectorXYZE v4);
 
+/// distance in eta-phi space
 double deltaR(LorentzVector v1, LorentzVector v2);
+
+/// absolute value of Delta_phi, xi should be in [-pi,pi]
+double deltaPhiAbs(double x1, double x2);
 
 double double_infinity();
 int int_infinity();

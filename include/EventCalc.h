@@ -82,6 +82,9 @@ class EventCalc
   /// scalar sum of the pt of all jets, leptons and missing transverse energy
   double GetHT();
 
+  /// sum of SubBTags + AK5BTags
+  double GetNSumBTags();
+
   /// scalar sum of missing transverse energy and the pt of all leptons in the actual BaseCycleContainer
   double GetHTlep();
 
@@ -133,8 +136,6 @@ class EventCalc
    *
    */
   std::vector<LorentzVector> NeutrinoReconstruction(const LorentzVector lepton, const LorentzVector met);
-
-  void FillHighMassTTbarHypotheses();
 
   /// print a list of all objects in the actual BaseCycleContainer
   void PrintEventContent();
@@ -191,7 +192,6 @@ class EventCalc
   LuminosityHandler* m_lumi;
 
   // booleans to tell weather quantities have already been derived in an event
-  bool b_Reconstruction;
 
   bool b_jetparticles;
   bool b_isoparticles;

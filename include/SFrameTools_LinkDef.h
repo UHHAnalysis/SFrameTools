@@ -23,8 +23,9 @@
 #pragma link C++ struct PUWeightProducer+;
 #pragma link C++ class BaseHists+;
 #pragma link C++ class LeptonScaleFactors+;
-
+#pragma link C++ class TriggerWeight+;
 #pragma link C++ class ReconstructionHypothesis+;
+#pragma link C++ class TopFitCalc+;
 #pragma link C++ class std::vector<ReconstructionHypothesis>+;
 #pragma link C++ struct qualityflag+;
 

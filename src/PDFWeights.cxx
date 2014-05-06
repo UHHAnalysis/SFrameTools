@@ -10,7 +10,7 @@ PDFWeights::PDFWeights(E_SystShift syst_shift, TString pdfname, TString pdfweigh
       return;
     }
     m_libvalid=true;
-    std::cout << pdfname << std::endl;
+  
     LHAPDF::initPDFSet(1, (string)(pdfname+".LHgrid"));
     m_N_unc = LHAPDF::numberPDF();
     cout << "got pdfset number " << m_N_unc << endl;
@@ -72,15 +72,15 @@ std::vector<double> PDFWeights::GetWeightList(){
   double xpdf1 = LHAPDF::xfx(1, x1, q, id1);
   double xpdf2 = LHAPDF::xfx(1, x2, q, id2);
  
-  double w0 = x1 * x2;
-  for(unsigned int i=0; i <=m_N_unc; ++i){
+  double w0 = xpdf1 * xpdf2;
+  for(unsigned int i=1; i <=m_N_unc; ++i){
     LHAPDF::usePDFMember(1,i);
     double xpdf1_new = LHAPDF::xfx(1, x1, q, id1);
     double xpdf2_new = LHAPDF::xfx(1, x2, q, id2);
     double weight = xpdf1_new * xpdf2_new / w0;
 
     if(m_normalize_to_total_sum){
-      pdf_weights.push_back(weight/m_sumofweights[i]*m_N_tot);
+      pdf_weights.push_back(weight/m_sumofweights[i-1]*m_N_tot);
       
     }
     else{ 

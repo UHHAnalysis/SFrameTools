@@ -48,7 +48,6 @@ void EventCalc::Reset()
   //m_lumi = ?
 
   // reset booleans
-  b_Reconstruction = false;
   b_jetparticles = false;
   b_isoparticles = false;
   b_puisoparticles = false;
@@ -106,6 +105,69 @@ double EventCalc::GetHT()
         }
     }
     return m_HT;
+}
+
+double EventCalc::GetNSumBTags(){
+
+  if(!m_bcc->topjets) return 0;
+  if(!m_bcc->jets) return 0;
+
+  int NAntiktBTags =0;
+  int NSubBTags = 0;
+  int NSumBTags = 0;
+  int nsubjetbtag = 0; 
+  double mmin = 0;
+  double mjet = 0;
+  int nsubjets = 0;
+  int nsumbtags = 0;
+
+  for(unsigned int m = 0; m< m_bcc->topjets->size();++m){
+
+    TopJet topjet =  m_bcc->topjets->at(m); 
+    TopTag(topjet,mjet,nsubjets,mmin);
+    if(topjet.pt() < 250.) continue;
+
+    if(nsubjets > 1){
+      // loop over subjets, find minimum DeltaR between them
+      double min_dr = 5.;
+      for(unsigned int g = 0; g<topjet.subjets().size()-1; ++g){
+
+        Particle subjetg = topjet.subjets().at(g);
+        for(unsigned int k = g+1; k<topjet.subjets().size(); ++k){
+
+          double dr = subjetg.deltaR(topjet.subjets().at(k));
+          if(dr < min_dr) min_dr = dr;
+        }
+      }
+
+      if(min_dr > 0.4){
+        if(subJetBTag(topjet, e_CSVL)>=1) NSubBTags++;
+      }
+      else{
+        if(topjet.btag_combinedSecondaryVertex()>0.244) NSubBTags++;
+      }
+    }
+    else{
+      if(topjet.btag_combinedSecondaryVertex()>0.244) NSubBTags++;
+    }
+  }
+
+  for(unsigned int i=0; i<m_bcc->jets->size(); ++i){
+
+    bool overlap_with_topjet = false;
+    for(unsigned int m = 0; m< m_bcc->topjets->size();++m){
+
+      TopJet topjet =  m_bcc->topjets->at(m);
+      if(topjet.pt()>250. && topjet.deltaR(m_bcc->jets->at(i))<1.3) overlap_with_topjet = true;
+    }
+
+    if(!overlap_with_topjet){
+      if(m_bcc->jets->at(i).btag_combinedSecondaryVertex()>0.244) NAntiktBTags++;
+    }
+  }
+
+  NSumBTags = NAntiktBTags + NSubBTags;
+  return NSumBTags;
 }
 
 double EventCalc::GetHTlep()
@@ -197,9 +259,9 @@ void EventCalc::ApplyTauEnergySmearing(double factor)
 
 }
 
-std::vector<LorentzVector> EventCalc::NeutrinoReconstruction(const LorentzVector lepton, const LorentzVector met){
+std::vector<LorentzVector> EventCalc::NeutrinoReconstruction(const LorentzVector lepton, const LorentzVector met)
+{
 
-  
   TVector3 lepton_pT = toVector(lepton);
   lepton_pT.SetZ(0);
   
@@ -255,89 +317,6 @@ std::vector<LorentzVector> EventCalc::NeutrinoReconstruction(const LorentzVector
     }
   
   return solutions;
-}
-
-void EventCalc::FillHighMassTTbarHypotheses(){
-
-  if(b_Reconstruction) return;
-  b_Reconstruction=true;
-
-  //clear hypothesis list
-  m_bcc->recoHyps->clear();
-
-  //find primary charged lepton
-  Particle* lepton = GetPrimaryLepton();
-
-  //reconstruct neutrino
-  std::vector<LorentzVector> neutrinos = NeutrinoReconstruction( lepton->v4(), m_bcc->met->v4());
-  
-  ReconstructionHypothesis hyp;
-
-  hyp.set_lepton(*lepton);
-
-  //loop over neutrino solutions and jet assignments to fill hyotheses
-  for(unsigned int i=0; i< neutrinos.size();++i){
-
-    hyp.set_neutrino_v4(neutrinos[i]);
-    LorentzVector wlep_v4 = lepton->v4()+neutrinos[i];
-
-    unsigned int n_jets = m_bcc->jets->size();
-    if(n_jets>10) n_jets=10; //avoid crashes in events with many jets
-    unsigned int max_j = myPow(3, n_jets);
-    for (unsigned int j=0; j < max_j; j++) {
-      LorentzVector tophad_v4(0,0,0,0);
-      LorentzVector toplep_v4 = wlep_v4;
-      int hadjets=0;
-      int lepjets=0;
-      int num = j;
-      hyp.clear_jetindices();
-      for (unsigned int k=0; k<n_jets; k++) {
-	// num is the k-th digit of j if you
-	// write j in a base-3 system. According
-	// to the value of this digit (which takes
-	// values from 0 to 2,
-	// in all possible combinations with the other digits),
-	// decide how to treat the jet.
-	
-	if(num%3==0) {
-	  tophad_v4 = tophad_v4 + m_bcc->jets->at(k).v4();
-	  hyp.add_tophad_jet_index(k);
-	  hadjets++;
-	}
-	
-	if(num%3==1) {
-	  toplep_v4 = toplep_v4 + m_bcc->jets->at(k).v4();
-	  hyp.add_toplep_jet_index(k);
-	  lepjets++;
-	}
-	//if(num%3==2); //do not take this jet
-	
-	//shift the trigits of num to the right:
-	num /= 3;
-      }
-      
-      //search jet with highest pt assigned to leptonic top
-      float maxpt=-999;
-      int maxind=-1;
-      for(unsigned int i=0; i<hyp.toplep_jets_indices().size(); ++i){
-	float pt = m_bcc->jets->at(hyp.toplep_jets_indices().at(i)).pt();
-	if(pt>maxpt){
-	  maxpt=pt;
-	  maxind=hyp.toplep_jets_indices().at(i);
-	}
-      }
-      hyp.set_blep_index(maxind);
-
-      
-      //fill only hypotheses with at least one jet assigned to each top quark
-      if(hadjets>0 && lepjets>0){
-	hyp.set_tophad_v4(tophad_v4);
-	hyp.set_toplep_v4(toplep_v4);
-	m_bcc->recoHyps->push_back(hyp);
-      }
-    }
-  }
-  
 }
 
 
@@ -557,4 +536,6 @@ void EventCalc::PrintGenParticles(string name)
   }
 
 }
+
+
 

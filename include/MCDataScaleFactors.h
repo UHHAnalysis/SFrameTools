@@ -1,8 +1,10 @@
 #ifndef MCDataScaleFactors_H
 #define MCDataScaleFactors_H
 
-#include "TF1.h"
 #include <TGraphAsymmErrors.h>
+#include <TH2F.h>
+#include <TF1.h>
+#include <TF2.h>
 
 #include "SFrameTools/include/Utils.h"
 #include "SFrameTools/include/EventCalc.h"
@@ -49,19 +51,25 @@ public:
     ///return the weighted correction factor for electron trigger
     double GetElectronTrigWeight();
 
+    ///return the weighted correction factor for electron MVA ID
+    double GetElectronMVAIDWeight();
+
+    ///return the weighted correction factor for Ele30_OR_PFJet320 trigger
+    double GetElectronORJetTrigWeight(const std::string& sys="none");
+
     ///return the weighted correction factor for electrons (right now: only trigger)
     double GetElectronWeight();
 
     ///check if the scale factors are up-to-date, fill them only once per run
     ///implemented for run-dependent scale factors
     bool IsUpToDate();
-    
+
     /// return the bin number of the muon eta bin
     int GetMuonEtaBin(double eta);
 
     /// return the bin number of a graph corresponding to a certain value of the x coordinate
     int GetBin(double x, TGraphAsymmErrors* graph);
-    
+
     void DoUpVarMuonSF(bool f=true){m_muon_unc=true; m_syst_shift=e_Up;}
     void DoDownVarMuonSF(bool f=true){m_muon_unc=true; m_syst_shift=e_Down;}
 
@@ -70,7 +78,7 @@ public:
 
     void DoUpVarTauSF(bool f=true){m_tau_unc=true; m_syst_shift=e_Up;}
     void DoDownVarTauSF(bool f=true){m_tau_unc=true; m_syst_shift=e_Down;}
-    
+
     void DoUpVarTauEleSF(bool f=true){m_tauele_unc=true; m_syst_shift=e_Up;}
     void DoDownVarTauEleSF(bool f=true){m_tauele_unc=true; m_syst_shift=e_Down;}
 
@@ -81,7 +89,7 @@ public:
 
    double GetDecayModeFindingWeight();
 
-   
+
     /// return the scale factor for the tau efficiency
     double GetTauEffUnc();
 
@@ -90,21 +98,22 @@ private:
     E_SystShift m_syst_shift;
     std::vector<std::pair<std::string, double> > m_correctionlist;
     bool m_apply;                   // should any scale factors be applied?
-    bool m_muon_unc;                // do shift of muon scale factors 
-    bool m_ele_unc;                 // do shift of electron scale factors 
-    bool m_tau_unc;                 // do shift of tau scale factors 
+    bool m_muon_unc;                // do shift of muon scale factors
+    bool m_ele_unc;                 // do shift of electron scale factors
+    bool m_tau_unc;                 // do shift of tau scale factors
     bool m_tauele_unc;               // do shift of e -> tau fake rate
     int m_current_run;              // run for which the scale factors are vali
-    bool m_tau_eff_unc;             // do shift of tau efficiency scale factors 
    TString m_channel;
-   
-    
+   bool m_tau_eff_unc;             // do shift of tau efficiency scale factors
+
+
+
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_id;    // two arrays: first index stands for eta bin, second for run period
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_trig;  // two arrays: first index stands for eta bin, second for run period
     std::vector< std::vector<TGraphAsymmErrors*> > m_mu_iso;   // two arrays: first index stands for eta bin, second for run period
     std::vector<double> m_weights;  // weights for different runs
     std::vector<double> m_ele_trig; // two-parameter function of relative isolation times additional weight
-
+    TH2F* m_ele_mva; //2D histog for Egamma-POG SF for Electron-ID with TrigMVA
 };
 
 
@@ -113,7 +122,6 @@ private:
  *
  *
  */
-
 
 class BtagFunction {
 public:
@@ -124,12 +132,73 @@ public:
     virtual ~BtagFunction() {
     };
 
-    virtual float value(const float &x) const = 0;
-    virtual float value_plus(const float &x) const = 0;
-    virtual float value_minus(const float &x) const = 0;
+    virtual float value(const float &x, const float &y) const = 0;
+    virtual float value_plus(const float &x, const float &y) const = 0;
+    virtual float value_minus(const float &x, const float &y) const = 0;
 
 protected:
     E_BtagType m_btagtype;
+};
+
+/**
+ *  @short modules to apply data-MC toptagging corrections
+ *
+ *
+ */
+
+class ToptagFunction {
+public:
+    ToptagFunction() {
+    };
+
+    virtual ~ToptagFunction() {
+    };
+
+    virtual float value(const float&x, const float &y) const = 0;
+    virtual float value_plus(const float&x, const float &y) const = 0;
+    virtual float value_minus(const float&x, const float &y) const = 0;
+};
+
+class ToptagScale: public ToptagFunction {
+public:
+
+    ToptagScale();
+
+    virtual float value(const float &jet_pt, const float &jet_eta) const;
+    virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt, jet_eta) + error(jet_pt, jet_eta);
+    }
+
+    virtual float value_minus(const float &jet_pt, const float &jet_eta) const {
+      const float value_ = value(jet_pt,jet_eta) - error(jet_pt,jet_eta);
+        return value_ > 0 ? value_ : 0;
+    }
+
+protected:
+
+    virtual float error(const float &jet_pt, const float &jet_eta) const;
+
+};
+
+class TopMistagScale: public ToptagFunction {
+public:
+
+    TopMistagScale();
+
+    virtual float value(const float &jet_pt, const float &jet_eta) const;
+    virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt, jet_eta) + error(jet_pt, jet_eta);
+    }
+
+    virtual float value_minus(const float &jet_pt, const float &jet_eta) const {
+      const float value_ = value(jet_pt,jet_eta) - error(jet_pt,jet_eta);
+        return value_ > 0 ? value_ : 0;
+    }
+
+protected:
+
+    virtual float error(const float &jet_pt, const float &jet_eta) const;
+
 };
 
 
@@ -138,26 +207,26 @@ public:
 
     BtagScale(E_BtagType);
 
-    virtual float value(const float &jet_pt) const;
-    virtual float value_plus(const float &jet_pt) const {
-        return value(jet_pt) + error(jet_pt);
+    virtual float value(const float &jet_pt, const float &jet_eta) const;
+    virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt, jet_eta) + error(jet_pt, jet_eta);
     }
 
-    virtual float value_minus(const float &jet_pt) const {
-        const float value_ = value(jet_pt) - error(jet_pt);
+    virtual float value_minus(const float &jet_pt, const float &jet_eta) const {
+      const float value_ = value(jet_pt,jet_eta) - error(jet_pt,jet_eta);
         return value_ > 0 ? value_ : 0;
     }
 
 protected:
 
-    virtual float error(const float &jet_pt) const;
+    virtual float error(const float &jet_pt, const float &jet_eta) const;
 
 private:
 
     TF1 * _scale;
     std::vector<float> _errors;
     std::vector<float> _bins;
-    const unsigned int find_bin(const float &jet_pt) const;
+    const unsigned int find_bin(const float &jet_pt, const float &jet_eta) const;
 };
 
 
@@ -168,7 +237,7 @@ public:
 
 protected:
 
-    virtual float error(const float &jet_pt) const;
+    virtual float error(const float &jet_pt, const float &jet_eta) const;
 
 };
 
@@ -178,36 +247,76 @@ public:
 
     LtagScale(E_BtagType btagtype);
 
-    virtual float value(const float &jet_pt) const;
-    virtual float value_plus(const float &jet_pt) const;
-    virtual float value_minus(const float &jet_pt) const;
+    virtual float value(const float &jet_pt, const float &jet_eta ) const;
+    virtual float value_plus(const float &jet_pt, const float &jet_eta) const;
+    virtual float value_minus(const float &jet_pt, const float &jet_eta) const;
+
+private:
+
+    TF2 * _scale;
+    TF2 * _scale_plus;
+    TF2 * _scale_minus;
+
+};
+
+class ToptagEfficiency: public ToptagFunction {
+public:
+
+  ToptagEfficiency();
+
+    virtual float value(const float &jet_p, const float &jet_etat) const;
+    virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt,jet_eta);
+    }
+
+    virtual float value_minus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt,jet_eta);
+    }
 
 private:
 
     TF1 * _scale;
-    TF1 * _scale_plus;
-    TF1 * _scale_minus;
 
 };
 
 
+class TopMistagEfficiency: public ToptagFunction {
+public:
+
+  TopMistagEfficiency();
+
+    virtual float value(const float &jet_p, const float &jet_etat) const;
+    virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt,jet_eta);
+    }
+
+    virtual float value_minus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt,jet_eta);
+    }
+
+private:
+
+    TF1 * _scale;
+
+};
+
 class BtagEfficiency: public BtagFunction {
 public:
 
-    BtagEfficiency(E_BtagType, E_LeptonSelection);
+  BtagEfficiency(E_BtagType, E_LeptonSelection, bool dosubjets=false, bool dotopjets=false);
 
-    virtual float value(const float &jet_pt) const;
-    virtual float value_plus(const float &jet_pt) const {
-        return value(jet_pt);
+    virtual float value(const float &jet_p, const float &jet_etat) const;
+    virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt,jet_eta);
     }
 
-    virtual float value_minus(const float &jet_pt) const {
-        return value(jet_pt);
+    virtual float value_minus(const float &jet_pt, const float &jet_eta) const {
+      return value(jet_pt,jet_eta);
     }
 
 protected:
 
-    const unsigned int find_bin(const float &jet_pt) const;
+    const unsigned int find_bin(const float &jet_pt, const float &jet_eta) const;
     std::vector<float> _values;
     std::vector<float> _bins;
 
@@ -217,7 +326,7 @@ protected:
 class CtagEfficiency: public BtagEfficiency {
 public:
 
-    CtagEfficiency(E_BtagType, E_LeptonSelection);
+    CtagEfficiency(E_BtagType, E_LeptonSelection, bool dosubjets=false, bool dotopjets=false);
 
 };
 
@@ -225,10 +334,50 @@ public:
 class LtagEfficiency: public BtagEfficiency {
 public:
 
-    LtagEfficiency(E_BtagType, E_LeptonSelection);
+    LtagEfficiency(E_BtagType, E_LeptonSelection, bool dosubjets=false, bool dotopjets=false);
 
 };
 
+/**
+ *  @short module to apply data-MC scale factors for top tagging
+ *
+ *
+ */
+class TopTaggingScaleFactors {
+public:
+    /**
+     * constructor
+     *
+     * argument: systematic shift
+     * @see E_SystShift
+     */
+    TopTaggingScaleFactors(
+	 E_SystShift sys_toptag=e_Default, E_SystShift sys_mistag=e_Default
+    );
+    ///Default destructor
+    ~TopTaggingScaleFactors() {};
+
+    ///return the weighted correction factor
+    double GetWeight();
+
+private:
+
+    E_SystShift m_sys_toptag;
+    E_SystShift m_sys_mistag;
+
+    float scale(const bool &is_tagged,
+                const float &jet_pt,
+                const float &jet_eta,
+                const ToptagFunction* sf,
+                const ToptagFunction* eff,
+                const E_SystShift &sytematic);
+
+    ToptagFunction* _scale_toptag;
+    ToptagFunction* _eff_toptag;
+    ToptagFunction* _scale_topmistag;
+    ToptagFunction* _eff_topmistag;
+
+};
 
 /**
  *  @short module to apply data-MC scale factors for b tagging
@@ -244,7 +393,7 @@ public:
      * @see E_SystShift
      */
     BTaggingScaleFactors(
-        E_BtagType, E_LeptonSelection, E_SystShift sys_bjets=e_Default, E_SystShift sys_ljets=e_Default
+	 E_BtagType, E_LeptonSelection, E_SystShift sys_bjets=e_Default, E_SystShift sys_ljets=e_Default, bool use_subjet_btags=true
     );
     ///Default destructor
     ~BTaggingScaleFactors() {};
@@ -261,40 +410,50 @@ private:
 
     float scale(const bool &is_tagged,
                 const float &jet_pt,
+                const float &jet_eta,
                 const BtagFunction* sf,
                 const BtagFunction* eff,
                 const E_SystShift &sytematic);
 
     float scale_data(const bool &is_tagged,
                      const float &jet_pt,
+		     const float &jet_eta,
                      const BtagFunction* sf,
                      const BtagFunction* eff,
                      const E_SystShift &sytematic);
 
     BtagFunction* _scale_btag;
     BtagFunction* _eff_btag;
+    BtagFunction* _eff_btag_subj;
+    BtagFunction* _eff_btag_topj;
 
     BtagFunction* _scale_ctag;
     BtagFunction* _eff_ctag;
+    BtagFunction* _eff_ctag_subj;
+    BtagFunction* _eff_ctag_topj;
 
     BtagFunction* _scale_light;
     BtagFunction* _eff_light;
+    BtagFunction* _eff_light_subj;
+    BtagFunction* _eff_light_topj;
+
+    bool m_use_subjet_btags;
 };
 
 class JetpTReweightingInWJets {
 public:
-   
+
    JetpTReweightingInWJets();
    ///Default destructor
    ~JetpTReweightingInWJets() {};
-   
+
    ///return the weighted correction factor
    double GetWeight();
-   
+
    void DoUpVarJetSF(bool f=true){m_jetpTreweigting_unc=true; m_syst_shift=e_Up;}
    void DoDownVarJetSF(bool f=true){m_jetpTreweigting_unc=true; m_syst_shift=e_Down;}
-   
-   
+
+
 private:
    E_SystShift m_syst_shift;
    bool m_jetpTreweigting_unc; // do shift of jet pT reweighting in W+jets
