@@ -99,11 +99,11 @@ double PDFWeights::GetWeight(unsigned int index){
 
   std::vector<double> pdf_weights = GetWeightList();
 
-  if(index>pdf_weights.size() || index<0){
+  if(index>pdf_weights.size() || index<1){
     m_logger << ERROR << "PDF index "  << index << " out of range, should be >=1 and <= " << pdf_weights.size() << SLogger::endmsg;
     return 1.;
   }
 
-  return pdf_weights.at(index);
+  return pdf_weights.at(index-1);
 
 }

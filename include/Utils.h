@@ -59,7 +59,6 @@ enum E_SysUnc {
   e_TauEffSF, /**< tau identification scale factor uncertainty */
   e_TauEnergy,/**< tau energy scale uncertainty */
   e_PDF,     /**< PDF uncertainty */
-  e_JetSF,
   e_TER,
 };
 
