@@ -284,6 +284,7 @@ class TopMistagEfficiency: public ToptagFunction {
 public:
 
   TopMistagEfficiency();
+  ~TopMistagEfficiency() { delete _scale; }
 
     virtual float value(const float &jet_p, const float &jet_etat) const;
     virtual float value_plus(const float &jet_pt, const float &jet_eta) const {
