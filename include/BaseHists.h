@@ -11,6 +11,7 @@
 
 #include "core/include/SCycleBase.h"
 #include "core/include/SError.h"
+#include "SFrameTools/include/Objects.h"
 
 // Forward declaration(s):
 class TDirectory;
@@ -40,6 +41,7 @@ public:
    virtual void Init() = 0;
 
    virtual void Fill() = 0;
+  virtual void Fill2(TopJet topjet, double mva_value) {}
 
    // This is called at the end of the histograms. IMPORTANT: it's best not to use this method, since
    // it's called on each proof worker node (in proof node), and thus things like taking ratios of histograms
