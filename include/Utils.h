@@ -119,6 +119,9 @@ private:
 // end of n_bins bins, suitable for passing it to the TH1 constructor.
 boost::shared_array<double> log_binning(size_t n_bins, double xmin, double xmax);
 
+//tmva tagger variables
+
+
 float HiggsBRweight();
 
 int subJetBTag(TopJet topjet, E_BtagType type, TString mode="default",TString filename="");
@@ -139,7 +142,7 @@ float HepTopTagMatchPt(TopJet topjet);
 
 /* bool HiggsTag(TopJet topjet, E_BtagType type1, E_BtagType type2); */
 
-bool HepTopTagFull(TopJet topjet);
+bool HepTopTagFull(TopJet topjet, std::vector<PFParticle>* allparts);
 
 /// return if a jet is tagged given a btag operating point
 bool IsTagged(Jet &, E_BtagType);
