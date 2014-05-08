@@ -123,13 +123,6 @@ boost::shared_array<double> log_binning(size_t n_bins, double xmin, double xmax)
 
 
 float HiggsBRweight();
-Double_t HelicityAngle(TLorentzVector j1, TLorentzVector j2);
-bool jet_matches_top(TopJet topjet, float cone);
-bool jet_decays_hadronic(TopJet topjet, float cone);
-bool jet_decays_leptonic(TopJet topjet, float cone);
-bool vec_matches_leptonic_decay(LorentzVector vec, float cone);
-bool decay_products_in_jet_had(TopJet topjet, float cone);
-double distance_quark(TopJet topjet, int nquarks, float cone);
 
 int subJetBTag(TopJet topjet, E_BtagType type, TString mode="default",TString filename="");
 
