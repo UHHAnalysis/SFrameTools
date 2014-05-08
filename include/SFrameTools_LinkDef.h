@@ -37,6 +37,8 @@
 #pragma link C++ class pair<double,unsigned int>+;
 #pragma link C++ class ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiE4D<Double32_t> >+;
 #pragma link C++ class ROOT::Math::PtEtaPhiE4D<Double32_t>+;
+#pragma link C++ class map<int,LuminosityUtils::LumiBinInfo*>;
+#pragma link C++ class map<LuminosityUtils::RunNr_LbNr,int>;
 
 // needed by PROOF (don't really know why)
 #pragma link C++ class pair<const string,string*>;
