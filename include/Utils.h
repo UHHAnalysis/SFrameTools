@@ -120,7 +120,7 @@ private:
 boost::shared_array<double> log_binning(size_t n_bins, double xmin, double xmax);
 
 //tmva tagger variables
-
+Double_t HelicityAngle(TLorentzVector j1, TLorentzVector j2);
 
 float HiggsBRweight();
 
