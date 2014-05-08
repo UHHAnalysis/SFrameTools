@@ -24,7 +24,7 @@ public:
      * second argument: systematic shift
      * @see E_SystShift
      */
-    LeptonScaleFactors(std::vector<std::string> correctionlist);
+    LeptonScaleFactors(std::vector<std::string> correctionlist, std::string channel="");
     ///Default destructor
     ~LeptonScaleFactors() {};
 

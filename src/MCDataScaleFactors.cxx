@@ -2,7 +2,7 @@
 #include "include/Utils.h"
 #include <TMath.h>
 
-LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist)
+LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist, std::string channel)
 {
     m_syst_shift = e_Default;
     m_muon_unc = false;
