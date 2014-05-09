@@ -164,33 +164,36 @@ def getinputfilenames(configfile):
         if not file[:5]=="/eos/": rootfilenamelist += file+", "
     return rootfilenamelist[:-2]
 
-def createcondortxt(jobname, jobnumber, jobdir):
-    rootfiles = getoutputfilenames(jobname+"/xml/"+jobname+"_"+str(jobnumber)+".xml")
-    additionalfiles = getinputfilenames(jobname+"/xml/"+jobname+"_"+str(jobnumber)+".xml")
-    os.chdir(jobname+"/configs")
-    condorfile = open(jobname+"_"+str(jobnumber)+".txt", 'w')
-    outputdir = options.output
-    if outputdir == "" : outputdir = jobdir+"/results"
+def createcondortxt(options, jobnumber, jobdir):
+    rootfiles = getoutputfilenames(options.jobname+"/xml/"+options.jobname+"_"+str(jobnumber)+".xml").replace(".root","."+str(jobnumber)+".root")
+    md5file = 'md5sums.'+str(jobnumber)+'.txt'
+    outputfiles = rootfiles+", "+md5file
+    additionalfiles = getinputfilenames(options.jobname+"/xml/"+options.jobname+"_"+str(jobnumber)+".xml")
+    os.chdir(options.jobname+"/configs")
+    condorfile = open(options.jobname+"_"+str(jobnumber)+".txt", 'w')
+    if options.output == "" : options.output = jobdir+"/results"
+    if len(options.output)>5 and options.output[:5] == "/eos/": outputfiles=""
     print >> condorfile, """universe = vanilla
 Executable = %s/configs/%s_%d.sh
 Requirements = Memory >= 199 &&OpSys == "LINUX"&& (Arch != "DUMMY" )&& Disk > 1000000
++BigMemoryJob = TRUE
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
 InitialDir = %s
 Transfer_Input_Files = %s/configs/%s.tgz%s
-Transfer_Output_Files = %s, %s
+Transfer_Output_Files = %s
 Output = %s/logs/%s_%d.stdout
 Error = %s/logs/%s_%d.stderr
 Log = %s/logs/%s_%d.log
 notify_user = ${LOGNAME}@FNAL.GOV
 Arguments = %s 0
-Queue 1""" %(jobname, jobname, jobnumber, outputdir, jobdir, jobname, additionalfiles, rootfiles.replace(".root","."+str(jobnumber)+".root"), 'md5sums.'+str(jobnumber)+'.txt', jobdir, jobname, jobnumber, jobdir, jobname, jobnumber, jobdir, jobname, jobnumber, os.getcwd())
+Queue 1""" %(options.jobname, options.jobname, jobnumber, options.output, jobdir, options.jobname, additionalfiles, outputfiles, jobdir, options.jobname, jobnumber, jobdir, options.jobname, jobnumber, jobdir, options.jobname, jobnumber, os.getcwd())
     condorfile.close()
     os.chdir("../..")
 
-def createcondorscript(jobname, jobnumber):
-    os.chdir(jobname+"/configs")
-    scriptname = jobname+"_"+str(jobnumber)+".sh"
+def createcondorscript(options, jobnumber):
+    os.chdir(options.jobname+"/configs")
+    scriptname = options.jobname+"_"+str(jobnumber)+".sh"
     scriptfile = open(scriptname, 'w')
     print >> scriptfile, """#!/bin/bash
 WORKINGDIR=$PWD
@@ -214,7 +217,23 @@ for filename in `/bin/ls *.root`; do
     md5sum $newfilename >> md5sums.%d.txt
 done
 mv *.root $WORKINGDIR
-mv md5sums.%d.txt $WORKINGDIR""" %(jobname, jobnumber, jobname, jobname, jobnumber, jobnumber, jobnumber, jobnumber)
+mv md5sums.%d.txt $WORKINGDIR""" %(options.jobname, jobnumber, options.jobname, options.jobname, jobnumber, jobnumber, jobnumber, jobnumber)
+    if len(options.output)>5 and options.output[:5] == "/eos/": print >> scriptfile, """
+cd $WORKINGDIR
+OUTPUTDIR=%s/
+for FILE in *.root *.txt; do
+    /bin/cp $FILE $OUTPUTDIR
+    LOCALMD5=`md5sum $FILE | awk '{print $1}'`
+    REMOTEMD5=`md5sum ${OUTPUTDIR}/${FILE} | awk '{print $1}'`
+    COUNTER=0
+    while [ "$LOCALMD5" != "$REMOTEMD5" -a "$COUNTER" -lt 5 ]; do
+        sleep 30
+        /bin/cp $FILE $OUTPUTDIR
+        LOCALMD5=`md5sum $FILE | awk '{print $1}'`
+        REMOTEMD5=`md5sum ${OUTPUTDIR}/${FILE} | awk '{print $1}'`
+        let COUNTER+=1
+    done
+done""" %(options.output)
     os.chmod(scriptname, 493) #493==755 in python chmod
     os.chdir("../..")
 
@@ -392,6 +411,7 @@ def checkstdout(jobname, jobnumber):
 
 def getjobstatus(statusdict, jobid, jobstatus):
     if jobid not in statusdict and jobstatus != "Killed" and jobstatus != "Cleaned": return "Missing"
+    elif jobid not in statusdict: return jobstatus
     jobstatuscode = statusdict[jobid]
     if jobstatuscode=="I": return "Idle"
     if jobstatuscode=="R": return "Running"
@@ -400,14 +420,12 @@ def getjobstatus(statusdict, jobid, jobstatus):
     return "Unknown: " + jobstatuscode
 
 def getjobinfo(jobname,jobnumber,resubmitjobs,jobstatus):
-    outputfiles = os.popen("grep Transfer_Output_Files "+jobname+"/configs/"+jobname+"_"+str(jobnumber)+".txt").readline().strip("\n")
-    outputfiles = outputfiles.split(" ")[2:]
+    rootfiles = getoutputfilenames(jobname+"/xml/"+jobname+"_"+str(jobnumber)+".xml").replace(".root","."+str(jobnumber)+".root").split(",")
     outputdirectory = os.popen("grep InitialDir "+jobname+"/configs/"+jobname+"_"+str(jobnumber)+".txt | awk '{print $3}'").readline().strip("\n")
     jobinfo=""
     offset="                                     "
-    for file in outputfiles:
-        file=file.strip(",")
-        if file.find(".root")==-1: continue
+    for file in rootfiles:
+        file=file.strip(", ")
         if jobinfo != "": jobinfo += "\n"+offset
         filepath = outputdirectory+"/"+file
         jobstatus = open(options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status").read().strip("\n")
@@ -437,7 +455,7 @@ def getjobinfo(jobname,jobnumber,resubmitjobs,jobstatus):
                     os.system("echo 'Done' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
                     jobstatus="Done"
                 if not iszombie: rootfile.Close()
-        else:
+        elif jobstatus=="Done" or jobstatus=="Missing":
             jobinfo += " Output file "+file+" is not found!"
             if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
             jobstatus="Error"
@@ -484,8 +502,8 @@ if options.create:
     for xmlfile in os.popen("/bin/ls "+options.jobname+"/xml/*.xml").readlines():
         xmlfile = xmlfile.strip("\n")
         jobnumber = int(xmlfile[xmlfile.rfind("_")+1:xmlfile.rfind(".")])
-        createcondortxt(options.jobname,jobnumber,workingdir+"/"+options.jobname)
-        createcondorscript(options.jobname,jobnumber)
+        createcondortxt(options,jobnumber,workingdir+"/"+options.jobname)
+        createcondorscript(options,jobnumber)
         os.system("echo 'Created' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
 
     if not options.notar:
@@ -591,7 +609,7 @@ if (options.status):
     options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip("\n"))
     statusdict={}
     for line in condorstatus:
-        line = line.strip("\n").split()
+        line = line.split()
         statusdict[line[0][:-2]]=line[5]
     for jobnumber in range(1,options.numjobs+1):
         jobinfo=""
