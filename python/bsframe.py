@@ -36,6 +36,7 @@ parser.add_option("--toptag", dest="tjets", default="", help="Apply toptag scale
 parser.add_option("--JEC", dest="jec", default="", help="Apply JEC Systematic: up or down")
 parser.add_option("--JER", dest="jer", default="", help="Apply JER Systematic: up or down")
 parser.add_option("--EleSF", dest="elesf", default="", help="Apply EleSF Systematic: up or down")
+parser.add_option("--MuSF", dest="musf", default="", help="Apply MuonSF Systematic: up or down")
 parser.add_option("--PDF", dest="pdf", default="", help="Apply PDF Systematics: CT10 or cteq66")
 parser.add_option("--PDFDir", dest="pdfdir", default="", help="Location of PDF systematic files.")
 parser.add_option("--filter", dest="filter", default="", help="Run only samples that pass filter.")
@@ -53,6 +54,7 @@ if options.jobname == "":
     if options.jec != "": options.jobname += "_JEC"+options.jec
     if options.jer != "": options.jobname += "_JER"+options.jer
     if options.elesf != "": options.jobname += "_EleSF"+options.elesf
+    if options.musf != "": options.jobname += "_MuSF"+options.musf
     if options.pdf != "": options.jobname += "_"+options.pdf
     if options.append != "": options.jobname += "_"+options.append
 else:
@@ -122,6 +124,12 @@ def applyjesystematic(infile,jectype,jecdirection):
 def applyelesfsystematic(infile,direction):
     infile=applypostfix(infile,"EleSF"+direction)
     infile=additem(infile,"SystematicUncertainty","EleSF")
+    infile=additem(infile,"SystematicVariation",direction)
+    return infile
+
+def applymusfsystematic(infile,direction):
+    infile=applypostfix(infile,"MuSF"+direction)
+    infile=additem(infile,"SystematicUncertainty","MuonSF")
     infile=additem(infile,"SystematicVariation",direction)
     return infile
 
@@ -339,6 +347,7 @@ def createxmlfile(infile, jobnumber, datablocklist, datablocknumber, blockindex,
     if options.jec != "": infile = applyjesystematic(infile, "JEC", options.jec)
     if options.jer != "": infile = applyjesystematic(infile, "JER", options.jer)
     if options.elesf != "": infile = applyelesfsystematic(infile, options.elesf)
+    if options.musf != "": infile = applymusfsystematic(infile, options.musf)
     if options.pileupfile != "": infile = changepileupfile(infile, options.pileupfile)
     if options.bjets != "": infile = applybjetsystematic(infile, options.bjets)
     if options.tjets != "": infile = applytjetsystematic(infile, options.tjets)
@@ -400,13 +409,13 @@ def checklog(jobname, jobnumber):
     errorline = errorinfo[errorinfo.find(")")+2:]
     return errorline
 
-def checkstdout(jobname, jobnumber):
-    errors = os.popen('egrep -i "exit|break|exceed|error|traceback|aborted|E R R O R|find tree AnalysisTree|fatal" '+jobname+"/logs/"+jobname+"_"+str(jobnumber)+".stdout").readlines()
+def checkstdout(jobname, jobnumber, offset):
+    errors = os.popen('egrep -i "exit|break|exceed|error|traceback|aborted|E R R O R|find tree AnalysisTree|fatal" '+jobname+"/logs/"+jobname+"_"+str(jobnumber)+".stdout | sort -u").readlines()
     returnerror = ""
     if len(errors)>0:
-        error = errors[0].strip("\n")
-        if error.find(":") != -1: returnerror = error.split(":")[-1:][0]
-        else: returnerror=error
+        for error in errors: returnerror += offset+error
+#             if error.find(":") != -1: returnerror += offset+error.split(":")[-1:][0]
+#             else: returnerror += effset+error
     return returnerror
 
 def getjobstatus(statusdict, jobid, jobstatus):
@@ -459,18 +468,18 @@ def getjobinfo(jobname,jobnumber,resubmitjobs,jobstatus):
             jobinfo += " Output file "+file+" is not found!"
             if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
             jobstatus="Error"
-        if jobstatus=="Held":
-            if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
-        if jobstatus=="Done":
-            stdouterror = checkstdout(jobname, jobnumber)
-            logerror = ""
-            #logerror = checklog(jobname, jobnumber)
-            if (stdouterror != "" or logerror != "") and resubmitjobs.count(jobnumber)<1:
-                resubmitjobs.append(jobnumber)
-                os.system("echo 'Error' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
-                jobstatus="Error"
-            if stdouterror != "": jobinfo += "\n"+offset+stdouterror
-            if logerror != "": jobinfo += "\n"+offset+logerror
+    if jobstatus=="Held":
+        if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
+    if jobstatus=="Done" or jobstatus=="Error":
+        stdouterror = checkstdout(jobname, jobnumber, offset)
+        logerror = ""
+        #logerror = checklog(jobname, jobnumber)
+        if (stdouterror != "" or logerror != "") and resubmitjobs.count(jobnumber)<1:
+            resubmitjobs.append(jobnumber)
+            os.system("echo 'Error' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
+            jobstatus="Error"
+        if stdouterror != "": jobinfo += "\n"+stdouterror
+        if logerror != "": jobinfo += "\n"+offset+logerror
     return jobinfo,jobstatus
 
 if not options.create and options.submit=="" and options.kill=="" and options.clean=="" and not options.status:
