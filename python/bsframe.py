@@ -36,6 +36,7 @@ parser.add_option("--toptag", dest="tjets", default="", help="Apply toptag scale
 parser.add_option("--JEC", dest="jec", default="", help="Apply JEC Systematic: up or down")
 parser.add_option("--JER", dest="jer", default="", help="Apply JER Systematic: up or down")
 parser.add_option("--EleSF", dest="elesf", default="", help="Apply EleSF Systematic: up or down")
+parser.add_option("--MuSF", dest="musf", default="", help="Apply MuonSF Systematic: up or down")
 parser.add_option("--PDF", dest="pdf", default="", help="Apply PDF Systematics: CT10 or cteq66")
 parser.add_option("--PDFDir", dest="pdfdir", default="", help="Location of PDF systematic files.")
 parser.add_option("--filter", dest="filter", default="", help="Run only samples that pass filter.")
@@ -53,6 +54,7 @@ if options.jobname == "":
     if options.jec != "": options.jobname += "_JEC"+options.jec
     if options.jer != "": options.jobname += "_JER"+options.jer
     if options.elesf != "": options.jobname += "_EleSF"+options.elesf
+    if options.musf != "": options.jobname += "_MuSF"+options.musf
     if options.pdf != "": options.jobname += "_"+options.pdf
     if options.append != "": options.jobname += "_"+options.append
 else:
@@ -125,6 +127,12 @@ def applyelesfsystematic(infile,direction):
     infile=additem(infile,"SystematicVariation",direction)
     return infile
 
+def applymusfsystematic(infile,direction):
+    infile=applypostfix(infile,"MuSF"+direction)
+    infile=additem(infile,"SystematicUncertainty","MuonSF")
+    infile=additem(infile,"SystematicVariation",direction)
+    return infile
+
 def applypdfsystematics(infile, options, pdfindex):
     infile=applypostfix(infile, options.pdf+"_"+str(pdfindex))
     infile=additem(infile,"SystematicUncertainty","PDF")
@@ -164,13 +172,15 @@ def getinputfilenames(configfile):
         if not file[:5]=="/eos/": rootfilenamelist += file+", "
     return rootfilenamelist[:-2]
 
-def createcondortxt(jobname, jobnumber, jobdir):
-    rootfiles = getoutputfilenames(jobname+"/xml/"+jobname+"_"+str(jobnumber)+".xml")
-    additionalfiles = getinputfilenames(jobname+"/xml/"+jobname+"_"+str(jobnumber)+".xml")
-    os.chdir(jobname+"/configs")
-    condorfile = open(jobname+"_"+str(jobnumber)+".txt", 'w')
-    outputdir = options.output
-    if outputdir == "" : outputdir = jobdir+"/results"
+def createcondortxt(options, jobnumber, jobdir):
+    rootfiles = getoutputfilenames(options.jobname+"/xml/"+options.jobname+"_"+str(jobnumber)+".xml").replace(".root","."+str(jobnumber)+".root")
+    md5file = 'md5sums.'+str(jobnumber)+'.txt'
+    outputfiles = rootfiles+", "+md5file
+    additionalfiles = getinputfilenames(options.jobname+"/xml/"+options.jobname+"_"+str(jobnumber)+".xml")
+    os.chdir(options.jobname+"/configs")
+    condorfile = open(options.jobname+"_"+str(jobnumber)+".txt", 'w')
+    if options.output == "" : options.output = jobdir+"/results"
+    if len(options.output)>5 and options.output[:5] == "/eos/": outputfiles=""
     print >> condorfile, """universe = vanilla
 Executable = %s/configs/%s_%d.sh
 Requirements = Memory >= 199 &&OpSys == "LINUX"&& (Arch != "DUMMY" )&& Disk > 1000000
@@ -179,19 +189,19 @@ Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
 InitialDir = %s
 Transfer_Input_Files = %s/configs/%s.tgz%s
-Transfer_Output_Files = %s, %s
+Transfer_Output_Files = %s
 Output = %s/logs/%s_%d.stdout
 Error = %s/logs/%s_%d.stderr
 Log = %s/logs/%s_%d.log
 notify_user = ${LOGNAME}@FNAL.GOV
 Arguments = %s 0
-Queue 1""" %(jobname, jobname, jobnumber, outputdir, jobdir, jobname, additionalfiles, rootfiles.replace(".root","."+str(jobnumber)+".root"), 'md5sums.'+str(jobnumber)+'.txt', jobdir, jobname, jobnumber, jobdir, jobname, jobnumber, jobdir, jobname, jobnumber, os.getcwd())
+Queue 1""" %(options.jobname, options.jobname, jobnumber, options.output, jobdir, options.jobname, additionalfiles, outputfiles, jobdir, options.jobname, jobnumber, jobdir, options.jobname, jobnumber, jobdir, options.jobname, jobnumber, os.getcwd())
     condorfile.close()
     os.chdir("../..")
 
-def createcondorscript(jobname, jobnumber):
-    os.chdir(jobname+"/configs")
-    scriptname = jobname+"_"+str(jobnumber)+".sh"
+def createcondorscript(options, jobnumber):
+    os.chdir(options.jobname+"/configs")
+    scriptname = options.jobname+"_"+str(jobnumber)+".sh"
     scriptfile = open(scriptname, 'w')
     print >> scriptfile, """#!/bin/bash
 WORKINGDIR=$PWD
@@ -215,7 +225,23 @@ for filename in `/bin/ls *.root`; do
     md5sum $newfilename >> md5sums.%d.txt
 done
 mv *.root $WORKINGDIR
-mv md5sums.%d.txt $WORKINGDIR""" %(jobname, jobnumber, jobname, jobname, jobnumber, jobnumber, jobnumber, jobnumber)
+mv md5sums.%d.txt $WORKINGDIR""" %(options.jobname, jobnumber, options.jobname, options.jobname, jobnumber, jobnumber, jobnumber, jobnumber)
+    if len(options.output)>5 and options.output[:5] == "/eos/": print >> scriptfile, """
+cd $WORKINGDIR
+OUTPUTDIR=%s/
+for FILE in *.root *.txt; do
+    /bin/cp $FILE $OUTPUTDIR
+    LOCALMD5=`md5sum $FILE | awk '{print $1}'`
+    REMOTEMD5=`md5sum ${OUTPUTDIR}/${FILE} | awk '{print $1}'`
+    COUNTER=0
+    while [ "$LOCALMD5" != "$REMOTEMD5" -a "$COUNTER" -lt 5 ]; do
+        sleep 30
+        /bin/cp $FILE $OUTPUTDIR
+        LOCALMD5=`md5sum $FILE | awk '{print $1}'`
+        REMOTEMD5=`md5sum ${OUTPUTDIR}/${FILE} | awk '{print $1}'`
+        let COUNTER+=1
+    done
+done""" %(options.output)
     os.chmod(scriptname, 493) #493==755 in python chmod
     os.chdir("../..")
 
@@ -321,6 +347,7 @@ def createxmlfile(infile, jobnumber, datablocklist, datablocknumber, blockindex,
     if options.jec != "": infile = applyjesystematic(infile, "JEC", options.jec)
     if options.jer != "": infile = applyjesystematic(infile, "JER", options.jer)
     if options.elesf != "": infile = applyelesfsystematic(infile, options.elesf)
+    if options.musf != "": infile = applymusfsystematic(infile, options.musf)
     if options.pileupfile != "": infile = changepileupfile(infile, options.pileupfile)
     if options.bjets != "": infile = applybjetsystematic(infile, options.bjets)
     if options.tjets != "": infile = applytjetsystematic(infile, options.tjets)
@@ -382,17 +409,18 @@ def checklog(jobname, jobnumber):
     errorline = errorinfo[errorinfo.find(")")+2:]
     return errorline
 
-def checkstdout(jobname, jobnumber):
-    errors = os.popen('egrep -i "exit|break|exceed|error|traceback|aborted|E R R O R|find tree AnalysisTree|fatal" '+jobname+"/logs/"+jobname+"_"+str(jobnumber)+".stdout").readlines()
+def checkstdout(jobname, jobnumber, offset):
+    errors = os.popen('egrep -i "exit|break|exceed|error|traceback|aborted|E R R O R|find tree AnalysisTree|fatal" '+jobname+"/logs/"+jobname+"_"+str(jobnumber)+".stdout | sort -u").readlines()
     returnerror = ""
     if len(errors)>0:
-        error = errors[0].strip("\n")
-        if error.find(":") != -1: returnerror = error.split(":")[-1:][0]
-        else: returnerror=error
+        for error in errors: returnerror += offset+error
+#             if error.find(":") != -1: returnerror += offset+error.split(":")[-1:][0]
+#             else: returnerror += effset+error
     return returnerror
 
 def getjobstatus(statusdict, jobid, jobstatus):
     if jobid not in statusdict and jobstatus != "Killed" and jobstatus != "Cleaned": return "Missing"
+    elif jobid not in statusdict: return jobstatus
     jobstatuscode = statusdict[jobid]
     if jobstatuscode=="I": return "Idle"
     if jobstatuscode=="R": return "Running"
@@ -401,14 +429,12 @@ def getjobstatus(statusdict, jobid, jobstatus):
     return "Unknown: " + jobstatuscode
 
 def getjobinfo(jobname,jobnumber,resubmitjobs,jobstatus):
-    outputfiles = os.popen("grep Transfer_Output_Files "+jobname+"/configs/"+jobname+"_"+str(jobnumber)+".txt").readline().strip("\n")
-    outputfiles = outputfiles.split(" ")[2:]
+    rootfiles = getoutputfilenames(jobname+"/xml/"+jobname+"_"+str(jobnumber)+".xml").replace(".root","."+str(jobnumber)+".root").split(",")
     outputdirectory = os.popen("grep InitialDir "+jobname+"/configs/"+jobname+"_"+str(jobnumber)+".txt | awk '{print $3}'").readline().strip("\n")
     jobinfo=""
     offset="                                     "
-    for file in outputfiles:
-        file=file.strip(",")
-        if file.find(".root")==-1: continue
+    for file in rootfiles:
+        file=file.strip(", ")
         if jobinfo != "": jobinfo += "\n"+offset
         filepath = outputdirectory+"/"+file
         jobstatus = open(options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status").read().strip("\n")
@@ -438,22 +464,22 @@ def getjobinfo(jobname,jobnumber,resubmitjobs,jobstatus):
                     os.system("echo 'Done' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
                     jobstatus="Done"
                 if not iszombie: rootfile.Close()
-        else:
+        elif jobstatus=="Done" or jobstatus=="Missing":
             jobinfo += " Output file "+file+" is not found!"
             if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
             jobstatus="Error"
-        if jobstatus=="Held":
-            if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
-        if jobstatus=="Done":
-            stdouterror = checkstdout(jobname, jobnumber)
-            logerror = ""
-            #logerror = checklog(jobname, jobnumber)
-            if (stdouterror != "" or logerror != "") and resubmitjobs.count(jobnumber)<1:
-                resubmitjobs.append(jobnumber)
-                os.system("echo 'Error' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
-                jobstatus="Error"
-            if stdouterror != "": jobinfo += "\n"+offset+stdouterror
-            if logerror != "": jobinfo += "\n"+offset+logerror
+    if jobstatus=="Held":
+        if resubmitjobs.count(jobnumber)<1: resubmitjobs.append(jobnumber)
+    if jobstatus=="Done" or jobstatus=="Error":
+        stdouterror = checkstdout(jobname, jobnumber, offset)
+        logerror = ""
+        #logerror = checklog(jobname, jobnumber)
+        if (stdouterror != "" or logerror != "") and resubmitjobs.count(jobnumber)<1:
+            resubmitjobs.append(jobnumber)
+            os.system("echo 'Error' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
+            jobstatus="Error"
+        if stdouterror != "": jobinfo += "\n"+stdouterror
+        if logerror != "": jobinfo += "\n"+offset+logerror
     return jobinfo,jobstatus
 
 if not options.create and options.submit=="" and options.kill=="" and options.clean=="" and not options.status:
@@ -485,8 +511,8 @@ if options.create:
     for xmlfile in os.popen("/bin/ls "+options.jobname+"/xml/*.xml").readlines():
         xmlfile = xmlfile.strip("\n")
         jobnumber = int(xmlfile[xmlfile.rfind("_")+1:xmlfile.rfind(".")])
-        createcondortxt(options.jobname,jobnumber,workingdir+"/"+options.jobname)
-        createcondorscript(options.jobname,jobnumber)
+        createcondortxt(options,jobnumber,workingdir+"/"+options.jobname)
+        createcondorscript(options,jobnumber)
         os.system("echo 'Created' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
 
     if not options.notar:
@@ -592,7 +618,7 @@ if (options.status):
     options.numjobs=int(os.popen("/bin/ls "+options.jobname+"/xml/"+options.jobname+"_*.xml | wc -l").readline().strip("\n"))
     statusdict={}
     for line in condorstatus:
-        line = line.strip("\n").split()
+        line = line.split()
         statusdict[line[0][:-2]]=line[5]
     for jobnumber in range(1,options.numjobs+1):
         jobinfo=""
