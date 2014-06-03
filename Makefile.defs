@@ -1,7 +1,8 @@
 # LHAPDF
 # note: this is just to make it compile cleanly. If you want to perform pdf studies, you have to
 # install lhapdf and provide the actual path here!
-export LHAPDFDIR:="/afs/cern.ch/sw/lcg/external/MCGenerators/lhapdf/5.8.8/x86_64-slc5-gcc46-opt"
+#export LHAPDFDIR:="/afs/cern.ch/sw/lcg/external/MCGenerators/lhapdf/5.8.8/x86_64-slc5-gcc46-opt"
+export LHAPDFDIR:="/nfs/dust/cms/user/mameyer/lhapdf/"
 INCLUDES += -I$(LHAPDFDIR)/include
 
 # configure FastJet

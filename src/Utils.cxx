@@ -1990,7 +1990,8 @@ bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, do
         return false;
     }
 
-    mjet = allsubjets.M();
+    //mjet = allsubjets.M();
+    mjet = topjet.v4().M();
 
     if(nsubjets>=3) {
 
