@@ -297,10 +297,12 @@ std::vector<LorentzVector> TopFitCalc::NeutrinoFitPolar(const LorentzVector lept
 
 void TopFitCalc::CalculateSelection()
 {
-
+  
   EventCalc* calc = EventCalc::Instance();
   BaseCycleContainer* m_bcc = calc->GetBaseCycleContainer();
-
+  double deltaR_Lep_Tophad = .8;
+  double deltaR_Jet_Tophad = 1.3;
+  double mjet=0;
   //clear hypothesis list
   //m_bcc->recoHyps->clear();
 
@@ -310,14 +312,15 @@ void TopFitCalc::CalculateSelection()
   std::vector<Jet>* antikjets = m_bcc->jets; 
   std::vector<TopJet>* cajets = m_bcc->topjets;
 
-  //std::vector<LorentzVector> neutrinos = calc->NeutrinoReconstruction(lepton->v4(),m_bcc->met->v4());
-  std::vector<LorentzVector> neutrinos = NeutrinoFitPolar(lepton->v4(),m_bcc->met->v4());
- 
+    std::vector<LorentzVector> neutrinos = calc->NeutrinoReconstruction(lepton->v4(),m_bcc->met->v4());
+    // std::vector<LorentzVector> neutrinos = NeutrinoFitPolar(lepton->v4(),m_bcc->met->v4());
+    
   ReconstructionHypothesis hyp;
 
   hyp.set_lepton(*lepton);
-
-  double cajets_pt   =  cajets->at(0).pt(); 
+  double cajets_pt;
+  if(cajets->size()>0) {
+   cajets_pt   =  cajets->at(0).pt();
   int caposi_pt = 0;
   
   for(unsigned int m = 0; m<cajets->size(); ++m)
@@ -329,37 +332,57 @@ void TopFitCalc::CalculateSelection()
 	  cajets_pt = cajet.pt();
 	  caposi_pt = m;
 	}
+    
     }
-  
+   LorentzVector top_had;
+  if(cajets->size()>0) top_had = cajets->at(caposi_pt).v4();
+  mjet=top_had.M();
+     for(unsigned int m = 0; m<cajets->size(); ++m)
+    {
+       TopJet cajet = cajets->at(m);
+       if(deltaR_Lep_Tophad < deltaR(cajet.v4(),lepton->v4())){
  
-  LorentzVector top_had = cajets->at(caposi_pt).v4();
-  
-  hyp.add_tophad_jet_index(caposi_pt);
-  
-  hyp.set_tophad_v4(top_had);
+	int n_jets = antikjets->size();
+	if(n_jets>6) n_jets=6;
+	int max_j = myPow(3, n_jets);
+	
 
-  for(unsigned int i = 0; i < neutrinos.size();i++){
-  
-    LorentzVector wboson_lep = lepton->v4()+neutrinos.at(i);
-  
-    for(unsigned int m=0; m<antikjets->size(); ++m){
-      if( m_bcc->jets->at(m).pt()>50){
-	LorentzVector top_lep = wboson_lep + m_bcc->jets->at(m).v4();
-	hyp.set_blep_index(m);
-	hyp.add_toplep_jet_index(m);
-	hyp.set_blep_v4(m_bcc->jets->at(m).v4());
+	for(unsigned int i = 0; i < neutrinos.size();++i){
+	  
+	  Particle wboson_lep;
+	  wboson_lep.set_v4(lepton->v4()+neutrinos.at(i));
+	  
 
-        hyp.set_neutrino_v4(neutrinos[i]);
-	hyp.set_tophad_v4(top_had);
-	hyp.set_toplep_v4(top_lep);
+	  for(int j=0; j<max_j; ++j){
+	    LorentzVector top_lep(0,0,0,0);  
+	    LorentzVector b_lep(0,0,0,0);  
+	    int num = j;
+	    hyp.clear_jetindices();
+	    for(unsigned int p=0; p<antikjets->size(); ++p){
+	      if(deltaR(top_had,antikjets->at(p).v4())> deltaR_Jet_Tophad && num%3==0){
+		b_lep = b_lep + antikjets->at(p).v4();
+		top_lep = wboson_lep.v4() + b_lep;
+		hyp.set_blep_index(p);
+		hyp.set_blep_v4(b_lep);
+		hyp.add_toplep_jet_index(p);
+		hyp.add_tophad_jet_index(caposi_pt);
+		  
+		hyp.set_neutrino_v4(neutrinos[i]);
 
-	m_bcc->recoHyps->push_back(hyp);
-	}
-    }
-  }
+		double egroomed = sqrt(cajet.v4().P2()+mjet*mjet);
+		top_had.SetPxPyPzE(cajet.v4().Px(),cajet.v4().Py(),cajet.v4().Pz(),egroomed);
+		hyp.set_tophad_v4(top_had);
 
+		hyp.set_toplep_v4(top_lep);
+		  
+		m_bcc->recoHyps->push_back(hyp);
+	      }
+	      num/=3;
+	    }
+	  
+	  }}}}
 
-}
+  }}
 
 
 void TopFitCalc::CalculateTopTag()

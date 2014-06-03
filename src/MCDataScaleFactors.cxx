@@ -2,7 +2,9 @@
 #include "include/Utils.h"
 #include <TMath.h>
 
-LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist)
+
+
+LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist, TString channel)
 {
     m_syst_shift = e_Default;
     m_muon_unc = false;
@@ -10,7 +12,8 @@ LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist)
     m_tau_unc = false;
     m_tauele_unc = false;
     m_tau_eff_unc = false;
-
+    m_channel = channel;
+    
     if(correctionlist.size()%2!=0) {
         std::cerr<< "not a valid list of correction factors given to LeptonScaleFactors" <<std::endl;
         std::cerr<< "usage: \"<name> <weight> <name> <weight> <name> <weight> ...\" " <<std::endl;
@@ -406,30 +409,140 @@ double LeptonScaleFactors::GetTauWeight()
       }
    for(unsigned int i=0; i<fake_taus.size(); ++i)
       {
-         Tau tau = fake_taus[i];
-         if (!m_tau_unc)
+         Tau tau = fake_taus[i];	
+         if (m_channel == "inclusive_LQ")
             {
-               if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.0235;
-               if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.7719;
-               if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.4929;
-               if (tau.pt() > 200) weight = weight*1.0813;
-
-            } else
-            {
-
-               if (m_syst_shift==e_Down)
+               if (!m_tau_unc)
                   {
-                     if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*0.9567;
-                     if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.6874;
-                     if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.2870;
-                     if (tau.pt() > 200) weight = weight*0.3583;
+                     if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.04765;
+                     if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.857812;
+                     if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.59419;
+                     if (tau.pt() > 200) weight = weight*1.06272;
+                  } else 
+                  {
+                     
+                     if (m_syst_shift==e_Down)
+                        {
+                           if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*0.9352;
+                           if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.6769;
+                           if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.287;
+                           if (tau.pt() > 200) weight = weight*0.3583;
+                        }
+                     if (m_syst_shift==e_Up)
+                        {
+                           if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.1113;
+                           if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.8671;
+                           if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.7064;
+                           if (tau.pt() > 200) weight = weight*1.8769;
+                        }
                   }
-               if (m_syst_shift==e_Up)
+            }
+         if (m_channel == "combination_LQ")
+            {
+               if (!m_tau_unc)
                   {
-                     if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.0898;
-                     if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.8566;
-                     if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.7064;
-                     if (tau.pt() > 200) weight = weight*1.8769;
+                     if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.04765;
+                     if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.857812;
+                     if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.59419;
+                     if (tau.pt() > 200) weight = weight*1.06272;
+                  } else 
+                  {
+                    
+                     if (m_syst_shift==e_Down)
+                        {
+                           if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*0.9142;
+                           if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.6652;
+                           if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.281;
+                           if (tau.pt() > 200) weight = weight*0.3525;
+                        }
+                     if (m_syst_shift==e_Up)
+                        {
+                           if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.1324;
+                           if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.8788;
+                           if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.7104;
+                           if (tau.pt() > 200) weight = weight*1.8824;
+                        }
+                  }
+            }
+         if (m_channel == "inclusive_ClosureTest")
+            {
+              if (!m_tau_unc)
+                  {
+                     if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.04765;
+                     if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.857812;
+                     if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.59419;
+                     if (tau.pt() > 200) weight = weight*1.06272;
+                  } else 
+                  {
+                     
+                     if (m_syst_shift==e_Down)
+                        {
+                           if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*0.8873;
+                           if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.6488;
+                           if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.2792;
+                           if (tau.pt() > 200) weight = weight*0.3535;
+                        }
+                     if (m_syst_shift==e_Up)
+                        {
+                           if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.1593;
+                           if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.8951;
+                           if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.7139;
+                           if (tau.pt() > 200) weight = weight*1.8867;
+                        }
+                  }
+            }
+         if (m_channel == "SS_ClosureTest")
+            {
+              if (!m_tau_unc)
+                  {
+                     if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.04765;
+                     if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.857812;
+                     if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.59419;
+                     if (tau.pt() > 200) weight = weight*1.06272;
+                  } else 
+                  {
+                     
+                     if (m_syst_shift==e_Down)
+                        {
+                           if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*0.8053;
+                           if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.5939;
+                           if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.264;
+                           if (tau.pt() > 200) weight = weight*0.3257;
+                        }
+                     if (m_syst_shift==e_Up)
+                        {
+                           if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.2415;
+                           if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.95;
+                           if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.7287;
+                           if (tau.pt() > 200) weight = weight*1.9066;
+                        }
+                  }
+            }
+         if (m_channel == "OS_ClosureTest")
+            {
+               if (!m_tau_unc)
+                  {
+                     if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.04765;
+                     if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.857812;
+                     if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.59419;
+                     if (tau.pt() > 200) weight = weight*1.06272;
+                  } else 
+                  {
+                     
+                     if (m_syst_shift==e_Down)
+                        {
+                           if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*0.7563;
+                           if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.5593;
+                           if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.2522;
+                           if (tau.pt() > 200) weight = weight*0.3535;
+                        }
+                     if (m_syst_shift==e_Up)
+                        {
+                           if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*1.2906;
+                           if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.9846;
+                           if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.7401;
+                           if (tau.pt() > 200) weight = weight*1.9225;
+                        }
                   }
             }
       }

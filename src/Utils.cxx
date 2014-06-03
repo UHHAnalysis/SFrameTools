@@ -15,6 +15,33 @@ namespace external {
 
 using namespace std;
 
+Double_t HelicityAngle(TLorentzVector j1, TLorentzVector j2)
+{
+  // calculate helicity angle between j1 and W, assuming j1 and j2 are it's decay products
+
+TLorentzVector W = j1+j2;
+
+TVector3 NegBoostOfW = -(W.BoostVector());
+
+j1.Boost(NegBoostOfW);
+
+ TVector3 j1_3 = j1.Vect();
+ TVector3 j2_3 = j2.Vect();
+ TVector3 W3 = W.Vect();
+
+Double_t numerator = j1_3.Dot(W3);
+Double_t denominator = (j1_3.Mag())*(W3.Mag());
+Double_t CosHel = numerator/denominator;
+
+Double_t HelAng = acos(CosHel);
+ if (TMath::IsNaN(HelAng)) return -1;
+ if (j2_3.Mag() == 0) return -1;
+return HelAng;
+
+}
+
+
+
 int SubJetFlavor(TopJet topjet, int whichsub, float matchcone)
 {
 

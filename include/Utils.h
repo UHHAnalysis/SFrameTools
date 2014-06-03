@@ -52,6 +52,7 @@ enum E_SysUnc {
   e_subJEC,     /**< jet energy scale uncertainty subjets */
   e_JER,     /**< jet resolution uncertainty */
   e_subJER,     /**< jet resolution uncertainty */
+  e_fatJER,     /**< jet resolution uncertainty */
   e_MuonSF,  /**< muon scale factor uncertainty */
   e_EleSF,   /**< electron scale factor uncertainty */
   e_TauSF,   /**< tau scale factor uncertainty */
@@ -59,7 +60,8 @@ enum E_SysUnc {
   e_TauEffSF, /**< tau identification scale factor uncertainty */
   e_TauEnergy,/**< tau energy scale uncertainty */
   e_PDF,     /**< PDF uncertainty */
-  e_JetSF
+  e_TER     /**< tau energy resolution */
+
 };
 
 /**
@@ -118,6 +120,9 @@ private:
 // end of n_bins bins, suitable for passing it to the TH1 constructor.
 boost::shared_array<double> log_binning(size_t n_bins, double xmin, double xmax);
 
+//tmva tagger variables
+Double_t HelicityAngle(TLorentzVector j1, TLorentzVector j2);
+
 float HiggsBRweight();
 
 int subJetBTag(TopJet topjet, E_BtagType type, TString mode="default",TString filename="");
@@ -138,7 +143,7 @@ float HepTopTagMatchPt(TopJet topjet);
 
 /* bool HiggsTag(TopJet topjet, E_BtagType type1, E_BtagType type2); */
 
-bool HepTopTagFull(TopJet topjet);
+bool HepTopTagFull(TopJet topjet, std::vector<PFParticle>* allparts);
 
 /// return if a jet is tagged given a btag operating point
 bool IsTagged(Jet &, E_BtagType);
