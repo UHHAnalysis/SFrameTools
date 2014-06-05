@@ -2018,6 +2018,8 @@ bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, do
     if(mmin<mminLower) return false;
     //jet mass between 140 and 250 GeV/c^2
     if(mjet<mjetLower || mjet>mjetUpper) return false;
+    // n-subjettiness cut at 0.7
+    if(!(topjet.tau3() / topjet.tau2() < 0.7)) return false;
 
     return true;
 }
