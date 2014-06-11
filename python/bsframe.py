@@ -484,8 +484,8 @@ def getjobinfo(jobname,jobnumber,resubmitjobs,jobstatus):
         if logerror != "": jobinfo += "\n"+offset+logerror
     return jobinfo,jobstatus
 
-if not options.create and options.submit=="" and options.kill=="" and options.clean=="" and not options.status:
-    print "ERROR: Must either create, submit jobs, kill, clean, or check the status of jobs"
+if not options.create and options.submit=="" and options.kill=="" and options.clean=="" and not options.status and not options.retar:
+    print "ERROR: Must either create, retar, submit jobs, kill, clean, or check the status of jobs"
 
 workingdir=os.getcwd()
 cmsswbase=os.getenv("CMSSW_BASE")
@@ -527,7 +527,7 @@ if options.create:
             os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
             if options.usetarball != "": os.system("mv "+tarball+" "+options.usetarball)
         if options.usetarball == "": os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
-        else: os.system("cp "+options.usetarball+" "+workingdir+"/"+options.jobname+"/configs")
+        else: os.system("cp "+options.usetarball+" "+workingdir+"/"+options.jobname+"/configs/"+options.jobname+".tgz")
         os.chdir(workingdir+"/"+options.jobname)
         os.system('echo "Signature: 8a477f597d28d172789f06886806bc55" >& CACHEDIR.TAG')
     os.chdir(workingdir)
@@ -544,11 +544,12 @@ if options.retar:
     os.chdir(cmsswbase+"/..")
     tarball = options.jobname+".tgz"
     target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
-    print "Creating tarball of "+target+" area."
-    os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
-    if options.usetarball != "": os.system("mv "+tarball+" "+options.usetarball)
+    if (options.usetarball != "" and not os.path.isfile(options.usetarball)) or options.usetarball == "":
+        print "Creating tarball of "+target+" area."
+        os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
+        if options.usetarball != "": os.system("mv "+tarball+" "+options.usetarball)
     if options.usetarball == "": os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
-    else: os.system("cp "+options.usetarball+" "+workingdir+"/"+options.jobname+"/configs")
+    else: os.system("cp "+options.usetarball+" "+workingdir+"/"+options.jobname+"/configs/"+options.jobname+".tgz")
     os.chdir(workingdir+"/"+options.jobname)
     os.system('echo "Signature: 8a477f597d28d172789f06886806bc55" >& CACHEDIR.TAG')
     os.chdir(workingdir)
