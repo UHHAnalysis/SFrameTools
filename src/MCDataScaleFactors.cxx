@@ -829,7 +829,7 @@ double TopTaggingScaleFactors::GetWeight()
 
         //Only apply corrections to high pT TopJets
         //Mistag measurement starts at 200, Efficiency starts at 400, but TopTag algorithm is rated for 350
-        if(jet_pt < 350.0)
+        if(jet_pt < 400.0)
             continue;
 
         bool truetop = false;
