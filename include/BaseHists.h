@@ -40,7 +40,7 @@ public:
 
    virtual void Init() = 0;
 
-   virtual void Scale(double scale) = 0;
+   virtual void Scale(double scale) {};
 
    virtual void Fill() = 0;
   virtual void Fill2(TopJet topjet, double mva_value) {}
