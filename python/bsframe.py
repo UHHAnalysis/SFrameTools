@@ -25,6 +25,7 @@ parser.add_option("--create", action="store_true", dest="create", default=False,
 parser.add_option("--datablocks", action="store_true", dest="datablocks", default=False, help="Seperate jobs based on data blocks.")
 parser.add_option("--status", action="store_true", dest="status", default=False, help="Get job status")
 parser.add_option("--retar", action="store_true", dest="retar", default=False, help="Recreate the job tarball.")
+parser.add_option("--usetar", dest="usetar", default="", help="Use the specified tarball.")
 parser.add_option("--ttbargencut", action="store_true", dest="ttbargencut", default=False, help="Apply ttbar generator cut")
 parser.add_option("--notar", action="store_true", dest="notar", default=False, help="Do not create tarball. For debugging configs.")
 
@@ -159,7 +160,7 @@ def getoutputfilenames(configfile):
     postfix = xmlparser.parse(rawxmlfile,"PostFix")
     rootfilenamelist = ""
     for name in namelist:
-        if name.find("SelectionCycle") != -1: cyclename=name
+        if name.find("Cycle") != -1: cyclename=name
     for type,version in zip(typelist,versionlist):
         rootfilenamelist += cyclename+"."+type+"."+version+postfix[0]+".root, "
     return rootfilenamelist[:-2]
@@ -482,7 +483,7 @@ def getjobinfo(jobname,jobnumber,resubmitjobs,jobstatus):
         if logerror != "": jobinfo += "\n"+offset+logerror
     return jobinfo,jobstatus
 
-if not options.create and options.submit=="" and options.kill=="" and options.clean=="" and not options.status:
+if not options.create and options.submit=="" and options.kill=="" and options.clean=="" and not options.status and not options.retar:
     print "ERROR: Must either create, submit jobs, kill, clean, or check the status of jobs"
 
 workingdir=os.getcwd()
@@ -516,14 +517,19 @@ if options.create:
         os.system("echo 'Created' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
 
     if not options.notar:
-        os.chdir(cmsswbase+"/..")
-        tarball = options.jobname+".tgz"
-        target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
-        print "Creating tarball of "+target+" area."
-        os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
-        os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
-        os.chdir(workingdir+"/"+options.jobname)
-        os.system('echo "Signature: 8a477f597d28d172789f06886806bc55" >& CACHEDIR.TAG')
+        if options.usetar:
+            os.system("cp "+options.usetar+" "+workingdir+"/"+options.jobname+"/configs/"+options.jobname+".tgz")
+            os.chdir(workingdir+"/"+options.jobname)
+            os.system('echo "Signature: 8a477f597d28d172789f06886806bc55" >& CACHEDIR.TAG')
+        else:
+            os.chdir(cmsswbase+"/..")
+            tarball = options.jobname+".tgz"
+            target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
+            print "Creating tarball of "+target+" area."
+            os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
+            os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
+            os.chdir(workingdir+"/"+options.jobname)
+            os.system('echo "Signature: 8a477f597d28d172789f06886806bc55" >& CACHEDIR.TAG')
     os.chdir(workingdir)
 
 if not os.path.isdir(options.jobname):
@@ -533,17 +539,23 @@ if not os.path.isdir(options.jobname):
 if options.retar:
     if options.create: print "There is no point in creating a task and then recreating the tarball."
     if options.notar: print "You are stupid!"
-    os.chdir(workingdir+"/"+options.jobname)
-    if os.path.isfile("CACHEDIR.TAG"): os.remove("CACHEDIR.TAG")
-    os.chdir(cmsswbase+"/..")
-    tarball = options.jobname+".tgz"
-    target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
-    print "Creating tarball of "+target+" area."
-    os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
-    os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
-    os.chdir(workingdir+"/"+options.jobname)
-    os.system('echo "Signature: 8a477f597d28d172789f06886806bc55" >& CACHEDIR.TAG')
-    os.chdir(workingdir)
+    if options.usetar:
+        os.system("cp "+options.usetar+" "+workingdir+"/"+options.jobname+"/configs/"+options.jobname+".tgz")
+        os.chdir(workingdir+"/"+options.jobname)
+        os.system('echo "Signature: 8a477f597d28d172789f06886806bc55" >& CACHEDIR.TAG')
+        os.chdir(workingdir)
+    else:
+        os.chdir(workingdir+"/"+options.jobname)
+        if os.path.isfile("CACHEDIR.TAG"): os.remove("CACHEDIR.TAG")
+        os.chdir(cmsswbase+"/..")
+        tarball = options.jobname+".tgz"
+        target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
+        print "Creating tarball of "+target+" area."
+        os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
+        os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
+        os.chdir(workingdir+"/"+options.jobname)
+        os.system('echo "Signature: 8a477f597d28d172789f06886806bc55" >& CACHEDIR.TAG')
+        os.chdir(workingdir)
 
 if options.kill!="":
     joblist=[]
