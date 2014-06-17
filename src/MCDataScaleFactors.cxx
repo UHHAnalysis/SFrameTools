@@ -13,7 +13,7 @@ LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist, 
     m_tauele_unc = false;
     m_tau_eff_unc = false;
     m_channel = channel;
-    
+
     if(correctionlist.size()%2!=0) {
         std::cerr<< "not a valid list of correction factors given to LeptonScaleFactors" <<std::endl;
         std::cerr<< "usage: \"<name> <weight> <name> <weight> <name> <weight> ...\" " <<std::endl;
@@ -409,7 +409,7 @@ double LeptonScaleFactors::GetTauWeight()
       }
    for(unsigned int i=0; i<fake_taus.size(); ++i)
       {
-         Tau tau = fake_taus[i];	
+         Tau tau = fake_taus[i];
          if (m_channel == "inclusive_LQ")
             {
                if (!m_tau_unc)
@@ -418,9 +418,9 @@ double LeptonScaleFactors::GetTauWeight()
                      if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.857812;
                      if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.59419;
                      if (tau.pt() > 200) weight = weight*1.06272;
-                  } else 
+                  } else
                   {
-                     
+
                      if (m_syst_shift==e_Down)
                         {
                            if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*0.9352;
@@ -445,9 +445,9 @@ double LeptonScaleFactors::GetTauWeight()
                      if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.857812;
                      if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.59419;
                      if (tau.pt() > 200) weight = weight*1.06272;
-                  } else 
+                  } else
                   {
-                    
+
                      if (m_syst_shift==e_Down)
                         {
                            if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*0.9142;
@@ -472,9 +472,9 @@ double LeptonScaleFactors::GetTauWeight()
                      if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.857812;
                      if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.59419;
                      if (tau.pt() > 200) weight = weight*1.06272;
-                  } else 
+                  } else
                   {
-                     
+
                      if (m_syst_shift==e_Down)
                         {
                            if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*0.8873;
@@ -499,9 +499,9 @@ double LeptonScaleFactors::GetTauWeight()
                      if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.857812;
                      if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.59419;
                      if (tau.pt() > 200) weight = weight*1.06272;
-                  } else 
+                  } else
                   {
-                     
+
                      if (m_syst_shift==e_Down)
                         {
                            if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*0.8053;
@@ -526,9 +526,9 @@ double LeptonScaleFactors::GetTauWeight()
                      if (tau.pt() > 60 && tau.pt() <= 120) weight = weight*0.857812;
                      if (tau.pt() > 120 && tau.pt() <= 200) weight = weight*0.59419;
                      if (tau.pt() > 200) weight = weight*1.06272;
-                  } else 
+                  } else
                   {
-                     
+
                      if (m_syst_shift==e_Down)
                         {
                            if (tau.pt() > 20 && tau.pt() <= 60) weight = weight*0.7563;
@@ -829,7 +829,7 @@ double TopTaggingScaleFactors::GetWeight()
 
         //Only apply corrections to high pT TopJets
         //Mistag measurement starts at 200, Efficiency starts at 400, but TopTag algorithm is rated for 350
-        if(jet_pt < 350.0)
+        if(jet_pt < 400.0)
             continue;
 
         bool truetop = false;
@@ -1236,23 +1236,27 @@ ToptagScale::ToptagScale() : ToptagFunction() {}
 
 float ToptagScale::value(const float &jet_pt, const float &jet_eta) const
 {
+    //Flat value for fit in theta
+    return 1.0;
     //From
     // https://cds.cern.ch/record/1647419/files/JME-13-007-pas.pdf
-    if(abs(jet_eta) < 1.0)
-        return 0.985;
-    else
-        return 0.644;
+    //if(abs(jet_eta) < 1.0)
+    //    return 0.985;
+    //else
+    //    return 0.644;
 }
 
 
 float ToptagScale::error(const float &jet_pt, const float &jet_eta) const
 {
+    //Flat error for fit in theta
+    return 0.2;
     //From
     // https://cds.cern.ch/record/1647419/files/JME-13-007-pas.pdf
-    if(abs(jet_eta) < 1.0)
-        return 0.073;
-    else
-        return 0.100;
+    //if(abs(jet_eta) < 1.0)
+    //    return 0.073;
+    //else
+    //    return 0.100;
 }
 
 
@@ -1264,25 +1268,29 @@ TopMistagScale::TopMistagScale() : ToptagFunction() {;}
 
 float TopMistagScale::value(const float &jet_pt, const float &jet_eta) const
 {
+    //Flat error for fit in theta
+    return 1.0;
     //Flat scale factor fit result from Mistag Studies
     //****************************************
     //Minimizer is Linear
     //Chi2                      =      4.10966
     //NDf                       =            4
     //p0                        =      1.00263   +/-   0.0836751
-    return 1.00263;
+    //return 1.00263;
 }
 
 
 float TopMistagScale::error(const float &jet_pt, const float &jet_eta) const
 {
+    //Flat error for fit in theta
+    return 0.2;
     //Flat scale factor fit result from Mistag Studies
     //****************************************
     //Minimizer is Linear
     //Chi2                      =      4.10966
     //NDf                       =            4
     //p0                        =      1.00263   +/-   0.0836751
-    return 0.0836751;
+    //return 0.0836751;
 }
 
 
@@ -1313,7 +1321,7 @@ BtagScale::BtagScale(E_BtagType btagtype) : BtagFunction(btagtype)
       0.0866832,
       0.0942053,
       0.102403
-    }; 
+    };
     const float CSVLErrors[] = {
       0.033299,
       0.0146768,
@@ -1504,34 +1512,27 @@ float LtagScale::value_minus(const float &jet_pt, const float &jet_eta) const
 // Toptag Efficiency
 //
 ToptagEfficiency::ToptagEfficiency() : ToptagFunction() {
-    //_scale = new TF1("mistag","-0.0134373+3.18639e-5*x+8.32377e-8*x*x",200,5000);
+
 }
 
 
 float ToptagEfficiency::value(const float &jet_pt, const float &jet_eta) const
 {
-    //From
-    // https://cds.cern.ch/record/1647419/files/JME-13-007-pas.pdf
-    if(abs(jet_eta) < 1.0)
-        return 0.256;
-    else
-        return 0.200;
+    //From Mistag study - P. Turner
+    return 0.199;
 }
 
 // TopMistag Efficiency
 //
 TopMistagEfficiency::TopMistagEfficiency() : ToptagFunction() {
-    _scale = new TF1("mistag_eff","[2]*0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(x)*[1])))",0,5000);
-    _scale->SetParameter(0,439.858);
-    _scale->SetParameter(1,8.11654);
-    _scale->SetParameter(2,0.0540203);
 
 }
 
 
 float TopMistagEfficiency::value(const float &jet_pt, const float &jet_eta) const
 {
-    return _scale->Eval(jet_pt);
+    //Measured in mistag study - P. Turner
+    return 0.02435;
 }
 
 

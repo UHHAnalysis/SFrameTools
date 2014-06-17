@@ -21,12 +21,12 @@ class TList;
 /**
  *   Base Class for the histogramming functionality
  *
- *   Class which books and fills histograms. This class is a base 
- *   class, all histogramming classes should inherit from it. 
- *   The booking and naming of the histograms is taken care of 
- *   through this class. Any derived class has to overwrite the 
+ *   Class which books and fills histograms. This class is a base
+ *   class, all histogramming classes should inherit from it.
+ *   The booking and naming of the histograms is taken care of
+ *   through this class. Any derived class has to overwrite the
  *   Init, Fill and Finish methods.
- *   The derived objects have to be initialised in each 
+ *   The derived objects have to be initialised in each
  *   SCycleBase::BeginInputData(...)
  *
  *   @version $Revision: 1.1 $
@@ -39,6 +39,8 @@ public:
    virtual ~BaseHists();
 
    virtual void Init() = 0;
+
+   virtual void Scale(double scale) {};
 
    virtual void Fill() = 0;
   virtual void Fill2(TopJet topjet, double mva_value) {}
@@ -55,7 +57,7 @@ public:
    void SetName(const TString & name) {m_name = name;}
 
   // class has to inherit from SCycleBase to have access to histogram functionality in SFrame
-  // implement virtual routines but throw exception in case they are called 
+  // implement virtual routines but throw exception in case they are called
    void BeginCycle()throw( SError ) {  m_logger << ERROR << "This should not happen: BeginCycle called for BaseHist class" << SLogger::endmsg; } ;
    void EndCycle()throw( SError ){  m_logger << ERROR << "This should not happen: EndCycle called for BaseHist class" << SLogger::endmsg; } ;
    void BeginInputData(const SInputData&)throw( SError ){  m_logger << ERROR << "This should not happen: BeginInputData called for BaseHist class" << SLogger::endmsg; } ;
