@@ -19,6 +19,7 @@ parser.add_option("-o", "--output", dest="output", default="", help="Output dire
 parser.add_option("-s", "--submit", dest="submit",  default="", help="Submit Jobs: all, 1-5, or 1,3,5,9")
 parser.add_option("-l", "--clean", dest="clean",  default="", help="Clean log and result files: all, 1-5, 1,3,5,9")
 parser.add_option("-e", "--resubmit", dest="resubmit",  default="", help="Clean log and result files and then submit jobs: all, 1-5, 1,3,5,9")
+parser.add_option("-t", "--usetarball", dest="usetarball",  default="", help="Use target tarball. If it doesn't exsist create it.")
 
 parser.add_option("--clobber", action="store_true", dest="clobber", default=False, help="Overwrite Job Directory")
 parser.add_option("--create", action="store_true", dest="create", default=False, help="Create job and configuration files.")
@@ -65,7 +66,7 @@ if options.resubmit != "":
 if not os.path.isfile(options.configxml) and not os.path.isdir(options.jobname):
     if options.configxml!="": print "ERROR: "+options.configxml+" is not a valid file!"
     else: print "ERROR: "+options.jobname+" is not a valid directory!"
-    exit(2)
+    exit(1)
 
 def makejoblist(joblist):
     newjoblist=[]
@@ -219,17 +220,18 @@ cp %s/xml/${FILENAME} .
 sed -i 's|FileName="/[^e][^o][^s].*/\(.*.root\)"|FileName="./\1"|' $FILENAME
 mv ${WORKINGDIR}/*.root .
 sframe_main %s_%d.xml
-for filename in `/bin/ls *.root`; do
+CYCLENAME=`grep "Cycle Name" %s_%d.xml | sed 's|.*<Cycle Name="\([^ \\t\\r\\n\\v\\f]*\)".*|\\1|'`
+for filename in `/bin/ls ${CYCLENAME}*.root`; do
     newfilename=`echo $filename | sed 's|.root|.%d.root|'`
     mv $filename $newfilename
     md5sum $newfilename >> md5sums.%d.txt
 done
-mv *.root $WORKINGDIR
-mv md5sums.%d.txt $WORKINGDIR""" %(options.jobname, jobnumber, options.jobname, options.jobname, jobnumber, jobnumber, jobnumber, jobnumber)
+mv ${CYCLENAME}*.root $WORKINGDIR
+mv md5sums.%d.txt $WORKINGDIR""" %(options.jobname, jobnumber, options.jobname, options.jobname, jobnumber, options.jobname, jobnumber, jobnumber, jobnumber, jobnumber)
     if len(options.output)>5 and options.output[:5] == "/eos/": print >> scriptfile, """
 cd $WORKINGDIR
 OUTPUTDIR=%s/
-for FILE in *.root *.txt; do
+for FILE in ${CYCLENAME}*.root *.txt; do
     /bin/cp $FILE $OUTPUTDIR
     LOCALMD5=`md5sum $FILE | awk '{print $1}'`
     REMOTEMD5=`md5sum ${OUTPUTDIR}/${FILE} | awk '{print $1}'`
@@ -361,7 +363,7 @@ def createxmlfile(infile, jobnumber, datablocklist, datablocknumber, blockindex,
         lumilist=datablocklist[datablocknumber].lumilist
     else:
         print "Error: No DataBlocks Found!\n"
-        exit(3)
+        exit(1)
 
     while numfiles>0:
         if blockindex == len(filelist):
@@ -482,19 +484,20 @@ def getjobinfo(jobname,jobnumber,resubmitjobs,jobstatus):
         if logerror != "": jobinfo += "\n"+offset+logerror
     return jobinfo,jobstatus
 
-if not options.create and options.submit=="" and options.kill=="" and options.clean=="" and not options.status:
-    print "ERROR: Must either create, submit jobs, kill, clean, or check the status of jobs"
+if not options.create and options.submit=="" and options.kill=="" and options.clean=="" and not options.status and not options.retar:
+    print "ERROR: Must either create, retar, submit jobs, kill, clean, or check the status of jobs"
 
 workingdir=os.getcwd()
 cmsswbase=os.getenv("CMSSW_BASE")
 username=os.getenv("USER")
 currentnode=os.getenv("HOST")
+options.usetarball = os.path.abspath(options.usetarball)
 
 if options.create:
     if not os.path.isdir(options.jobname) and not options.clobber: os.mkdir(options.jobname)
     elif os.path.isdir(options.jobname) and not options.clobber:
         print "ERROR: Job directory "+options.jobname+" exists!\nPlease remove job directory or enable --clobber option.."
-        exit(4)
+        exit(1)
     elif options.clobber:
         if os.path.isdir(options.jobname): shutil.rmtree(options.jobname)
         os.mkdir(options.jobname)
@@ -519,16 +522,19 @@ if options.create:
         os.chdir(cmsswbase+"/..")
         tarball = options.jobname+".tgz"
         target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
-        print "Creating tarball of "+target+" area."
-        os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
-        os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
+        if (options.usetarball != "" and not os.path.isfile(options.usetarball)) or options.usetarball == "":
+            print "Creating tarball of "+target+" area."
+            os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
+            if options.usetarball != "": os.system("mv "+tarball+" "+options.usetarball)
+        if options.usetarball == "": os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
+        else: os.system("cp "+options.usetarball+" "+workingdir+"/"+options.jobname+"/configs/"+options.jobname+".tgz")
         os.chdir(workingdir+"/"+options.jobname)
         os.system('echo "Signature: 8a477f597d28d172789f06886806bc55" >& CACHEDIR.TAG')
     os.chdir(workingdir)
 
 if not os.path.isdir(options.jobname):
     print "ERROR: Job directory "+options.jobname+" does not exist!\nPlease create job with bsframe.py -c myconfig.xml --create."
-    exit(5)
+    exit(1)
 
 if options.retar:
     if options.create: print "There is no point in creating a task and then recreating the tarball."
@@ -538,9 +544,12 @@ if options.retar:
     os.chdir(cmsswbase+"/..")
     tarball = options.jobname+".tgz"
     target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
-    print "Creating tarball of "+target+" area."
-    os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
-    os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
+    if (options.usetarball != "" and not os.path.isfile(options.usetarball)) or options.usetarball == "":
+        print "Creating tarball of "+target+" area."
+        os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
+        if options.usetarball != "": os.system("mv "+tarball+" "+options.usetarball)
+    if options.usetarball == "": os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
+    else: os.system("cp "+options.usetarball+" "+workingdir+"/"+options.jobname+"/configs/"+options.jobname+".tgz")
     os.chdir(workingdir+"/"+options.jobname)
     os.system('echo "Signature: 8a477f597d28d172789f06886806bc55" >& CACHEDIR.TAG')
     os.chdir(workingdir)
@@ -596,7 +605,7 @@ if options.submit!="":
         print "Submitting job number: %d" %(jobnumber)
         if not os.path.isfile(options.jobname+"/xml/"+options.jobname+"_"+str(jobnumber)+".xml"):
             print "Error: No configuration file for jobs number "+str(jobnumber)+"!"
-            exit(6)
+            exit(1)
         subnum = int(os.popen("grep Arguments "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt | awk '{print $4}'").readline().strip('\n'))
         os.system("sed -i 's|Transfer_Output_Files = \(.*\)_"+str(subnum)+".root$|Transfer_Output_Files = \\1_"+str(subnum+1)+".root|' "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
         os.system("sed -i 's|/configs "+str(subnum)+"$|/configs "+str(subnum+1)+"|' "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
