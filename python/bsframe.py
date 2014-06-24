@@ -34,6 +34,7 @@ parser.add_option("--flavor", dest="flavor", default="", help="Apply flavor sele
 parser.add_option("--pileupfile", dest="pileupfile", default="", help="Specify pileup file")
 parser.add_option("--bjets", dest="bjets", default="", help="Apply bjet Systematic: up-bjets, down-bjets, up-ljets, down-ljets")
 parser.add_option("--toptag", dest="tjets", default="", help="Apply toptag scale Systematic: up-mistag, down-mistag, up-toptag, down-toptag")
+parser.add_option("--toppt", dest="toppt", default="", help="Apply top pT reweighting Systematic: mean, up, down")
 parser.add_option("--JEC", dest="jec", default="", help="Apply JEC Systematic: up or down")
 parser.add_option("--JER", dest="jer", default="", help="Apply JER Systematic: up or down")
 parser.add_option("--EleSF", dest="elesf", default="", help="Apply EleSF Systematic: up or down")
@@ -148,6 +149,11 @@ def applytjetsystematic(infile,tjets):
     infile=additem(infile,"TopTaggingScaleFactors",tjets)
     return infile
 
+def applytopptsystematic(infile,toppt):
+    infile=applypostfix(infile,"toppt"+toppt)
+    infile=additem(infile,"toppagptweight",toppt)
+    return infile
+
 def changepileupfile(infile,pileupfile):
     infile = additem(infile,"PU_Filename_Data",pileupfile)
     return infile
@@ -195,7 +201,7 @@ Output = %s/logs/%s_%d.stdout
 Error = %s/logs/%s_%d.stderr
 Log = %s/logs/%s_%d.log
 notify_user = ${LOGNAME}@FNAL.GOV
-Arguments = %s 0
+Arguments = %s
 Queue 1""" %(options.jobname, options.jobname, jobnumber, options.output, jobdir, options.jobname, additionalfiles, outputfiles, jobdir, options.jobname, jobnumber, jobdir, options.jobname, jobnumber, jobdir, options.jobname, jobnumber, os.getcwd())
     condorfile.close()
     os.chdir("../..")
@@ -353,6 +359,7 @@ def createxmlfile(infile, jobnumber, datablocklist, datablocknumber, blockindex,
     if options.pileupfile != "": infile = changepileupfile(infile, options.pileupfile)
     if options.bjets != "": infile = applybjetsystematic(infile, options.bjets)
     if options.tjets != "": infile = applytjetsystematic(infile, options.tjets)
+    if options.toppt != "": infile = applytopptsystematic(infile, options.toppt)
     if options.pdf != "": infile = applypdfsystematics(infile, options, pdfindex)
     frontend = infile[:infile.find("<InputData ")]
     indent = frontend[frontend.rfind("\n")+1:]
@@ -491,7 +498,7 @@ workingdir=os.getcwd()
 cmsswbase=os.getenv("CMSSW_BASE")
 username=os.getenv("USER")
 currentnode=os.getenv("HOST")
-options.usetarball = os.path.abspath(options.usetarball)
+if options.usetarball != "": options.usetarball = os.path.abspath(options.usetarball)
 
 if options.create:
     if not os.path.isdir(options.jobname) and not options.clobber: os.mkdir(options.jobname)
@@ -524,7 +531,7 @@ if options.create:
         target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
         if (options.usetarball != "" and not os.path.isfile(options.usetarball)) or options.usetarball == "":
             print "Creating tarball of "+target+" area."
-            os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
+            os.system("tar -czf "+tarball+" "+target+" --exclude-caches --exclude='*.tgz'")
             if options.usetarball != "": os.system("mv "+tarball+" "+options.usetarball)
         if options.usetarball == "": os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
         else: os.system("cp "+options.usetarball+" "+workingdir+"/"+options.jobname+"/configs/"+options.jobname+".tgz")
@@ -546,7 +553,7 @@ if options.retar:
     target = os.popen("echo ${CMSSW_BASE##*/}").readline().strip("\n")+"/"
     if (options.usetarball != "" and not os.path.isfile(options.usetarball)) or options.usetarball == "":
         print "Creating tarball of "+target+" area."
-        os.system("tar -czf "+tarball+" "+target+" --exclude-caches")
+        os.system("tar -czf "+tarball+" "+target+" --exclude-caches --exclude='*.tgz'")
         if options.usetarball != "": os.system("mv "+tarball+" "+options.usetarball)
     if options.usetarball == "": os.system("mv "+tarball+" "+workingdir+"/"+options.jobname+"/configs")
     else: os.system("cp "+options.usetarball+" "+workingdir+"/"+options.jobname+"/configs/"+options.jobname+".tgz")
@@ -606,9 +613,6 @@ if options.submit!="":
         if not os.path.isfile(options.jobname+"/xml/"+options.jobname+"_"+str(jobnumber)+".xml"):
             print "Error: No configuration file for jobs number "+str(jobnumber)+"!"
             exit(1)
-        subnum = int(os.popen("grep Arguments "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt | awk '{print $4}'").readline().strip('\n'))
-        os.system("sed -i 's|Transfer_Output_Files = \(.*\)_"+str(subnum)+".root$|Transfer_Output_Files = \\1_"+str(subnum+1)+".root|' "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
-        os.system("sed -i 's|/configs "+str(subnum)+"$|/configs "+str(subnum+1)+"|' "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
         if os.path.isfile(options.jobname+"/logs/"+options.jobname+"_"+str(jobnumber)+".log"): os.system("/bin/rm "+options.jobname+"/logs/"+options.jobname+"_"+str(jobnumber)+".log")
         os.system("condor_submit "+options.jobname+"/configs/"+options.jobname+"_"+str(jobnumber)+".txt")
         os.system("echo 'Submitted' >& "+options.jobname+"/status/"+options.jobname+"_"+str(jobnumber)+".status")
