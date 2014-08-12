@@ -1268,29 +1268,15 @@ TopMistagScale::TopMistagScale() : ToptagFunction() {;}
 
 float TopMistagScale::value(const float &jet_pt, const float &jet_eta) const
 {
-    //Flat error for fit in theta
-    return 1.0;
-    //Flat scale factor fit result from Mistag Studies
-    //****************************************
-    //Minimizer is Linear
-    //Chi2                      =      4.10966
-    //NDf                       =            4
-    //p0                        =      1.00263   +/-   0.0836751
-    //return 1.00263;
+    //From Mistag Study
+    return 0.83;
 }
 
 
 float TopMistagScale::error(const float &jet_pt, const float &jet_eta) const
 {
-    //Flat error for fit in theta
-    return 0.2;
-    //Flat scale factor fit result from Mistag Studies
-    //****************************************
-    //Minimizer is Linear
-    //Chi2                      =      4.10966
-    //NDf                       =            4
-    //p0                        =      1.00263   +/-   0.0836751
-    //return 0.0836751;
+    //From Mistag Study
+    return 0.21;
 }
 
 
@@ -1532,7 +1518,7 @@ TopMistagEfficiency::TopMistagEfficiency() : ToptagFunction() {
 float TopMistagEfficiency::value(const float &jet_pt, const float &jet_eta) const
 {
     //Measured in mistag study - P. Turner
-    return 0.02435;
+    return 0.0152;
 }
 
 
