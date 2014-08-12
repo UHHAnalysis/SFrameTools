@@ -431,7 +431,7 @@ void TopFitCalc::CalculateTopTag()
         LorentzVector allsubjets(0,0,0,0);
 
         for(int j=0; j<cajet.numberOfDaughters(); ++j) {
-            allsubjets += topjet.subjets()[j].v4();
+            allsubjets += cajet.subjets()[j].v4();
         }
         double mgroomed = allsubjets.M();
 
