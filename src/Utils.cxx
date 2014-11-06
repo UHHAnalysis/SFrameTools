@@ -2020,8 +2020,8 @@ bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, do
     if(mjet<mjetLower || mjet>mjetUpper) return false;
     // n-subjettiness cut at 0.7
     // if tau2 = 0, tau3/tau2 = Inf, so it fails. safer than dividing by zero below
-    if(topjet.tau2() == 0) return false;
-    if(!(topjet.tau3() / topjet.tau2() < 0.7)) return false;
+   // if(topjet.tau2() == 0) return false;
+   // if(!(topjet.tau3() / topjet.tau2() < 0.7)) return false;
 
     return true;
 }
