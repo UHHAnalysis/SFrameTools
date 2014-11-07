@@ -28,7 +28,7 @@ public:
   ~CMSTopTagger();
 
   bool Tag (const TopJet& topjet);
-  
+  void SetTau32Cut(double cut=0.7);
   // available variables: "nsubjets", "mmin" and "mjet"
   std::map<std::string,double> TagVar();
 

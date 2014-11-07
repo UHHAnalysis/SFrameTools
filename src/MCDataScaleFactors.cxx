@@ -1,7 +1,7 @@
 #include "include/MCDataScaleFactors.h"
 #include "include/Utils.h"
 #include <TMath.h>
-
+#include "include/SubJetTagger.h"
 
 
 LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist, TString channel)
@@ -813,15 +813,17 @@ double TopTaggingScaleFactors::GetWeight()
     double scale_factor = 1.;
 
     bool toptagevent = false;
+
+    CMSTopTagger toptag;
+    toptag.SetTau32Cut();
+
     for(unsigned int i=0; i<jets->size(); ++i) {
 
         TopJet jet = jets->at(i);
 
         double scale_jet = 1.0;
-        double mmin=0;
-        double mjet=0;
-        int nsubjets=0;
-        bool result = TopTag(jet,mjet,nsubjets,mmin);
+
+        bool result = toptag.Tag(jet);
         if(result)
             toptagevent = true;
         float jet_pt = jet.pt();
