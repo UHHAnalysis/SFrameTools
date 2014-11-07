@@ -172,8 +172,13 @@ double HepTopTagPairwiseMassWithMatch2(TopJet topjet, double ptJetMin = 200., do
 bool HepTopTag(TopJet topjet);
 bool HepTopTagWithMatch(TopJet topjet);
 bool HepTopTagInverted(TopJet topjet);
-bool TopTag(TopJet topjet, double& mjet, int& nsubjets, double& mmin);
-bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, double mminLower = 50., double mjetLower = 140., double mjetUpper = 250.);
+
+/// same as variableTopTag with default parameters, i.e. WITH tau3/tau2 cut at 0.7.
+bool TopTag(TopJet topjet, double& mjet, int& nsubjets, double& mmin) DEPRECATED_MSG("Use CMSTopTagger instead");
+
+/// CMSTopTagger WITH tau3/tau2 cut at 0.7; other cuts as given here.
+bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, double mminLower = 50., double mjetLower = 140., double mjetUpper = 250.) DEPRECATED_MSG("Use CMSTopTagger instead");
+
 
 /**
  * W tagging routine

@@ -88,7 +88,7 @@ bool SubJetBTagger::Tag(const TopJet& topjet){
   
   for(unsigned int i=0; i < btagsub_combinedSecondaryVertex_top.size(); ++i){
 
-    if(whichsub!=-1&&i!=whichsub) continue;
+    if(whichsub!=-1&&int(i)!=whichsub) continue;
 
     Particle subjet=subjets_top[i];
     int flav = flavorsub_top[i];

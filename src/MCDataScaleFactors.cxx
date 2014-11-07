@@ -840,8 +840,8 @@ double TopTaggingScaleFactors::GetWeight()
                 bool leptonic_decay = false;
                 const GenParticle* d1 = p.daughter(genparticles,1);
                 const GenParticle* d2 = p.daughter(genparticles,2);
-                const GenParticle* d11;
-                const GenParticle* d12;
+                const GenParticle* d11 = 0;
+                const GenParticle* d12 = 0;
                 if(abs(d1->pdgId())==24) {
                     d11 = d1->daughter(genparticles,1);
                     d12 = d1->daughter(genparticles,2);
