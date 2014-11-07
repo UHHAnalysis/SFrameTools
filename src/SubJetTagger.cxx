@@ -58,6 +58,10 @@ bool CMSTopTagger::Tag(const TopJet& topjet){
   return true;
 }  
 
+void CMSTopTagger::SetTau32Cut(double cut){
+  m_tau32Upper=cut;
+}
+
 
 map<string,double> CMSTopTagger::TagVar(){
   map<string,double> mymap;

@@ -1971,6 +1971,7 @@ bool HepTopTagWithMatch(TopJet topjet)
 
 }
 
+
 bool variableTopTag(const TopJet & topjet, double &mjet, int &nsubjets, double &mmin, double mminLower, double mjetLower, double mjetUpper){
     CMSTopTagger tagger(mminLower, mjetLower, mjetUpper, 0.7);
     bool result = tagger.Tag(topjet);
@@ -1981,12 +1982,15 @@ bool variableTopTag(const TopJet & topjet, double &mjet, int &nsubjets, double &
     return result;
 }
 
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 bool TopTag(const TopJet & topjet,  double &mjet, int &nsubjets, double &mmin){
   //call variable tagger with default parameters
   return variableTopTag(topjet, mjet, nsubjets, mmin);
 
 }
+#pragma GCC diagnostic pop
+
  
 Jet* nextJet(const Particle *p, std::vector<Jet> *jets)
 {

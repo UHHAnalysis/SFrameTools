@@ -1,6 +1,7 @@
 // Dear emacs, this is -*- c++ -*-
 
 #include "include/TopFitCalc.h"
+#include "include/SubJetTagger.h"
 #include "include/Utils.h"
 #include "TSystem.h"
 #include <stdio.h>
@@ -412,17 +413,17 @@ void TopFitCalc::CalculateTopTag()
   int NCAJets = cajets->size();
 
   int caposi=-1;
-  double mjet;
-  int nsubjets;
-  double mmin;
   double deltaR_Lep_Tophad = .8;
   double deltaR_Jet_Tophad = 1.3;
+
+  CMSTopTagger toptag;
+  toptag.SetTau32Cut();
 
   for(unsigned int m = 0; m<cajets->size(); ++m)
     {
       TopJet cajet = cajets->at(m);
 
-      if(TopTag(cajet, mjet, nsubjets, mmin) && deltaR_Lep_Tophad < deltaR(cajet.v4(),lepton->v4())){
+      if(toptag.Tag(cajet) && deltaR_Lep_Tophad < deltaR(cajet.v4(),lepton->v4())){
 	caposi = m;
 	//deltaR_Lep_Tophad = delR(cajet.v4(),lepton->v4());
 
