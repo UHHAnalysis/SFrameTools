@@ -1,33 +1,36 @@
-#ifndef _SubJetTagger_H
-#define _SubJetTagger_H
+#ifndef SubJetTagger_H
+#define SubJetTagger_H
 
 #include "SFrameTools/include/Objects.h"
-#include <map> 
+#include "SFrameTools/include/Utils.h"
+#include <map>
+#include <string>
 
-using namespace std;
-
-class SubJetTagger
-{
+class SubJetTagger {
  public:
-  SubJetTagger(){};
-  virtual ~SubJetTagger(){};
+  virtual ~SubJetTagger();
   virtual bool Tag(const TopJet& topjet) = 0;
-  virtual map<string, double> TagVar()=0;
+  virtual std::map<std::string, double> TagVar()=0;
 
   //discriminator value is supposed to be treated as part of the TagVariables
 
 };
 
 
-
-class CMSTopTagger : public SubJetTagger
-{
- public:
-  CMSTopTagger(const double& mminLower=50., const double& mjetLower=140., const double& mjetUpper=250.);
-  ~CMSTopTagger(){};
+/** \brief CMS top tagger, with optional tau3/tau2 cut
+ * 
+ * The default values of the constructor correspond to the default values used in CMS, without tau3/tau2 cut.
+ */
+class CMSTopTagger : public SubJetTagger {
+public:
+  
+  CMSTopTagger(double mminLower=50., double mjetLower=140., double mjetUpper=250., double tau32Upper = double_infinity());
+  ~CMSTopTagger();
 
   bool Tag (const TopJet& topjet);
-  map<string,double> TagVar();
+  
+  // available variables: "nsubjets", "mmin" and "mjet"
+  std::map<std::string,double> TagVar();
 
 
  private:
@@ -36,8 +39,9 @@ class CMSTopTagger : public SubJetTagger
   double m_nsubjets;
   double m_mmin;
   double m_mminLower;
-  double m_mjetLower; 
+  double m_mjetLower;
   double m_mjetUpper;
+  double m_tau32Upper;
 
 };
 

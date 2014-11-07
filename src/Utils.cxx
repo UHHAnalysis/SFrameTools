@@ -12,6 +12,7 @@ namespace external {
 #include "include/HEPTopTagger.h"
 }
 #include "SFrameTools/include/EventCalc.h"
+#include "SFrameTools/include/SubJetTagger.h"
 
 using namespace std;
 
@@ -392,7 +393,7 @@ int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode, TString filename
     dosf=0;
   }
 
-  TFile *file_mc;
+  TFile *file_mc = 0;
 
   if(dosf){
     file_mc = new TFile(filename);
@@ -402,7 +403,7 @@ int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode, TString filename
   
   for(unsigned int i=0; i < btagsub_combinedSecondaryVertex_top.size(); ++i){
 
-    if(whichsub!=-1&&i!=whichsub) continue;
+    if(whichsub!=-1&&int(i)!=whichsub) continue;
 
     Particle subjet=subjets_top[i];
     int flav = flavorsub_top[i];
@@ -417,9 +418,9 @@ int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode, TString filename
       continue;
     }
     
-    TH1F *numpt;
-    TH1F *denpt;
-    TH1F *effipt;
+    TH1F *numpt = 0;
+    TH1F *denpt = 0;
+    TH1F *effipt = 0;
 
     TRandom3* rand;
 
@@ -682,7 +683,7 @@ int subJetBTagOne(TopJet topjet, E_BtagType type, TString mode, TString filename
   }
   
   if(dosf){
-    file_mc->Close();   
+    file_mc->Close();
     delete file_mc;
   }
 
@@ -751,7 +752,7 @@ int subJetBTag(TopJet topjet, E_BtagType type, TString mode, TString filename){
     dosf=0;
   }
 
-  TFile *file_mc;
+  TFile *file_mc = 0;
 
   if(dosf){
     file_mc = new TFile(filename);
@@ -774,16 +775,16 @@ int subJetBTag(TopJet topjet, E_BtagType type, TString mode, TString filename){
       continue;
     }
 
-    TF1 *csv;
-    TF1 *csvu;
-    TF1 *csvd;
+    TF1 *csv = 0;
+    TF1 *csvu = 0;
+    TF1 *csvd = 0;
     
-    TH1F *numpt;
-    TH1F *denpt;
-    TH1F *effipt;
-    TH1F *errbc;
+    TH1F *numpt = 0;
+    TH1F *denpt = 0;
+    TH1F *effipt = 0;
+    TH1F *errbc = 0;
 
-    TRandom3* rand;
+    TRandom3* rand = 0;
 
     double bc_bins[] = {
       20, 30, 40, 50, 60, 70, 80, 100, 120, 160, 210, 260, 320, 400, 500, 600, 800
@@ -1970,65 +1971,18 @@ bool HepTopTagWithMatch(TopJet topjet)
 
 }
 
-//default values (mminLower=50., mjetLower=140, mjetUpper=250.) defined in Utils.h
-bool variableTopTag(TopJet topjet, double &mjet, int &nsubjets, double &mmin, double mminLower, double mjetLower, double mjetUpper)
-{
-
-    nsubjets=topjet.numberOfDaughters();
-
-    LorentzVector allsubjets(0,0,0,0);
-
-    for(int j=0; j<topjet.numberOfDaughters(); ++j) {
-        allsubjets += topjet.subjets()[j].v4();
-    }
-    if(!allsubjets.isTimelike()) {
-        mjet=0;
-        mmin=0;
-//  mminLower=50;
-//   mjetLower=140;
-//   mjetUpper=250;
-        return false;
-    }
-
-    //mjet = allsubjets.M();
-    mjet = topjet.v4().M();
-
-    if(nsubjets>=3) {
-
-        std::vector<Particle> subjets = topjet.subjets();
-        sort(subjets.begin(), subjets.end(), HigherPt());
-
-        double m01 = 0;
-        if( (subjets[0].v4()+subjets[1].v4()).isTimelike())
-            m01=(subjets[0].v4()+subjets[1].v4()).M();
-        double m02 = 0;
-        if( (subjets[0].v4()+subjets[2].v4()).isTimelike() )
-            m02=(subjets[0].v4()+subjets[2].v4()).M();
-        double m12 = 0;
-        if( (subjets[1].v4()+subjets[2].v4()).isTimelike() )
-            m12 = (subjets[1].v4()+subjets[2].v4()).M();
-
-        //minimum pairwise mass
-        mmin = std::min(m01,std::min(m02,m12));
-    }
-
-    //at least 3 sub-jets
-    if(nsubjets<3) return false;
-    //minimum pairwise mass > 50 GeV/c^2
-    if(mmin<mminLower) return false;
-    //jet mass between 140 and 250 GeV/c^2
-    if(mjet<mjetLower || mjet>mjetUpper) return false;
-    // n-subjettiness cut at 0.7
-    // if tau2 = 0, tau3/tau2 = Inf, so it fails. safer than dividing by zero below
-    if(topjet.tau2() == 0) return false;
-    if(!(topjet.tau3() / topjet.tau2() < 0.7)) return false;
-
-    return true;
+bool variableTopTag(const TopJet & topjet, double &mjet, int &nsubjets, double &mmin, double mminLower, double mjetLower, double mjetUpper){
+    CMSTopTagger tagger(mminLower, mjetLower, mjetUpper, 0.7);
+    bool result = tagger.Tag(topjet);
+    std::map<string, double> vars = tagger.TagVar();
+    mjet = vars["mjet"];
+    mmin = vars["mmin"];
+    nsubjets = vars["nsubjets"];
+    return result;
 }
 
 
-bool TopTag(TopJet topjet,  double &mjet, int &nsubjets, double &mmin)
-{
+bool TopTag(const TopJet & topjet,  double &mjet, int &nsubjets, double &mmin){
   //call variable tagger with default parameters
   return variableTopTag(topjet, mjet, nsubjets, mmin);
 

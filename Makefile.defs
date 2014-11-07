@@ -9,7 +9,7 @@ INCLUDES += -I$(FASTJETDIR)/../include
 INCLUDES += -I$(FASTJETDIR)/include
 
 # C++ flags
-USERCXXFLAGS := -g
+USERCXXFLAGS := -g -Wdeprecated-declarations
 
 # SFrame analysis includes 
 INCLUDES += -I$(SFRAME_DIR)/SFrameTools
