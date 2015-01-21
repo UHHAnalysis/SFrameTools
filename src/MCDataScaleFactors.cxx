@@ -1,7 +1,7 @@
 #include "include/MCDataScaleFactors.h"
 #include "include/Utils.h"
 #include <TMath.h>
-
+#include "include/SubJetTagger.h"
 
 
 LeptonScaleFactors::LeptonScaleFactors(std::vector<std::string> correctionlist, TString channel)
@@ -813,15 +813,17 @@ double TopTaggingScaleFactors::GetWeight()
     double scale_factor = 1.;
 
     bool toptagevent = false;
+
+    CMSTopTagger toptag;
+    toptag.SetTau32Cut();
+
     for(unsigned int i=0; i<jets->size(); ++i) {
 
         TopJet jet = jets->at(i);
 
         double scale_jet = 1.0;
-        double mmin=0;
-        double mjet=0;
-        int nsubjets=0;
-        bool result = TopTag(jet,mjet,nsubjets,mmin);
+
+        bool result = toptag.Tag(jet);
         if(result)
             toptagevent = true;
         float jet_pt = jet.pt();
@@ -840,8 +842,8 @@ double TopTaggingScaleFactors::GetWeight()
                 bool leptonic_decay = false;
                 const GenParticle* d1 = p.daughter(genparticles,1);
                 const GenParticle* d2 = p.daughter(genparticles,2);
-                const GenParticle* d11;
-                const GenParticle* d12;
+                const GenParticle* d11 = 0;
+                const GenParticle* d12 = 0;
                 if(abs(d1->pdgId())==24) {
                     d11 = d1->daughter(genparticles,1);
                     d12 = d1->daughter(genparticles,2);
@@ -1268,29 +1270,15 @@ TopMistagScale::TopMistagScale() : ToptagFunction() {;}
 
 float TopMistagScale::value(const float &jet_pt, const float &jet_eta) const
 {
-    //Flat error for fit in theta
-    return 1.0;
-    //Flat scale factor fit result from Mistag Studies
-    //****************************************
-    //Minimizer is Linear
-    //Chi2                      =      4.10966
-    //NDf                       =            4
-    //p0                        =      1.00263   +/-   0.0836751
-    //return 1.00263;
+    //From Mistag Study
+    return 0.83;
 }
 
 
 float TopMistagScale::error(const float &jet_pt, const float &jet_eta) const
 {
-    //Flat error for fit in theta
-    return 0.2;
-    //Flat scale factor fit result from Mistag Studies
-    //****************************************
-    //Minimizer is Linear
-    //Chi2                      =      4.10966
-    //NDf                       =            4
-    //p0                        =      1.00263   +/-   0.0836751
-    //return 0.0836751;
+    //From Mistag Study
+    return 0.21;
 }
 
 
@@ -1532,7 +1520,7 @@ TopMistagEfficiency::TopMistagEfficiency() : ToptagFunction() {
 float TopMistagEfficiency::value(const float &jet_pt, const float &jet_eta) const
 {
     //Measured in mistag study - P. Turner
-    return 0.02435;
+    return 0.0152;
 }
 
 

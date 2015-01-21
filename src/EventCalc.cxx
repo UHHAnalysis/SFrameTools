@@ -116,15 +116,12 @@ double EventCalc::GetNSumBTags(){
   int NSubBTags = 0;
   int NSumBTags = 0;
   int nsubjetbtag = 0; 
-  double mmin = 0;
-  double mjet = 0;
-  int nsubjets = 0;
   int nsumbtags = 0;
 
   for(unsigned int m = 0; m< m_bcc->topjets->size();++m){
 
     TopJet topjet =  m_bcc->topjets->at(m); 
-    TopTag(topjet,mjet,nsubjets,mmin);
+    int nsubjets = topjet.numberOfDaughters();
     if(topjet.pt() < 250.) continue;
 
     if(nsubjets > 1){

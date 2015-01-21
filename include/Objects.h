@@ -12,3 +12,5 @@
 #include "NtupleWriter/include/GenTopJet.h"
 #include "NtupleWriter/include/GenInfo.h"
 #include "NtupleWriter/include/GenParticle.h"
+#include "NtupleWriter/include/GenJetWithParts.h"
+

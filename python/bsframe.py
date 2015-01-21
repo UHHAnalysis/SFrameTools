@@ -166,7 +166,7 @@ def getoutputfilenames(configfile):
     postfix = xmlparser.parse(rawxmlfile,"PostFix")
     rootfilenamelist = ""
     for name in namelist:
-        if name.find("SelectionCycle") != -1: cyclename=name
+        if name.find("Cycle") != -1: cyclename=name
     for type,version in zip(typelist,versionlist):
         rootfilenamelist += cyclename+"."+type+"."+version+postfix[0]+".root, "
     return rootfilenamelist[:-2]
